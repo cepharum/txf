@@ -1,0 +1,10 @@
+RewriteEngine On
+
+RewriteBase /
+
+# all requests for unknown resources are processed using global script
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule .* run.php [L]
+
+# Multiviews interfere with rewrite rule above, so disable here
+Options -MultiViews

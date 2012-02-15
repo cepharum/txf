@@ -1,0 +1,2 @@
+<?php namespace de\toxa\txf; list( $name, $value, $label ) = $arguments ?>
+<button name="<?php echo html::idname( $name, true ) ?>" type="submit" value="<?php echo html::inAttribute( $value ) ?>"><?php echo $label ? $label : $value ?></button>

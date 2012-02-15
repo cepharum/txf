@@ -1,0 +1,11 @@
+<div class="exception">
+<?php list( $major, $minor ) = explode( "\n", $exception->getMessage() ); ?>
+ <h2><?php echo $major ?> (<?php echo $exception->getCode() ?>)</h2>
+<?php if ( $minor ) { ?>
+ <h3><?php echo $minor ?></h3>
+<?php } ?>
+ <p>
+  in <strong><?php echo \de\toxa\txf\exception::reducePathname( $exception->getFile() ) ?></strong> at line <?php echo intval( $exception->getLine() ) ?>
+ </p>
+ <pre><?php echo \de\toxa\txf\exception::renderTrace( \de\toxa\txf\exception::reduceExceptionTrace( $exception ) ) ?></pre>
+</div>
