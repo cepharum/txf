@@ -123,13 +123,13 @@ class application
 			}
 
 			// derive list of application and script selectors
-			$frames = explode( '/', trim( $query, '/' ) );
+			$frames = path::stripCommonPrefix( explode( '/', trim( $query, '/' ) ), $context->prefixPathname );
 
 		}
 		else // txf::CTXMODE_NORMAL
 			// expect application and script selectors being part of requested
 			// script pathname
-			$frames = explode( '/', $context->scriptPathname );
+			$frames = explode( '/', $context->applicationScriptPathname );
 
 
 		/*

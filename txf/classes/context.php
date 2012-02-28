@@ -34,6 +34,8 @@ class context
 	/**
 	 * pathname of installation relative to document root folder
 	 * (e.g. for use in URL)
+	 * 
+	 * @example http://www.domain.com/SOME/PREFIX/application/action
 	 *
 	 * @var string
 	 */
@@ -47,6 +49,22 @@ class context
 	 */
 
 	private $scriptPathname;
+
+	/**
+	 * pathname of requested script's application relative to installation folder
+	 *
+	 * @var string
+	 */
+
+	private $applicationPathname;
+
+	/**
+	 * pathname of requested script relative to its application's folder
+	 *
+	 * @var string
+	 */
+
+	private $applicationScriptPathname;
 
 	/**
 	 * URL of current installation
@@ -88,6 +106,7 @@ class context
 
 
 
+
 		/*
 		 * PHASE 2: Validate and detect current application
 		 */
@@ -98,12 +117,23 @@ class context
 			throw new \InvalidArgumentException( 'script is not part of webspace' );
 
 		// ... must be inside installation folder of TXF
-		$this->scriptPathname = path::relativeToAnother( $this->installationPathname, $_SERVER['SCRIPT_FILENAME'] );
+		$this->scriptPathname = path::relativeToAnother( $this->installationPathname, realpath( $_SERVER['SCRIPT_FILENAME'] ) );
 		if ( $this->scriptPathname === false )
 			throw new \InvalidArgumentException( 'script is not part of TXF installation' );
 
-		// derive path prefix to select TXF installation
+		// derive URL's path prefix to select folder containing TXF installation
 		$this->prefixPathname = path::relativeToAnother( $_SERVER['DOCUMENT_ROOT'], $this->installationPathname );
+		if ( $this->prefixPathname === false )
+		{
+			// installation's folder might be linked into document root using symlink
+			// --> comparing pathname of current script with document root will fail then
+			//     --> try alternative method to find prefix pathname 
+			$this->prefixPathname = path::relativeToAnother( $_SERVER['DOCUMENT_ROOT'], dirname( $_SERVER['SCRIPT_FILENAME'] ) );
+		}
+
+
+		// cache some derivable names
+		list( $this->applicationPathname, $this->applicationScriptPathname ) = path::stripCommonPrefix( $this->scriptPathname, $this->prefixPathname, null );
 
 		// compile base URL of current installation
 		$this->url = path::glue(

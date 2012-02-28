@@ -98,6 +98,66 @@ class path
 	}
 
 	/**
+	 * Retrieves provided pathname after stripping off shared frames of given
+	 * prefix.
+	 * 
+	 * Pathname and prefix to strip off can be given as string or as an array
+	 * of a pathname's frames. If pathname is given as array, the results are
+	 * returned as array, too.
+	 * 
+	 * @example
+	 * 
+	 * 'b/c/d' = path::stripCommonPrefix( 'a/b/c/d', 'a/e' );
+	 * 'c/d'   = path::stripCommonPrefix( 'a/b/c/d', 'a/b/e' );
+	 * 'a'     = path::stripCommonPrefix( 'a/b/c/d', 'a/e', true );
+	 * 'a/b'   = path::stripCommonPrefix( 'a/b/c/d', 'a/b/e', true );
+	 * [ 'a', 'b/c/d' ] = path::stripCommonPrefix( 'a/b/c/d', 'a/e', null );
+	 * [ 'a/b', 'c/d' ] = path::stripCommonPrefix( 'a/b/c/d', 'a/b/e', null );
+	 * 
+	 * [ 'b', 'c', 'd' ] = path::stripCommonPrefix( [ 'a', 'b', 'c', 'd' ], 'a/e' );
+	 * [ 'b', 'c', 'd' ] = path::stripCommonPrefix( [ 'a', 'b', 'c', 'd' ], [ 'a', 'e' ] );
+	 *
+	 * [ [ 'a' ], [ 'b', 'c', 'd' ] ] = path::stripCommonPrefix( [ 'a', 'b', 'c', 'd' ], 'a/e', null );
+	 *
+	 * @param string|array $pathname some pathname to strip off prefix
+	 * @param string|array $prefix prefix to strip off if shared/common
+	 * @param boolean|null $retrieveStripped set false to get pathname left after stripping off, set true to get stripped off part, set null to get both parts as an array
+	 * @return string|array one of pathname after stripping off or stripped-off part or both as an array
+	 */
+
+	public static function stripCommonPrefix( $pathname, $prefix, $retrieveStripped = false )
+	{
+		if ( !( $gotAsArray = is_array( $pathname ) ) )
+			$pathname = preg_split( '#/+#', $pathname );
+
+		if ( !is_array( $prefix ) )
+			$prefix = preg_split( '#/+#', $prefix );
+
+
+		$stripped = array();
+
+		while ( count( $pathname ) )
+		{
+			$frame = array_shift( $pathname );
+			if ( $frame !== array_shift( $prefix ) )
+			{
+				array_unshift( $pathname, $frame );
+				break;
+			}
+
+			$stripped[] = $frame;
+		}
+
+		if ( is_null( $retrieveStripped ) )
+			// provide both parts of operation
+			return $gotAsArray ? array( $stripped, $pathname ) : array( implode( '/', $stripped ), implode( '/', $pathname ) );
+
+		$result = $retrieveStripped ? $stripped : $pathname;
+
+		return $gotAsArray ? $result : implode( '/', $result );
+	}
+
+	/**
 	 * Splits provided pathname at selected separators returning set of resulting
 	 * chunks each containing a selected number of pathname fragments.
 	 *
