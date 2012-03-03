@@ -2,14 +2,26 @@
 
 
 /**
- * Implements skinnable view manager.
+ * Copyright 2012 Thomas Urban, toxA IT-Dienstleistungen
+ * 
+ * This file is part of TXF, toxA's web application framework.
+ * 
+ * TXF is free software: you can redistribute it and/or modify it under the 
+ * terms of the GNU General Public License as published by the Free Software 
+ * Foundation, either version 3 of the License, or (at your option) any later 
+ * version.
+ * 
+ * TXF is distributed in the hope that it will be useful, but WITHOUT ANY 
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR 
+ * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along with 
+ * TXF. If not, see http://www.gnu.org/licenses/.
  *
- * This manager is supporting viewports mapped to regions of a page regions,
- * variables and skins to be selected providing different sets of templates each
- * used to convert some set of data into code for output.
- *
- * @author Thomas Urban
- *
+ * @copyright 2012, Thomas Urban, toxA IT-Dienstleistungen, www.toxa.de
+ * @license GNU GPLv3+
+ * @version: $Id$
+ * 
  */
 
 
@@ -21,6 +33,18 @@ use de\toxa\txf\i18n\lang;
 use de\toxa\txf\data;
 use de\toxa\txf\config;
 use de\toxa\txf\txf;
+
+
+/**
+ * Implements skinnable view manager.
+ *
+ * This manager is supporting viewports mapped to regions of a page regions,
+ * variables and skins to be selected providing different sets of templates each
+ * used to convert some set of data into code for output.
+ *
+ * @author Thomas Urban
+ *
+ */
 
 
 class manager extends \de\toxa\txf\singleton
