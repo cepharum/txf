@@ -54,20 +54,7 @@ class markup
 {
 	public static function __callStatic( $method, $arguments )
 	{
-		$oblevel = ob_get_level();
-
-		try
-		{
-			// @todo consider selecting engine depending on current configuration instead of using current view's one
-			return view::current()->getEngine()->render( 'markup/' . $method, variable_space::create( 'arguments', $arguments, 'text', array_shift( $arguments ) ) );
-		}
-		catch ( \Exception $e )
-		{
-			while ( $oblevel > ob_get_level() )
-				ob_end_clean();
-
-			throw $e;
-		}
+		return view::render( 'markup/' . $method, variable_space::create( 'arguments', $arguments, 'text', array_shift( $arguments ) ) );
 	}
 }
 
