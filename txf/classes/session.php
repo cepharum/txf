@@ -284,12 +284,21 @@ class session	// don't derive from anything external here!!! That's breaking maj
 				self::makeArray( $this->usable['applications'][TXF_APPLICATION]['scripts'][TXF_SCRIPT_PATH] );
 				return $this->usable['applications'][TXF_APPLICATION]['scripts'][TXF_SCRIPT_PATH];
 
+			case self::SCOPE_CLASS + self::SCOPE_SCRIPT :
+				self::makeArray( $this->usable['applications'] );
+				self::makeArray( $this->usable['applications'][TXF_APPLICATION] );
+				self::makeArray( $this->usable['applications'][TXF_APPLICATION]['scripts'] );
+				self::makeArray( $this->usable['applications'][TXF_APPLICATION]['scripts'][TXF_SCRIPT_PATH] );
+				self::makeArray( $this->usable['applications'][TXF_APPLICATION]['scripts'][TXF_SCRIPT_PATH]['classes'] );
+				self::makeArray( $this->usable['applications'][TXF_APPLICATION]['scripts'][TXF_SCRIPT_PATH]['classes'][$parameter] );
+				return $this->usable['applications'][TXF_APPLICATION]['scripts'][TXF_SCRIPT_PATH]['classes'][$parameter];
+
 			case self::SCOPE_CLASS + self::SCOPE_APPLICATION :
 				self::makeArray( $this->usable['applications'] );
 				self::makeArray( $this->usable['applications'][TXF_APPLICATION] );
 				self::makeArray( $this->usable['applications'][TXF_APPLICATION]['classes'] );
-				self::makeArray( $this->usable['applications'][TXF_APPLICATION]['scripts'][$parameter] );
-				return $this->usable['applications'][TXF_APPLICATION]['scripts'][$parameter];
+				self::makeArray( $this->usable['applications'][TXF_APPLICATION]['classes'][$parameter] );
+				return $this->usable['applications'][TXF_APPLICATION]['classes'][$parameter];
 
 			case self::SCOPE_CLASS + self::SCOPE_GLOBAL :
 				self::makeArray( $this->usable['classes'] );
