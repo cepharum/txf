@@ -56,7 +56,7 @@ class template_locator
 		assert( '\de\toxa\txf\txf::current()' );
 
 		$folders = array(
-						TXF_APPLICATION_PATH,
+						TXF_APPLICATION_PATH . '/skins/',
 						dirname( dirname( __FILE__ ) ) . '/skins/' . TXF_APPLICATION,
 						dirname( dirname( __FILE__ ) ) . '/skins/default',
 						);
@@ -69,17 +69,12 @@ class template_locator
 				array_unshift( $skins, $currentSkin );
 
 		foreach ( $folders as $folder )
-		{
-			if ( strpos( $folder, '%A' ) !== false )
-				$temp = $apps;
-
 			foreach ( $skins as $skin )
 			{
 				$pathname = path::glue( $folder, $skin, $templateName . '.phpt' );
 				if ( is_file( $pathname ) )
 					return $pathname;
 			}
-		}
 
 		throw new \UnexpectedValueException( 'template not found' );
 	}
