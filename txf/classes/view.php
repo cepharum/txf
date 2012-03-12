@@ -90,7 +90,7 @@ class view extends view\skinnable\manager
 	public static function wrapNotEmpty( $what, $wrapping, $wrappingAppend = null )
 	{
 		if ( ( is_array( $what ) && count( $what ) ) || ( !is_array( $what ) && !is_null( $what ) && trim( $what ) !== '' ) )
-			return static::wrap( $what, $wrapping, $wrappingAppen );
+			return static::wrap( $what, $wrapping, $wrappingAppend );
 
 		return null;
 	}
@@ -114,6 +114,38 @@ class view extends view\skinnable\manager
 			return static::wrap( $what, $wrapping, $wrappingAppen );
 
 		return null;
+	}
+
+	/**
+	 * Renders template using provided data.
+	 * 
+	 * This method is managing exceptions thrown inside to bubble up to current 
+	 * level of output buffering at least.
+	 * 
+	 * @param string $template template name to render
+	 * @param variable_space|array $data data to use on rendering template
+	 * @param string rendered template
+	 */
+
+	public static function render( $template, $data )
+	{
+		$oblevel = ob_get_level();
+
+		try
+		{
+			if ( is_array( $data ) )
+				$data = variable_space::fromArray( $data );
+
+			// @todo consider selecting engine depending on current configuration instead of using current view's one
+			return static::current()->getEngine()->render( $template, $data );
+		}
+		catch ( \Exception $e )
+		{
+			while ( $oblevel < ob_get_level() )
+				ob_end_clean();
+
+			static::error( log::exception( '[%s:%s in %s@%d]', get_class( $e ), $e->getMessage(), $e->getFile(), $e->getLine() ) );
+		}
 	}
 }
 
