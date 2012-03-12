@@ -42,11 +42,11 @@ use de\toxa\txf\shortcuts as shortcuts;
  *
  * @example
  *
- *   $query = query::create( 'employees em' )
- *               ->addJoin( 'salary s', 's.employee=em.id AND em.department<>?', 'management' )
- *               ->addColumn( 'em.id' )
- *               ->addColumn( 'CONCAT(em.firstname," ",em.surname)', 'fullname' )
- *               ->addColumn( 'IF(s.monthly>?,"high","low to moderate")', 'salary_class', 6000 )
+ *   $query = $datasource->createQuery( 'employees em' )
+ *               ->addDataset( 'salary s', 's.employee=em.id AND em.department<>?', 'management' )
+ *               ->addProperty( 'em.id' )
+ *               ->addProperty( 'CONCAT(em.firstname," ",em.surname)', 'fullname' )
+ *               ->addProperty( 'IF(s.monthly>?,"high","low to moderate")', 'salary_class', 6000 )
  *               ->addCondition( 'em.employed_since<?', true, date( 'Y-m-d', time()-86400*365*10 ) );
  *
  * resulting in a query to be compiled later similar to this
@@ -66,18 +66,18 @@ use de\toxa\txf\shortcuts as shortcuts;
  *
  * The benefit of class query is in situations like this:
  *
- * Given this instance any code may decide to adjust the query without parsing
+ * Given $query above any code may decide to adjust the query without parsing
  * and analysing what has been added to query before. If listing employees must
  * not include managers at all and should include employees' ages in addition
  * that code might run
  *
- *   $providedQuery->addCondition( 'em.department<>?', true, 'management' )
- *	               ->addColumn( 'em.age' );
+ *   $query->addCondition( 'em.department<>?', true, 'management' )
+ *	       ->addProperty( 'em.age' );
  *
  * Later it might add limit and sorting according to current script context:
  *
- *   $providedQuery->addOrder( 'em.fullname', false )
- *                ->limit( 10, 65 );
+ *   $query->addOrder( 'em.fullname', false )
+ *         ->limit( 10, 65 );
  *
  * This would finally result in an SQL-query like this:
  *
@@ -102,10 +102,8 @@ use de\toxa\txf\shortcuts as shortcuts;
  */
 
 
-class sql_query
+class sql_query implements query
 {
-
-	protected $name;
 
 	/**
 	 * connection query is related to
@@ -205,32 +203,19 @@ class sql_query
 
 
 	/**
+	 * @param connection $connection link to datasource
 	 * @param string $table name of a table optionally including alias
 	 */
 
-	public function __construct( $connection, $table )
+	public function __construct( connection $connection, $table )
 	{
-		$this->connection = $connection;
+		$this->reconnectDatasource( $connection );
 
 		$table = \de\toxa\txf\_S($table,null,'')->trim();
 		if ( $table->isEmpty )
 			throw new InvalidArgumentException( 'bad table name' );
 
 		$this->tables[$table->asUtf8] = false;
-	}
-
-	/**
-	 * Starts construction of query basically addressing provided table.
-	 *
-	 * @example $query = query::create( 'employees em' );
-	 *
-	 * @param string $table name of table optionally including alias as suffix
-	 * @return query
-	 */
-
-	public static function create( $table )
-	{
-		return new static( $table );
 	}
 
 	/**
@@ -286,21 +271,7 @@ class sql_query
 		return $term;
 	}
 
-	/**
-	 * Joins selected table to include (some of) its columns.
-	 *
-	 * @example $query->addJoin( 'salary s', 's.employee=em.id AND tax=?', 'full' );
-	 *
-	 * On providing another instance of class query in $table it's considered
-	 * subselect and
-	 *
-	 * @param string|query $dataset name and optionally appended alias of dataset to join
-	 * @param string $condition condition for selecting columns of joined table
-	 * @param mixed $parameters @see query::collectParameters()
-	 * @return query reference to current instance for chaining calls
-	 */
-
-	public function addJoin( $dataset, $condition, $parameters = null )
+	public function addDataset( $dataset, $condition, $parameters = null )
 	{
 		// first get parameters provided here for joining table
 		$joinParameters = array();
@@ -355,21 +326,7 @@ class sql_query
 		return $this;
 	}
 
-
-	/**
-	 * Adds column to retrieve from (set of joined) table(s).
-	 *
-	 * This column may be using alias. $name may contain full SQL term. In that
-	 * case $parameters may include some parameters for binding if $name
-	 * contains term including parameter markers.
-	 *
-	 * @param string $name column name or term
-	 * @param string $alias alias to assign
-	 * @param mixed $parameters @see query::collectParameters()
-	 * @return query
-	 */
-
-	public function addColumn( $name, $alias = null, $parameters = null )
+	public function addProperty( $name, $alias = null, $parameters = null )
 	{
 		if ( !is_string( $name ) || !( $name = trim( $name ) ) )
 			throw new InvalidArgumentException( 'bad column name' );
@@ -395,6 +352,9 @@ class sql_query
 
 		$this->collectParameters( func_get_args(), $conditionParameters, 2 );
 
+		if ( !count( $this->conditions ) )
+			$union = true;
+
 		$this->conditions[] = array( self::qualifyTerm( $term, $conditionParameters )->asUtf8, $union ? ' AND ' : ' OR ' );
 
 		$this->conditionParameters = array_merge( $this->conditionParameters, $conditionParameters );
@@ -406,6 +366,9 @@ class sql_query
 	{
 		if ( !is_string( $term ) || !( $term = trim( $term ) ) )
 			throw new InvalidArgumentException( 'bad filter term' );
+
+		if ( !count( $this->filters ) )
+			$union = true;
 
 		$this->filters[] = array( $term, $union ? ' AND ' : ' OR ' );
 
@@ -434,14 +397,6 @@ class sql_query
 		return $this;
 	}
 
-	/**
-	 * Requests to limit result set.
-	 *
-	 * @param integer $size maximum number of records to include in result set
-	 * @param integer $offset number of matches to skip
-	 * @return sql_query current instance for chaining calls
-	 */
-
 	public function limit( $size = 20, $offset = 0 )
 	{
 		$size   = intval( $size );
@@ -455,13 +410,6 @@ class sql_query
 
 		return $this;
 	}
-
-	/**
-	 * Compiles previously described query.
-	 *
-	 * @param boolean $gettingMatchCount true on requesting count of matches
-	 * @return string statement to query actually
-	 */
 
 	public function compile( $gettingMatchCount = false )
 	{
@@ -504,13 +452,6 @@ class sql_query
 		return $sql;
 	}
 
-	/**
-	 * Compiles set of parameters to pass for binding in proper order.
-	 *
-	 * @param boolean $gettingMatchCount true on requesting count of matches
-	 * @return array set of parameters to bind
-	 */
-
 	public function compileParameters( $gettingMatchCount = false )
 	{
 		$parameters = $this->columnParameters;
@@ -527,23 +468,40 @@ class sql_query
 		return $parameters;
 	}
 
-	/**
-	 * Executes query providing access on result set.
-	 *
-	 * @param boolean $gettingMatchCount true to request query for count of matches
-	 * @return statement executed statement providing result set
-	 */
-
 	public function execute( $gettingMatchCount = false )
 	{
+		if ( !( $this->connection instanceof connection ) )
+			throw new \RuntimeException( 'missing connection to datasource' );
+
+
 		$query = $this->compile( $gettingMatchCount );
+
 		$statement = call_user_func( array( $this->connection, 'compile' ), $query );
+
 		return call_user_func_array( array( $statement, 'execute' ), $this->compileParameters( $gettingMatchCount ) );
 	}
 
 	public function __toString()
 	{
 		return $this->compile();
+	}
+
+	public function __sleep()
+	{
+		return array( 'tables', 'columns', 'columnParameters', 'conditions', 'conditionParameters', 'groups', 'filters', 'filterParameters', 'orders', 'offset', 'size' );
+	} 
+
+	public function __wakeup()
+	{
+		$this->connection = null;
+	}
+
+	public function reconnectDatasource( connection $connection )
+	{
+		if ( !( $connection instanceof pdo ) )
+			throw new \InvalidArgumentException( 'sql_query works on pdo datasources, only' );
+
+		$this->connection = $connection;
 	}
 }
 
