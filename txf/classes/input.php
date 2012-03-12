@@ -57,6 +57,8 @@ class input extends singleton
 	const FORMAT_INTEGER = 'integer';
 	/** Selects input filter matching boolean switch names (e.g. yes or no). */
 	const FORMAT_BOOL    = 'bool';
+	/** Selects input filter matching GUIDs. */
+	const FORMAT_GUID    = 'guid';
 
 
 	protected $sources = array();
@@ -236,7 +238,6 @@ class input extends singleton
 
 
 			return $this;
-
 		}
 		catch ( Exception $e )
 		{
@@ -249,7 +250,7 @@ class input extends singleton
 	/**
 	 * Reads single input value.
 	 *
-	 * Use this method or its counterpart input::get() in preference over
+	 * Use this method or its counterpart input::vget() in preference over
 	 * accessing $_GET, $_POST or other super global arrays.
 	 *
 	 * The method traverses current queue of input sources asking each for
@@ -313,6 +314,27 @@ class input extends singleton
 			throw new \InvalidArgumentException( 'invalid name' );
 
 		static::current()->persistValue( $name, $value );
+	}
+
+	/**
+	 * Detects if a parameter is persistent currently.
+	 * 
+	 * @param string $name name of parameter to test for persistence
+	 * @return boolean true if parameter is persistent in current context 
+	 */
+
+	final public static function isPersistent( $name )
+	{
+		$name = data::isKeyword( $name );
+		if ( !$name )
+			throw new \InvalidArgumentException( 'invalid name' );
+
+		foreach ( static::current()->sources as $source )
+			if ( $source['enabled'] && !$source['volatile'] )
+				if ( $source['manager']->hasValue( $name ) )
+					return true;
+
+		return false;
 	}
 
 	/**
@@ -466,6 +488,13 @@ class input extends singleton
 								'prepare' => function( $value, $format ) { if ( is_string( $value ) ) return trim( $value ); else return !!$value ? 'y' : 'n'; },
 								'valid'   => '/^(on|off|y(es)?|no?|true|false|0|1)$/i',
 								'convert' => function( $value, $format ) { return in_array( strtolower( $value ), array( 'y', 'yes', 'on', 'true', '1' ) ); }
+								);
+
+				case self::FORMAT_GUID :
+					return array(
+								'prepare' => function( $value, $format ) { return trim( $value ); },
+								'valid'   => '/^[\da-f]{8}(-[\da-f]{4}){3}-[\da-f]{12}$/i',
+								'convert' => function( $value, $format ) { return strtolower( $value ); }
 								);
 
 				default :
