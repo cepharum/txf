@@ -498,7 +498,7 @@ class set
 	{
 		$name = _S($name)->asUtf8;
 
-		if ( !xml::isValidTagName( $name ) )
+		if ( !xml::isValidName( $name ) )
 			throw new \UnexpectedValueException( 'invalid element name cannot be converted to XML' );
 
 
