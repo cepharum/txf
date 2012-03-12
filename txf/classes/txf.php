@@ -218,7 +218,7 @@ class txf extends singleton
 			if ( defined( 'TXF_APPLICATION_PATH' ) )
 			{
 				$classFile = TXF_APPLICATION_PATH . $classPathname . '.php';
-				if ( is_file( $classFile ) && path::isInWebfolder( $classFile ) )
+				if ( is_file( $classFile ) /*&& path::isInWebfolder( $classFile )*/ )
 				{
 					include_once( $classFile );
 					return true;
