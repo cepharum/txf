@@ -2,6 +2,9 @@ RewriteEngine On
 
 RewriteBase /
 
+# select some default application
+#RewriteRule ^$ application/action [R,L]
+
 # all requests for unknown resources are processed using global script
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule .* run.php [L]
