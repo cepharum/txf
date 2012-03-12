@@ -146,7 +146,7 @@ class context
 			throw new \InvalidArgumentException( 'script is not part of TXF installation' );
 
 		// derive URL's path prefix to select folder containing TXF installation
-		$this->prefixPathname = path::relativeToAnother( $_SERVER['DOCUMENT_ROOT'], $this->installationPathname );
+		$this->prefixPathname = path::relativeToAnother( realpath( $_SERVER['DOCUMENT_ROOT'] ), $this->installationPathname );
 		if ( $this->prefixPathname === false )
 		{
 			// installation's folder might be linked into document root using symlink
@@ -161,14 +161,53 @@ class context
 
 		// compile base URL of current installation
 		$this->url = path::glue(
-							( $context->isHTTPS ? 'https://' : 'http://' ) . $_SERVER['HTTP_HOST'],
-							$context->prefixPathname
+							( $this->isHTTPS ? 'https://' : 'http://' ) . $_SERVER['HTTP_HOST'],
+							$this->prefixPathname
 							);
 
 		// detect current application
 		$this->application = application::current( $this );
 	}
 
+	public static function getDocumentRoot()
+	{
+		if ( array_key_exists( 'DOCUMENT_ROOT', $_ENV ) )
+			return $_ENV['DOCUMENT_ROOT'];
+
+		return $_SERVER['DOCUMENT_ROOT'];
+	}
+
+	/**
+	 * Simplifies retrieval of compiled URLs to a current script.
+	 * 
+	 * @param array $parameters set of parameters to include in reference
+	 * @param string $selector one of several selectors to include in reference
+	 * @return string URL referring to currently running script 
+	 */
+
+	public static function selfURL( $parameters = array(), $selectors = null )
+	{
+		$args = func_get_args();
+
+		return call_user_func_array( array( application::current(), 'selfURL' ), $args );
+	}
+
+	/**
+	 * Simplifies retrieval of compiled URLs to a selected script of current 
+	 * application.
+	 * 
+	 * @param string $scriptName name of script to refer to
+	 * @param array $parameters set of parameters to include in reference
+	 * @param string $selector one of several selectors to include in reference
+	 * @return string URL referring to selected script 
+	 */
+
+	public static function scriptURL( $scriptName, $parameters = array(), $selector = null )
+	{
+		$args = func_get_args();
+
+		return call_user_func_array( array( application::current(), 'scriptURL' ), $args );
+	}
 
 	public function __get( $name )
 	{
