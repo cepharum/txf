@@ -125,12 +125,12 @@ class data
 	 * @return string potentially shortened string
 	 */
 
-	public static function limitString( $in, $length = 30, $ellipsis = '...' )
+	public static function limitString( $in, $length = 30, $ellipsis = '…' )
 	{
 		$in = strval( $in );
 
-		if ( strlen( $in ) > $length )
-			return substr( $in, 0, max( 0, $length - strlen( $ellipsis ) ) ) . $ellipsis;
+		if ( mb_strlen( $in ) > $length )
+			return substr( $in, 0, max( 0, $length - mb_strlen( $ellipsis ) ) ) . $ellipsis;
 
 		return $in;
 	}
