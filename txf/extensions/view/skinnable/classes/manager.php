@@ -46,7 +46,6 @@ use de\toxa\txf\txf;
  *
  */
 
-
 class manager extends \de\toxa\txf\singleton
 {
 
@@ -190,7 +189,7 @@ class manager extends \de\toxa\txf\singleton
 
 
 		// read default assets from configuration
-		$assets = config::get( 'view.asset', array() );
+		$assets = config::get( 'view.asset' );
 		if ( is_array( $assets ) )
 			foreach ( $assets as $asset )
 				if ( @$asset['url'] && @$asset['type'] )
@@ -206,8 +205,12 @@ class manager extends \de\toxa\txf\singleton
 		// initialize HTTP defaults
 		header( 'Content-Type: text/html; charset=utf-8' );
 
-		// initialize regions of view
 
+		// initialize content of viewports
+		$content = config::get( 'view.static' );
+		if ( is_array( $content ) )
+			foreach ( $content as $name => $content )
+				$this->writeInViewport( $name, $content );
 	}
 
 	/**
@@ -220,7 +223,14 @@ class manager extends \de\toxa\txf\singleton
 		{
 			$this->whileShuttingDown = true;
 
-			echo $this->renderPage();
+			try
+			{
+				echo $this->renderPage();
+			}
+			catch ( \Exception $e )
+			{
+				echo self::simpleRenderException( $e ); 
+			}
 		}
 	}
 
@@ -242,7 +252,7 @@ class manager extends \de\toxa\txf\singleton
 	}
 
 	/**
-	 * Cathes exceptions not catched in code for embedding rendered exception
+	 * Catches exceptions not catched in code for embedding rendered exception
 	 * description in selected page design (if possible).
 	 *
 	 * @param \Exception $exception
@@ -254,6 +264,10 @@ class manager extends \de\toxa\txf\singleton
 			if ( $exception->getCode() & E_NOTICE )
 				return;
 
+		if ( $exception instanceof \de\toxa\txf\http_exception )
+			header( $exception->getResponse() );
+
+
 		try
 		{
 			try
@@ -262,10 +276,16 @@ class manager extends \de\toxa\txf\singleton
 			}
 			catch ( Exception $e )
 			{
-				$code = lang::get( 'failed to render error' );
+				$code = lang::get( 'failed to render exception' );
 			}
 
 			$this->viewport( 'error', $code );
+
+
+			if ( txf::getContextMode() == txf::CTXMODE_REWRITTEN )
+				// this mode does not have registered shutdown handler
+				// --> call it explicitly here
+				$this->onShutdown();
 		}
 		catch ( \Exception $e )
 		{
@@ -274,11 +294,6 @@ class manager extends \de\toxa\txf\singleton
 			echo '<h1>Encountered error was</h1>';
 			echo self::simpleRenderException( $e );
 		}
-
-		if ( txf::getContextMode() == txf::CTXMODE_REWRITTEN )
-			// this mode does not have registered shutdown handler
-			// --> call it explicitly here
-			$this->onShutdown();
 
 		exit();
 	}
@@ -399,18 +414,26 @@ EOT
 	 * @param string $id ID used to identify asset after adding to current view
 	 * @param string $source URL/address of asset, omit to drop existing asset
 	 * @param enum $type one of view::ASSET_TYPE_* constants
+	 * @param boolean $blnIfNotExists if true, asset is added unless existing already
 	 * @param string|true $insertBeforeId ID of existing asset this will be inserted before
 	 *                     omit to append at end (default if selected asset is missing),
 	 *                     provide true or "*" to prepend before first existing asset
 	 * @return void
 	 */
 
-	public static function addAsset( $id, $source, $type, $insertBeforeId = null )
+	public static function addAsset( $id, $source, $type, $insertBeforeId = null, $blnIfNotExists = false )
 	{
+		if ( trim( $id ) === '' )
+			throw new \InvalidArgumentException( 'missing asset id' );
+
+
 		if ( trim( $source ) === null )
 			unset( static::current()->assets[$id] );
 		else
 		{
+			if ( $blnIfNotExists && array_key_exists( $id, static::current()->assets ) )
+				return;
+
 			$newAsset = array(
 							'url' => $source,
 							'type' => $type,
