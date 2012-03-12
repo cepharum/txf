@@ -35,7 +35,7 @@ namespace de\toxa\txf;
  *
  */
 
-class html_form
+class html_form implements widget
 {
 	/**
 	 * internal name of form
@@ -78,7 +78,24 @@ class html_form
 	 * @var string
 	 */
 
-	protected $code = '';
+	protected $code = '%%%%ROWS_STACK%%%%';
+
+
+	/**
+	 * heap of field rows
+	 * 
+	 * @var hash
+	 */
+
+	protected $rows = array();
+
+	/**
+	 * cached template used for rendering single row of form described by setRow()
+	 * 
+	 * @var string
+	 */
+
+	protected static $rowTemplate = null;
 
 
 
@@ -110,7 +127,7 @@ class html_form
 
 	protected function idValue()
 	{
-		return preg_replace( '/[^a-z0-9_]/i', '', base64_encode( gzcompress( sha1( $this->name . application::current()->name . $_SERVER['REMOTE_ADDR'] ), 9 ) ) );
+		return preg_replace( '/[^a-z0-9_]/i', '', base64_encode( gzcompress( sha1( $this->name . '|' . application::current()->name . '|' . $_SERVER['REMOTE_ADDR'] ), 9 ) ) );
 	}
 
 	/**
@@ -221,12 +238,200 @@ class html_form
 	}
 
 	/**
+	 * Appends new row or adjusts previously appended one selected by its name.
+	 * 
+	 * This method is selecting row of form by its internal name for 
+	 * modification. If selected row isn't found it is appended to collection.
+	 * 
+	 * A row consists of several properties including label, some control/widget
+	 * code, mark on being mandatory, a hint and an error message.
+	 * 
+	 * All arguments but $name are optional and may be null to ignore related
+	 * property of row in current request. Providing false for string properties
+	 * requests to drop related property. Provided property values are extending
+	 * existing ones in case of strings (except $class), but provided strings 
+	 * are managed as chunks internally until final rendering of a row's code.
+	 * 
+	 * NOTE! String chunks are appended to existing properties unless starting 
+	 *       with a vertical pipe requesting to prepend it.
+	 * 
+	 * @param string $name unique internal name of row to modify
+	 * @param string|null $label label to render next to the field/row
+	 * @param string|null $htmlCode another widget/control's code to contain in row
+	 * @param boolean|null $mandatory mark on whether this field must be filled by user (This is affecting visual representation, only!)
+	 * @param string|null $hint another hint supporting use of row/field
+	 * @param string|null $error another error message to associate with row/field
+	 * @param string|null $class HTML class of row
+	 * @return html_form current instance for chaining calls
+	 */
+
+	public function setRow( $name, $label = null, $htmlCode = null, $mandatory = null, $hint = null, $error = null, $class = null )
+	{
+		$name = trim( $name );
+		if ( $name === '' )
+			throw new \InvalidArgumentException( 'missing row name' );
+
+
+		// select existing row or append new row if selected one isn't found
+		if ( !array_key_exists( $name, $this->rows ) )
+			$this->rows[$name] = array();
+
+		$row =& $this->rows[$name];
+
+
+		// transfer all provided string properties of row
+		foreach ( array( 'label', 'htmlCode', 'hint', 'error' ) as $var )
+			if ( !is_null( $$var ) )
+			{
+				if ( $$var === false )
+					unset( $row[$var] );
+				else
+				{
+					if ( !is_array( @$row[$var] ) )
+						@$row[$var] = array();
+
+					$str = strval( $$var );
+
+					if ( $str[0] === '|' )
+						array_unshift( $row[$var], substr( $str, 1 ) );
+					else
+						$row[$var][] = $str;
+				}
+			}
+
+		// transfer provided string properties of row replacing previous value
+		if ( !is_null( $class ) )
+		{
+			if ( $class )
+				$row['class'] = html::classname( $class );
+			else
+				unset( $row['class'] );
+		}
+
+		// transfer provided boolean properties of row
+		if ( !is_null( $mandatory ) )
+		{
+			if ( $mandatory )
+				$row['mandatory'] = true;
+			else
+				unset( $row['mandatory'] );
+		}
+
+
+		return $this;
+	}
+
+	/**
+	 * Adjusts label of selected row in current form.
+	 * 
+	 * @param string $name name of row, row is added if missing
+	 * @param string $label text to append to row's label, false to reset
+	 * @return html_form current instance for chaining calls
+	 */
+
+	public function setRowLabel( $name, $label )
+	{
+		return $this->setRow( $name, $label );
+	}
+
+	/**
+	 * Adjusts HTML code of selected row in current form.
+	 * 
+	 * @param string $name name of row, row is added if missing
+	 * @param string $code HTML code to append to row's code, false to reset
+	 * @return html_form current instance for chaining calls
+	 */
+
+	public function setRowCode( $name, $code )
+	{
+		return $this->setRow( $name, null, $code );
+	}
+
+	/**
+	 * Adjusts mark on whether field(s) in row is/are mandatory or not.
+	 * 
+	 * @param string $name name of row, row is added if missing
+	 * @param boolean $blnIsMandatory if true, field(s) in row get(s) mandatory
+	 * @return html_form current instance for chaining calls
+	 */
+
+	public function setRowIsMandatory( $name, $blnIsMandatory )
+	{
+		return $this->setRow( $name, null, null, !!$blnIsMandatory );
+	}
+
+	/**
+	 * Adjusts hint of selected row in current form.
+	 * 
+	 * @param string $name name of row, row is added if missing
+	 * @param string $hint text of another hint to add, false to reset
+	 * @return html_form current instance for chaining calls
+	 */
+
+	public function setRowHint( $name, $hint )
+	{
+		return $this->setRow( $name, null, null, null, $hint );
+	}
+
+	/**
+	 * Adjusts error message of selected row in current form.
+	 * 
+	 * @param string $name name of row, row is added if missing
+	 * @param string $error text of another error message to add, false to reset
+	 * @return html_form current instance for chaining calls
+	 */
+
+	public function setRowError( $name, $error )
+	{
+		return $this->setRow( $name, null, null, null, null, $error );
+	}
+
+	/**
+	 * Adjusts class of selected row in current form.
+	 * 
+	 * @param string $name name of row, row is added if missing
+	 * @param string $class class name(s)
+	 * @return html_form current instance for chaining calls
+	 */
+
+	public function setRowClass( $name, $class )
+	{
+		return $this->setRow( $name, null, null, null, null, null, $class );
+	}
+
+	/**
+	 * Retrieves template for rendering rows managed by setRow().
+	 * 
+	 * This method manages runtime caching request for template to prevent 
+	 * frequent lookups in configuration.
+	 * 
+	 * The provided template is used in a call to sprintf() with HTML class 
+	 * name, compiled label, code, hint and error as further arguments.
+	 * 
+	 * @return string template to use on rendering single row of form
+	 */
+
+	protected static function getRowTemplate()
+	{
+		if ( is_null( self::$rowTemplate ) )
+			self::$rowTemplate = config::get( 'html.form.row', <<<EOT
+<div class="form-row %s">
+<label>%s</label>
+<div class="form-row-data">%s%s%s</div>
+</div>
+EOT
+											);
+
+		return self::$rowTemplate;
+	}
+
+	/**
 	 * Renders HTML code of form.
 	 *
 	 * @return string generated HTML code
 	 */
 
-	public function compile()
+	public function getCode()
 	{
 		$method = $this->usePost ? 'POST' : 'GET';
 		$action = is_null( $this->processorUrl ) ? application::current()->selfUrl() : $this->processorUrl;
@@ -239,17 +444,41 @@ class html_form
 		$idName = $this->idName();
 		$idValue = $this->idValue();
 
+
+		// compile code of form's rows
+		$template = self::getRowTemplate();
+
+		$rows = array_filter( $this->rows, function( $row ) { return !!count( $row ); } );
+		$rows = array_map( function( $row ) use ( $template )
+		{
+			$label = view::wrapNotEmpty( @$row['label'], '', "\n" );
+			$code  = view::wrapNotEmpty( @$row['htmlCode'], '', "\n" );
+			$hint  = view::wrapNotEmpty( @$row['hint'], '<span class="hint">', "</span>\n" );
+			$error = view::wrapNotEmpty( @$row['error'], '<span class="error">', "</span>\n" );
+
+			$mandatory = @$row['mandatory'] ? config::get( 'html.form.mandatory', '<span class="mandatory">*</span>' ) : '';
+
+			if ( trim( $label ) !== '' )
+				$label = sprintf( config::get( 'html.form.label', '%s%s:' ), $label, $mandatory );
+
+			return sprintf( $template, @$row['class'], $label, $code, $error, $hint );
+		}, $rows );
+
+		// embed compiled rows in form's custom content
+		$code = str_replace( '%%%%ROWS_STACK%%%%', implode( '', $rows ), $this->code );
+
+
 		return <<<EOT
 <form action="$action" method="$method"$mime id="$name">
 	$size<input type="hidden" name="$idName" value="$idValue"/>
-$this->code
+$code
 </form>
 EOT;
 	}
 
 	public function __toString()
 	{
-		return $this->compile();
+		return $this->getCode();
 	}
 }
 
