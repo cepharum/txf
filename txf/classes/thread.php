@@ -31,11 +31,11 @@ namespace de\toxa\txf;
  * Structured data entity manager
  * 
  * This API offers opportunity to organize data in hierarchical structure quite
- * simply. Hierarchies are created by simply addressing them:
+ * simply. Hierarchies are created by addressing them:
  * 
  * @example
- * $data = new data();
- * $data->support->may2011->tickets->addItem( new message( "my message" ) );
+ * $data = new de\toxa\txf\thread();
+ * $data->support->may2011->tickets->addItem( new message( "my message" ) )->setRecipient();
  * $data->support->departments->berlin->moderators->thomas_urban->name->label = "Name";
  * $data->support->departments->berlin->moderators->thomas_urban->name->value = "Thomas Urban";
  * 
@@ -96,7 +96,7 @@ class thread
 
 	public function isContainer()
 	{
-		return is_array( $this->subs ) && is_null( $this->label );
+		return is_array( $this->subs );
 	}
 
 	/**
@@ -106,7 +106,7 @@ class thread
 
 	public function isLeaf()
 	{
-		return is_null( $this->subs ) && !is_null( $this->label );
+		return ( $this->subs === false );
 	}
 
 	/**
@@ -150,7 +150,9 @@ class thread
 		if ( $this->isContainer() )
 			throw new RuntimeException( 'cannot turn container into leaf' );
 
-		if ( is_null( $this->label ) )
+		$this->subs = false;
+
+		if ( trim( $label ) !== '' )
 			$this->label = trim( $label );
 	}
 
@@ -162,7 +164,7 @@ class thread
 
 	public function set()
 	{
-		return $this->isLeaf() ? !is_null( $this->value ) : !!count( $this->subs );
+		return $this->isLeaf() ? !is_null( $this->value ) : ( is_array( $this->subs ) && !!count( $this->subs ) );
 	}
 
 	public function __get( $name )
@@ -342,6 +344,7 @@ class thread
 	 * Adds item to set collected in current leaf entity.
 	 * 
 	 * @param mixed $value item to add
+	 * @return mixed added value
 	 */
 
 	public function addItem( $value )
@@ -355,6 +358,8 @@ class thread
 			$this->value = array();
 
 		$this->value[] = $value;
+
+		return $value;
 	}
 
 	/**
@@ -409,6 +414,8 @@ class thread
 	/**
 	 * Indicates whether current leaf is a set for collecting data items or not.
 	 * 
+	 * This method is returning true for previously uninitialized leafs, too.
+	 * 
 	 * @return boolean true on leaf available for collecting items, false otherwise
 	 */
 
@@ -418,6 +425,101 @@ class thread
 			throw new RuntimeException( 'cannot have items on a container' );
 
 		return !$this->isLeaf() || is_array( $this->value ) || is_null( $this->value );
+	}
+
+
+
+	/**
+	 * Serializes current thread to XML.
+	 * 
+	 * The resulting XML is designed to be reversible thus may be used for
+	 * serializing this thread.
+	 * 
+	 * @param string $rootName element name of root whole thread is wrapped in
+	 * @param string $namespace namespace to use on elements of whole thread
+	 * @param integer $indent initial indentation depth
+	 * @return string XML code describing current thread
+	 */
+
+	public function toXml( $rootName = 'thread', $namespace = '', $indent = 0 )
+	{
+		if ( $this->isLeaf() )
+			throw new \RuntimeException( 'cannot convert leaf to XML' );
+
+		if ( trim( $rootName ) === '' )
+			throw new \InvalidArgumentException( 'missing root element name' );
+
+		return $this->nodeToXml( $rootName, $namespace, $indent );
+	}
+
+	/**
+	 * Recursively serializes current node.
+	 * 
+	 * This method is used internally to implement conversion of a thread to
+	 * XML code.
+	 * 
+	 * @param string $rootName element name of root whole thread is wrapped in
+	 * @param string $namespace namespace to use on elements of whole thread
+	 * @param integer $depth initial indentation depth
+	 * @return string XML code describing current node of thread
+	 */
+
+	protected function nodeToXml( $name, $namespace = '', $depth = 0 )
+	{
+		if ( $this->isLeaf() )
+		{
+			// serialize leaf nodes
+			$meta = array(
+						'type'    => strtolower( gettype( $this->value ) ),
+						'default' => $this->specialValue,
+						'label'   => $this->label,
+						);
+
+			if ( is_array( $this->value ) )
+			{
+				// manage collections/sets in a leaf node separately
+
+				if ( !count( $this->value ) )
+					// empty set -> use short tag
+					return xml::describeElement( $name, $namespace, $depth, null, $meta );
+
+				// write sequence of XML elements with same name
+				$out = '';
+
+				foreach ( $this->value as $item )
+				{
+					if ( $item instanceof self )
+					{
+						// subordinated is another thread ... render recursively
+						$meta['type'] = null;
+						$out .= $item->nodeToXml( $name, $namespace, $depth );
+					}
+					else
+					{
+						// subordinated is any other value ... serialize to string
+						$meta['type'] = strtolower( gettype( $item ) );
+						$out .= xml::describeElement( $name, $namespace, $depth, strval( $item ), $meta );
+					}
+
+					// don't repeat basic attributes "default" and "label"
+					$meta = array();
+				}
+
+				return $out;
+			}
+
+			return xml::describeElement( $name, $namespace, $depth, $this->value, $meta );
+		}
+
+
+		// serialize container nodes of thread by triggering serialization of
+		// subordinated nodes recursively
+		$value = '';
+
+		foreach ( $this->subs as $subname => $sub )
+			$value .= $sub->nodeToXml( static::fixXmlName( $subname ), $namespace, $depth + 1 );
+
+		return xml::describeElement( $name, $namespace, $depth, $value );
 	}
 }
 
