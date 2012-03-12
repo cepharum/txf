@@ -268,6 +268,7 @@ class application
 				break;
 		}
 
+
 		return $url . ( count( $parameters ) ? '?' . http_build_query( $parameters ) : '' );
 	}
 
@@ -287,8 +288,25 @@ class application
 		if ( empty( $selectors ) )
 			$selectors = application::current()->selectors;
 
-		if ( $parameters === null )
-			$parameters = input::source( input::SOURCE_ACTUAL_GET )->getAllValues();
+
+		/*
+		 * merge current script's input parameters with provided one
+		 */
+
+		// find all non-persistent input parameters of current script
+		$currentParameters = input::source( input::SOURCE_ACTUAL_GET )->getAllValues();
+		foreach ( $currentParameters as $name => $value )
+			if ( !data::isKeyword( $name ) || input::isPersistent( $name ) )
+				unset( $currentParameters[$name] );
+
+		// merge volatile input with given parameters, but drop all those 
+		// finally set NULL (to support removal per $parameters)
+		$parameters = array_filter( array_merge( $currentParameters, $parameters ), function( $item ) { return $item !== null; } );
+
+
+		/*
+		 * utilize scriptURL() for referring to current script
+		 */
 
 		array_unshift( $selectors, $parameters );
 		array_unshift( $selectors, $this->script );
