@@ -42,7 +42,7 @@ class input_source_stateful implements input_source
 	
 	public function __construct()
 	{
-		$this->set =& txf::session( session::SCOPE_CLASS + session::SCOPE_APPLICATION, 'input_source_stateful' );
+		$this->set =& txf::session( session::SCOPE_CLASS + session::SCOPE_SCRIPT, 'input_source_stateful' );
 	}
 
 	public function isVolatile()
