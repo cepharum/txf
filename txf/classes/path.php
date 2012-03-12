@@ -79,12 +79,7 @@ class path
 
 	public static function isInWebfolder( $pathname )
 	{
-		$result = self::relativeToAnother( $_SERVER['DOCUMENT_ROOT'], $pathname );
-
-		if ( !$result && array_key_exists( 'DOCUMENT_ROOT', $_ENV ) && is_dir( $_ENV['DOCUMENT_ROOT'] ) )
-			$result = self::relativeToAnother( $_ENV['DOCUMENT_ROOT'], $pathname );
-
-		return ( $result !== false );
+		return ( self::relativeToAnother( context::getDocumentRoot(), $pathname ) !== false );
 	}
 
 	/**
