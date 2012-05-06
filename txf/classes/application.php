@@ -126,6 +126,19 @@ class application
 
 		if ( txf::getContextMode() == txf::CTXMODE_REWRITTEN )
 		{
+			// rewriting works different with cherokee web server, thus try to fix
+			if ( !strcasecmp( $_SERVER['SERVER_SOFTWARE'], 'Cherokee' ) )
+			{
+				if ( !array_key_exists( 'REDIRECT_URL', $_SERVER ) )
+				{
+					if ( $_SERVER['REQUEST_URI'] != $_SERVER['SCRIPT_URL'] )
+					{
+						$_SERVER['REDIRECT_URL'] = $_SERVER['REQUEST_URI'];
+					}
+				}
+			}
+
+
 			assert( '$_SERVER[REDIRECT_URL] || $_SERVER[PATH_INFO]' );
 
 			// get originally requested script (e.g. prior to rewrite)

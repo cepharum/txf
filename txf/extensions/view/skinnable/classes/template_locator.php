@@ -63,7 +63,9 @@ class template_locator
 
 		$skins = array( 'default' );
 
-		$currentSkin = data::isKeyword( $currentSkin );
+		if ( $currentSkin !== null )
+			$currentSkin = data::isKeyword( $currentSkin );
+
 		if ( $currentSkin )
 			if ( $currentSkin != 'default' )
 				array_unshift( $skins, $currentSkin );

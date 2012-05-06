@@ -261,7 +261,7 @@ class singleton
 			self::$current = array();
 
 		$name = \get_called_class();
-		return self::$current[$name] instanceof self ? self::$current[$name] : null;
+		return @self::$current[$name] instanceof self ? self::$current[$name] : null;
 	}
 
 	/**

@@ -52,7 +52,7 @@ class thread
 	 * @var string
 	 */
 
-	protected $label = null;
+	protected $___label = null;
 
 	/**
 	 * value of a leaf entity
@@ -60,7 +60,7 @@ class thread
 	 * @var mixed
 	 */
 
-	protected $value = null;
+	protected $___value = null;
 
 	/**
 	 * special value available to describe case of having no regular value in a 
@@ -69,7 +69,7 @@ class thread
 	 * @var mixed
 	 */
 
-	protected $specialValue = null;
+	protected $___specialValue = null;
 
 	/**
 	 * set of subordinated entities in a container entity
@@ -77,16 +77,51 @@ class thread
 	 * @var array[data]
 	 */
 
-	protected $subs  = null;
+	protected $___subs  = null;
+
+	/**
+	 * public name of a node's property providing its label
+	 *
+	 * @var string
+	 */
+
+	protected $___labelName;
+
+	/**
+	 * public name of a node's property providing its value
+	 * 
+	 * @var string
+	 */
+
+	protected $___valueName;
+
+	/**
+	 * public name of node's property providing its special value
+	 * 
+	 * @var string
+	 */
+
+	protected $___specialValueName;
 
 
 
 	/**
 	 * Creates unfixed data entity.
+	 * 
+	 * @param string $labelName public name of property providing a node's label
+	 * @param string $valueName public name of property providing a node's value
+	 * @param string $specialName public name of property providing a node's special value
 	 */
 
-	public function __construct()
+	public function __construct( $labelName = 'label', $valueName = 'value', $specialName = 'specialValue' )
 	{
+		assert( 'is_string( $labelName ) && trim( $labelName ) !== ""' );
+		assert( 'is_string( $valueName ) && trim( $valueName ) !== ""' );
+		assert( 'is_string( $specialName ) && trim( $specialName ) !== ""' );
+
+		$this->___labelName = $labelName;
+		$this->___valueName = $valueName;
+		$this->___specialValueName = $specialName;
 	}
 
 	/**
@@ -96,7 +131,7 @@ class thread
 
 	public function isContainer()
 	{
-		return is_array( $this->subs );
+		return is_array( $this->___subs );
 	}
 
 	/**
@@ -106,7 +141,7 @@ class thread
 
 	public function isLeaf()
 	{
-		return ( $this->subs === false );
+		return ( $this->___subs === false );
 	}
 
 	/**
@@ -132,10 +167,10 @@ class thread
 	public function fixAsContainer()
 	{
 		if ( $this->isLeaf() )
-			throw new RuntimeException( 'cannot turn leaf into container' );
+			throw new \RuntimeException( 'cannot turn leaf into container' );
 
-		if ( !is_array( $this->subs ) )
-			$this->subs = array();
+		if ( !is_array( $this->___subs ) )
+			$this->___subs = array();
 	}
 
 	/**
@@ -148,12 +183,12 @@ class thread
 	public function fixAsLeaf( $label = '' )
 	{
 		if ( $this->isContainer() )
-			throw new RuntimeException( 'cannot turn container into leaf' );
+			throw new \RuntimeException( 'cannot turn container into leaf' );
 
-		$this->subs = false;
+		$this->___subs = false;
 
 		if ( trim( $label ) !== '' )
-			$this->label = trim( $label );
+			$this->___label = trim( $label );
 	}
 
 	/**
@@ -164,42 +199,42 @@ class thread
 
 	public function set()
 	{
-		return $this->isLeaf() ? !is_null( $this->value ) : ( is_array( $this->subs ) && !!count( $this->subs ) );
+		return $this->isLeaf() ? !is_null( $this->___value ) : ( is_array( $this->___subs ) && !!count( $this->___subs ) );
 	}
 
 	public function __get( $name )
 	{
 		switch ( strtolower( $name ) )
 		{
-			case 'label' :
+			case $this->___labelName :
 				if ( !$this->isLeaf() )
-					throw new RuntimeException( 'cannot retrieve label on a non-leaf' );
+					throw new \RuntimeException( 'cannot retrieve label on a container' );
 				
-				return $this->label;
+				return $this->___label;
 
-			case 'value' :
+			case $this->___valueName :
 				if ( !$this->isLeaf() )
-					throw new RuntimeException( 'cannot retrieve value on a non-leaf' );
+					throw new \RuntimeException( 'cannot retrieve value on a container' );
 				
-				return $this->value;
+				return $this->___value;
 
-			case 'specialvalue' :
+			case $this->___specialValueName :
 				if ( !$this->isLeaf() )
-					throw new RuntimeException( 'cannot retrieve special value on a non-leaf' );
+					throw new \RuntimeException( 'cannot retrieve special value on a container' );
 				
-				return $this->specialValue;
+				return $this->___specialValue;
 
 			default :
 				if ( $this->isLeaf() )
-					throw new RuntimeException( sprintf( 'cannot retrieve sub-entity on leaf "%s"', $this->label ) );
+					throw new \RuntimeException( sprintf( 'cannot retrieve sub-entity on leaf "%s"', $this->___label ) );
 
 				if ( !$this->isContainer() )
 					$this->fixAsContainer();
 
-				if ( !array_key_exists( $name, $this->subs ) )
-					$this->subs[$name] = new static();
+				if ( !array_key_exists( $name, $this->___subs ) )
+					$this->___subs[$name] = new static( $this->___labelName, $this->___valueName, $this->___specialValueName );
 
-				return $this->subs[$name];
+				return $this->___subs[$name];
 		}
 	}
 
@@ -207,46 +242,49 @@ class thread
 	{
 		switch ( strtolower( $name ) )
 		{
-			case 'label' :
+			case $this->___labelName :
 				if ( $this->isContainer() )
-					throw new RuntimeException( 'request for label on a non-leaf' );
+					throw new \RuntimeException( 'request for label on a non-leaf' );
 				
 				$this->fixAsLeaf( $value );
 				break;
 
-			case 'value' :
+			case $this->___valueName :
 				if ( $this->isContainer() )
-					throw new RuntimeException( 'invalid request for changing value on a container' );
+					throw new \RuntimeException( 'invalid request for changing value on a container' );
 
 				$this->fixAsLeaf();
 
-				$this->value = $value;
+				$this->___value = $value;
 				break;
 
-			case 'specialvalue' :
+			case $this->___specialValueName :
 				if ( $this->isContainer() )
-					throw new RuntimeException( 'invalid request for changing special value on a container' );
+					throw new \RuntimeException( 'invalid request for changing special value on a container' );
 
 				$this->fixAsLeaf();
 
-				$this->specialValue = $value;
+				$this->___specialValue = $value;
 				break;
 
 			default :
 				if ( $this->isLeaf() )
-					throw new RuntimeException( sprintf( 'cannot assign container data to leaf "%s"', $this->label ) );
+					throw new \RuntimeException( sprintf( 'cannot assign container data to leaf "%s"', $this->___label ) );
 
 				if ( !( $value instanceof static ) )
-					throw new RuntimeException( 'invalid assignment of leaf data to container' );
+					throw new \RuntimeException( 'invalid assignment of leaf data to container' );
 
 				$this->fixAsContainer();
 
-				$this->subs[$name] = new static();
+				$this->___subs[$name] = new static( $this->___labelName, $this->___valueName, $this->___specialValueName );
 
-				foreach ( $value->subs as $name => $value )
-					$this->subs[$name]->__set( $name, $value );
+				if ( is_array( $value->___subs ) )
+					foreach ( $value->___subs as $name => $value )
+					{
+						$this->___subs[$name]->__set( $name, $value );
+					}
 
-				return $this->subs[$name];
+				return $this->___subs[$name];
 		}
 	}
 
@@ -254,46 +292,32 @@ class thread
 	{
 		switch ( strtolower( $name ) )
 		{
-			case 'label' :
+			case $this->___labelName :
 				if ( $this->isContainer() )
-					throw new RuntimeException( 'request for label on a non-leaf' );
+					throw new \RuntimeException( 'invalid request for unsetting label on a container' );
 				
-				$this->fixAsLeaf( $value );
+				$this->___label = null;
 				break;
 
-			case 'value' :
+			case $this->___valueName :
 				if ( $this->isContainer() )
-					throw new RuntimeException( 'invalid request for changing value on a container' );
+					throw new \RuntimeException( 'invalid request for unsetting value on a container' );
 
-				$this->fixAsLeaf();
-
-				$this->value = $value;
+				$this->___value = null;
 				break;
 
-			case 'specialvalue' :
+			case $this->___specialValueName :
 				if ( $this->isContainer() )
-					throw new RuntimeException( 'invalid request for changing special value on a container' );
+					throw new \RuntimeException( 'invalid request for unsetting special value on a container' );
 
-				$this->fixAsLeaf();
-
-				$this->specialValue = $value;
+				$this->___specialValue = null;
 				break;
 
 			default :
 				if ( $this->isLeaf() )
-					throw new RuntimeException( sprintf( 'cannot assign container data to leaf "%s"', $this->label ) );
+					throw new \RuntimeException( sprintf( 'cannot unset container data on leaf "%s"', $this->___label ) );
 
-				if ( !( $value instanceof static ) )
-					throw new RuntimeException( 'invalid assignment of leaf data to container' );
-
-				$this->fixAsContainer();
-
-				$this->subs[$name] = new static();
-
-				foreach ( $value->subs as $name => $value )
-					$this->subs[$name]->__set( $name, $value );
-
-				return $this->subs[$name];
+				$this->___subs = null;
 		}
 	}
 
@@ -316,13 +340,13 @@ class thread
 	public function select( $selector, $invert = false )
 	{
 		if ( $this->isLeaf() )
-			throw new RuntimeException( 'cannot retrieve subs on a leaf' );
+			throw new \RuntimeException( 'cannot retrieve subs on a leaf' );
 
-		if ( !is_array( $this->subs ) )
+		if ( !is_array( $this->___subs ) )
 			return array();
 
 		$out = array();
-		foreach ( $this->subs as $name => $sub )
+		foreach ( $this->___subs as $name => $sub )
 		{
 			if ( is_callable( $selector ) )
 				$include = $selector( $name, $sub );
@@ -341,6 +365,31 @@ class thread
 	}
 
 	/**
+	 * Retrieves set of threads contained in current containing node.
+	 * 
+	 * @return array[thread] set of threads contained in current node
+	 */
+
+	public function content()
+	{
+		if ( $this->isLeaf() )
+			throw new \RuntimeException( 'invalid request for content on a leaf' );
+
+		return is_array( $this->___subs ) ? $this->___subs : array();
+	}
+
+	/**
+	 * Detects if current node is a non-empty container.
+	 * 
+	 * @return integer number of thread contained in current node
+	 */
+
+	public function hasContent()
+	{
+		return count( $this->content() ) > 0;
+	}
+
+	/**
 	 * Adds item to set collected in current leaf entity.
 	 * 
 	 * @param mixed $value item to add
@@ -350,14 +399,14 @@ class thread
 	public function addItem( $value )
 	{
 		if ( !$this->hasItems() )
-			throw new RuntimeException( 'cannot add item to scalar leaf' );
+			throw new \RuntimeException( 'cannot add item to scalar leaf' );
 
 		$this->fixAsLeaf();
 
-		if ( !is_array( $this->value ) )
-			$this->value = array();
+		if ( !is_array( $this->___value ) )
+			$this->___value = array();
 
-		$this->value[] = $value;
+		$this->___value[] = $value;
 
 		return $value;
 	}
@@ -374,12 +423,12 @@ class thread
 	public function item( $index )
 	{
 		if ( !$this->hasItems() )
-			throw new RuntimeException( 'cannot retrieve item on scalar leaf' );
+			throw new \RuntimeException( 'cannot retrieve item on scalar leaf' );
 
-		if ( !is_array( $this->value ) || $index < 0 || $index >= count( $this->value ) )
+		if ( !is_array( $this->___value ) || $index < 0 || $index >= count( $this->___value ) )
 			throw new OutOfBoundsException( 'index out of bounds' );
 
-		return $this->value[$index];
+		return $this->___value[$index];
 	}
 
 	/**
@@ -391,9 +440,9 @@ class thread
 	public function items()
 	{
 		if ( !$this->hasItems() )
-			throw new RuntimeException( 'cannot retrieve items on scalar leaf' );
+			throw new \RuntimeException( 'cannot retrieve items on scalar leaf' );
 
-		return is_array( $this->value ) ? $this->value : array();
+		return is_array( $this->___value ) ? $this->___value : array();
 	}
 
 	/**
@@ -406,9 +455,9 @@ class thread
 	public function itemCount()
 	{
 		if ( !$this->hasItems() )
-			throw new RuntimeException( 'cannot retrieve items on scalar leaf' );
+			throw new \RuntimeException( 'cannot retrieve items on scalar leaf' );
 
-		return is_array( $this->value ) ? count( $this->value ) : 0;
+		return is_array( $this->___value ) ? count( $this->___value ) : 0;
 	}
 
 	/**
@@ -422,12 +471,46 @@ class thread
 	public function hasItems()
 	{
 		if ( $this->isContainer() )
-			throw new RuntimeException( 'cannot have items on a container' );
+			throw new \RuntimeException( 'cannot have items on a container' );
 
-		return !$this->isLeaf() || is_array( $this->value ) || is_null( $this->value );
+		return !$this->isLeaf() || is_array( $this->___value ) || is_null( $this->___value );
 	}
 
+	/**
+	 * Extends current thread by provided XML.
+	 * 
+	 * @param SimpleXMLElement|string $xml XML document used to extend current thread
+	 * @return thread current instance
+	 */
 
+	public function fromXml( $xml )
+	{
+		if ( is_string( $xml ) || $xml instanceof string )
+			$xml = simplexml_load_string( trim( $xml ) );
+
+		if ( $xml instanceof \SimpleXMLElement )
+		{
+			foreach ( $xml as $name => $data )
+			{
+				$attributes = $xml->attributes();
+
+				if ( $data instanceof \SimpleXMLElement && $data->count() )
+					$this->__get( $name )->fromXml( $data );
+				else
+				{
+					$this->__set( $this->___valueName, data::autoType( strval( $data ), $attributes->type ) );
+
+					if ( $attributes->default )
+						$this->__set( $this->___specialValueName, $attributes->default );
+				}
+
+				if ( $attributes->label )
+					$this->__set( $this->___labelName, $attributes->label );
+			}
+		}
+
+		return $this;
+	}
 
 	/**
 	 * Serializes current thread to XML.
@@ -470,30 +553,27 @@ class thread
 		{
 			// serialize leaf nodes
 			$meta = array(
-						'type'    => strtolower( gettype( $this->value ) ),
-						'default' => $this->specialValue,
-						'label'   => $this->label,
+						'type'    => strtolower( gettype( $this->___value ) ),
+						'default' => $this->___specialValue,
+						'label'   => $this->___label,
 						);
 
-			if ( is_array( $this->value ) )
+			if ( is_array( $this->___value ) )
 			{
 				// manage collections/sets in a leaf node separately
 
-				if ( !count( $this->value ) )
+				if ( !count( $this->___value ) )
 					// empty set -> use short tag
 					return xml::describeElement( $name, $namespace, $depth, null, $meta );
 
 				// write sequence of XML elements with same name
 				$out = '';
 
-				foreach ( $this->value as $item )
+				foreach ( $this->___value as $item )
 				{
 					if ( $item instanceof self )
-					{
 						// subordinated is another thread ... render recursively
-						$meta['type'] = null;
 						$out .= $item->nodeToXml( $name, $namespace, $depth );
-					}
 					else
 					{
 						// subordinated is any other value ... serialize to string
@@ -508,7 +588,7 @@ class thread
 				return $out;
 			}
 
-			return xml::describeElement( $name, $namespace, $depth, $this->value, $meta );
+			return xml::describeElement( $name, $namespace, $depth, $this->___value, $meta );
 		}
 
 
@@ -516,7 +596,7 @@ class thread
 		// subordinated nodes recursively
 		$value = '';
 
-		foreach ( $this->subs as $subname => $sub )
+		foreach ( $this->___subs as $subname => $sub )
 			$value .= $sub->nodeToXml( static::fixXmlName( $subname ), $namespace, $depth + 1 );
 
 		return xml::describeElement( $name, $namespace, $depth, $value );

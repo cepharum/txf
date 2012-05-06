@@ -96,7 +96,7 @@ class set
 
 	public static function isValidThreadPath( $path )
 	{
-		return string::isString( $path ) && !!_S($path)->match( _S('/^([^.]+\.)*[^.]+$/') );
+		return string::isString( $path ) && preg_match( '/^([^.]+\.)*[^.]+$/', strval( $path ) );
 	}
 
 	/**
@@ -372,7 +372,7 @@ class set
 	protected function processThread( &$array, &$result, $path, $passedPath = null, $processor = null )
 	{
 		if ( !is_array( $path ) )
-			$path = _S($path)->split( _S('/\./') );
+			$path = preg_split( '/\./', $path );
 
 		if ( !is_array( $passedPath ) )
 			$passedPath = array();
@@ -381,7 +381,7 @@ class set
 		if ( count( $path ) )
 		{
 			// extract next element from path
-			$name = trim( array_shift( $path )->asUtf8 );
+			$name = trim( array_shift( $path ) );
 
 			if ( ctype_digit( $name ) && ( $name > 0 ) )
 				// prefering 1-based indices in thread pathnames
@@ -482,7 +482,7 @@ class set
 		if ( (string) $xml === '' )
 			return array();
 
-		return data::autoType( _S($xml,'utf-8') );
+		return data::autoType( _S($xml,'utf-8')->asUtf8 );
 	}
 
 	/**

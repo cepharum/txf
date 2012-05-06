@@ -42,8 +42,8 @@ class data
 
 	public static function isKeyword( $in )
 	{
-		if ( !is_string( $in ) )
-			log::debug( 'use of non-string value' );
+		if ( !string::isString( $in ) )
+			log::debug( 'use of non-string value "%s"', static::describe( $in ) );
 
 		$in = trim( $in );
 
@@ -64,7 +64,7 @@ class data
 
 	public static function isNonEmptyString( $in )
 	{
-		if ( !is_string( $in ) )
+		if ( !string::isString( $in ) )
 			log::debug( 'use of non-string value' );
 
 		$in = trim( $in );
@@ -202,34 +202,49 @@ class data
 	 * value is passed as is.
 	 *
 	 * @param mixed $value value to convert optionally
+	 * @param string $type name of type to prefer
 	 * @return provided or converted value
 	 */
 
-	public static function autoType( $value )
+	public static function autoType( $value, $type = null )
 	{
 		if ( string::isString( $value ) )
 		{
-			$string = _S($value)->asUtf8;
+			$type = strtolower( trim( $type ) );
 
-			if ( strtolower( trim( $string ) ) == 'null' )
+
+			if ( $type === 'string' )
+				return $value;
+
+			if ( strtolower( trim( $value ) ) == 'null' )
 				return null;
 
-			if ( preg_match( '/^[+-]?\d+$/', trim( $string ) ) )
-				return intval( $string );
 
-			if ( is_numeric( $string ) )
-				return doubleval( $string );
+			if ( $type === 'integer' || preg_match( '/^[+-]?\d+$/', trim( $value ) ) || $type === 'integer' )
+				return intval( $value );
+
+
+			if ( is_numeric( $value ) )
+				return doubleval( $value );
 
 			// due to different locale is_numeric() probably won't detect
 			// non-localized decimals
-			if ( preg_match( '/^(([+-]?)\d+)(\.(\d+))?$/', trim( $string ), $matches ) )
+			if ( preg_match( '/^(([+-]?)\d+)(\.(\d+))?$/', trim( $value ), $matches ) )
 				return doubleval( $matches[1] ) + "$matches[2]1" * doubleval( $matches[4] ) * pow( 10, -strlen( $matches[4] ) );
 
-			if ( preg_match( '/^(o(ff|n)|true|false|yes|no)$/i', trim( $string ), $matches ) )
+			if ( $type === 'double' )
+				return doubleval( $value );
+
+
+			if ( preg_match( '/^(o(ff|n)|true|false|yes|no)$/i', trim( $value ), $matches ) )
 				return in_array( strtolower( $matches[1] ), array( 'on', 'yes', 'true' ) );
 
-			if ( preg_match( '/^=\?8bit\?B\?(.+)\?=$/i', $string, $matches ) )
-				return unserialize( base64_decode( $matches[1] ) );
+			if ( $type === 'boolean' )
+				return in_array( strtolower( trim( $value ) ), array( 'on', 'yes', 'true' ) );
+
+
+			if ( preg_match( '/^=\?8bit\?B\?(.+)\?=$/i', $value, $matches ) )
+				return static::autotype( unserialize( base64_decode( $matches[1] ) ), $type );
 		}
 
 		return $value;
@@ -274,6 +289,9 @@ class data
 
 					case 'appurl' :
 						return application::current()->scriptURL( $chunks[1] );
+
+					case 'date' :
+						return date( $chunks[1], count( $chunks ) > 1 ? intval( $chunks[2] ) : time() );
 
 					default :
 						return '';

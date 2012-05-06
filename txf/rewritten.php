@@ -28,6 +28,10 @@
 namespace de\toxa\txf;
 
 
+// always disable notices
+error_reporting( error_reporting() & ~E_NOTICE );
+
+
 include_once( dirname( __FILE__ ) . '/classes/txf.php' );
 
 if ( !txf::hasCurrent() )

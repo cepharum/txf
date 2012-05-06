@@ -503,35 +503,55 @@ EOT
 
 	protected function collectRegions( $viewports )
 	{
-		$defaultConfig = array(
+		$configs = array(
+						// current application's customization
+						config::get( 'view.region', array() ),
+
+						// basic page setup
+						array(
 							array( 'name' => 'main',  'viewport' => array( 'title', 'error', 'main' ) ),
 							array( 'name' => 'head',  'viewport' => array( 'header' ) ),
 							array( 'name' => 'foot',  'viewport' => array( 'footer' ) ),
 							array( 'name' => 'left',  'viewport' => array( 'navigation' ) ),
 							array( 'name' => 'right', 'viewport' => array( 'aside' ) ),
-							);
+							),
+						);
+
 
 		$regions = array();
 
-		foreach ( config::get( 'view.region', $defaultConfig ) as $region )
-		{
-			$name = @$region['name'];
+		foreach ( $configs as $config )
+			if ( is_array( $config ) )
+				foreach ( $config as $region )
+				{
+					// get name of region to customize
+					$name = trim( @$region['name'] );
+					if ( $name === '' )
+					{
+						log::debug( 'ignoring nameless region configuration' );
+						continue;
+					}
 
-			if ( array_key_exists( 'code', $region ) )
-				$regions[$name] = data::qualifyString( $region['code'], $viewports );
-			else
-			{
-				$temp = @$region['viewport'];
-				if ( !is_array( $temp ) )
-					$temp = array( $temp );
+					if ( !array_key_exists( $name, $regions ) )
+					{
+						// region haven't been collected before ...
 
-				foreach ( $temp as $viewportName )
-					$regions[$name] .= \de\toxa\txf\view::wrapNotEmpty( @$viewports[$viewportName], config::get( 'view.viewport.wrap.' . $viewportName, '' ) );
-			}
+						if ( array_key_exists( 'code', $region ) )
+							// there is a line of code containing markers selecting viewports to collect their content in current region
+							// e.g. "{{title}}<some-literal-content-to-insert/>{{main}}"
+							$regions[$name] = data::qualifyString( $region['code'], $viewports );
+						else if ( is_array( @$region['viewport'] ) )
+							// collect set of viewports named in configuration
+							foreach ( @$region['viewport'] as $viewportName )
+								$regions[$name] .= \de\toxa\txf\view::wrapNotEmpty( @$viewports[$viewportName], config::get( 'view.viewport.wrap.' . $viewportName, '' ) );
 
-			if ( trim( $regions[$name] ) === '' )
-				$regions[$name] = trim( @$region['default'] );
-		}
+		
+						// support default content to show if a region keeps empty finally
+						if ( trim( $regions[$name] ) === '' )
+							$regions[$name] = trim( @$region['default'] );
+					}
+				}
+
 
 		return $regions;
 	}
