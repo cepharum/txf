@@ -3,25 +3,25 @@
 
 /**
  * Copyright 2012 Thomas Urban, toxA IT-Dienstleistungen
- * 
+ *
  * This file is part of TXF, toxA's web application framework.
- * 
- * TXF is free software: you can redistribute it and/or modify it under the 
- * terms of the GNU General Public License as published by the Free Software 
- * Foundation, either version 3 of the License, or (at your option) any later 
+ *
+ * TXF is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
  * version.
- * 
- * TXF is distributed in the hope that it will be useful, but WITHOUT ANY 
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR 
+ *
+ * TXF is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
  * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License along with 
+ *
+ * You should have received a copy of the GNU General Public License along with
  * TXF. If not, see http://www.gnu.org/licenses/.
  *
  * @copyright 2012, Thomas Urban, toxA IT-Dienstleistungen, www.toxa.de
  * @license GNU GPLv3+
  * @version: $Id$
- * 
+ *
  */
 
 
@@ -229,7 +229,7 @@ class manager extends \de\toxa\txf\singleton
 			}
 			catch ( \Exception $e )
 			{
-				echo self::simpleRenderException( $e ); 
+				echo self::simpleRenderException( $e );
 			}
 		}
 	}
@@ -545,7 +545,7 @@ EOT
 							foreach ( @$region['viewport'] as $viewportName )
 								$regions[$name] .= \de\toxa\txf\view::wrapNotEmpty( @$viewports[$viewportName], config::get( 'view.viewport.wrap.' . $viewportName, '' ) );
 
-		
+
 						// support default content to show if a region keeps empty finally
 						if ( trim( $regions[$name] ) === '' )
 							$regions[$name] = trim( @$region['default'] );
@@ -574,6 +574,17 @@ EOT
 			// don't exit in shutdown to permit processing further shutdown
 			// functions
 			exit();
+	}
+
+	/**
+	 * Disables rendering of current view.
+	 *
+	 * This method is useful to suppress any output e.g. on trying to redirect.
+	 */
+
+	public static function disableOutput()
+	{
+		$this->renderedBefore = true;
 	}
 
 	/**

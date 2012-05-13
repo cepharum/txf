@@ -83,17 +83,24 @@ class exception extends \Exception
 		return implode( "\n", $trace );
 	}
 
+	/**
+	 * Replaces pathnames related to current installation by representing tags.
+	 * 
+	 * This is used e.g. on rendering stack traces to prevent exposure of
+	 * sensitive security-related information.
+	 * 
+	 * @param string $in text to reduce contained pathnames in
+	 * @return string reduced version of provided string
+	 */
+
 	public static function reducePathname( $in )
 	{
-		if ( substr( $in, 0, strlen( TXF_APPLICATION_PATH ) + 1 ) === TXF_APPLICATION_PATH . '/' )
-			return '[APP]' . substr( $in, strlen( TXF_APPLICATION_PATH ) );
-
-		if ( substr( $in, 0, strlen( TXF_FRAMEWORK_PATH ) + 1 ) === TXF_FRAMEWORK_PATH . '/' )
-			return '[TXF]' . substr( $in, strlen( TXF_FRAMEWORK_PATH ) );
-
-		if ( substr( $in, 0, strlen( TXF_INSTALL_PATH ) + 1 ) === TXF_INSTALL_PATH . '/' )
-			return '[BASE]' . substr( $in, strlen( TXF_INSTALL_PATH ) );
-
-		return $in;
+		return preg_replace( array(
+						'#' . preg_quote( TXF_APPLICATION_PATH . '/', '#' ) . '#', 
+						'#' . preg_quote( TXF_FRAMEWORK_PATH . '/', '#' ) . '#', 
+						'#' . preg_quote( TXF_INSTALL_PATH . '/', '#' ) . '#', 
+						), array(
+						'[APP]/', '[TXF]/', '[BASE]/',
+						), $in );
 	}
 }

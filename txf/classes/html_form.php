@@ -3,25 +3,25 @@
 
 /**
  * Copyright 2012 Thomas Urban, toxA IT-Dienstleistungen
- * 
+ *
  * This file is part of TXF, toxA's web application framework.
- * 
- * TXF is free software: you can redistribute it and/or modify it under the 
- * terms of the GNU General Public License as published by the Free Software 
- * Foundation, either version 3 of the License, or (at your option) any later 
+ *
+ * TXF is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
  * version.
- * 
- * TXF is distributed in the hope that it will be useful, but WITHOUT ANY 
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR 
+ *
+ * TXF is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
  * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License along with 
+ *
+ * You should have received a copy of the GNU General Public License along with
  * TXF. If not, see http://www.gnu.org/licenses/.
  *
  * @copyright 2012, Thomas Urban, toxA IT-Dienstleistungen, www.toxa.de
  * @license GNU GPLv3+
  * @version: $Id$
- * 
+ *
  */
 
 
@@ -83,7 +83,7 @@ class html_form implements widget
 
 	/**
 	 * heap of field rows
-	 * 
+	 *
 	 * @var hash
 	 */
 
@@ -91,7 +91,7 @@ class html_form implements widget
 
 	/**
 	 * cached template used for rendering single row of form described by setRow()
-	 * 
+	 *
 	 * @var string
 	 */
 
@@ -106,6 +106,17 @@ class html_form implements widget
 			throw new \InvalidArgumentException( 'missing valid form name' );
 
 		$this->name = $name;
+	}
+
+	/**
+	 * Conveniently creates instance of html_form or any derived class.
+	 *
+	 * @return html_form created instance
+	 */
+
+	public static function create( $name )
+	{
+		return new static( $name );
 	}
 
 	/**
@@ -239,22 +250,22 @@ class html_form implements widget
 
 	/**
 	 * Appends new row or adjusts previously appended one selected by its name.
-	 * 
-	 * This method is selecting row of form by its internal name for 
+	 *
+	 * This method is selecting row of form by its internal name for
 	 * modification. If selected row isn't found it is appended to collection.
-	 * 
+	 *
 	 * A row consists of several properties including label, some control/widget
 	 * code, mark on being mandatory, a hint and an error message.
-	 * 
+	 *
 	 * All arguments but $name are optional and may be null to ignore related
 	 * property of row in current request. Providing false for string properties
 	 * requests to drop related property. Provided property values are extending
-	 * existing ones in case of strings (except $class), but provided strings 
+	 * existing ones in case of strings (except $class), but provided strings
 	 * are managed as chunks internally until final rendering of a row's code.
-	 * 
-	 * NOTE! String chunks are appended to existing properties unless starting 
+	 *
+	 * NOTE! String chunks are appended to existing properties unless starting
 	 *       with a vertical pipe requesting to prepend it.
-	 * 
+	 *
 	 * @param string $name unique internal name of row to modify
 	 * @param string|null $label label to render next to the field/row
 	 * @param string|null $htmlCode another widget/control's code to contain in row
@@ -323,7 +334,7 @@ class html_form implements widget
 
 	/**
 	 * Adjusts label of selected row in current form.
-	 * 
+	 *
 	 * @param string $name name of row, row is added if missing
 	 * @param string $label text to append to row's label, false to reset
 	 * @return html_form current instance for chaining calls
@@ -336,7 +347,7 @@ class html_form implements widget
 
 	/**
 	 * Adjusts HTML code of selected row in current form.
-	 * 
+	 *
 	 * @param string $name name of row, row is added if missing
 	 * @param string $code HTML code to append to row's code, false to reset
 	 * @return html_form current instance for chaining calls
@@ -349,7 +360,7 @@ class html_form implements widget
 
 	/**
 	 * Adjusts mark on whether field(s) in row is/are mandatory or not.
-	 * 
+	 *
 	 * @param string $name name of row, row is added if missing
 	 * @param boolean $blnIsMandatory if true, field(s) in row get(s) mandatory
 	 * @return html_form current instance for chaining calls
@@ -362,7 +373,7 @@ class html_form implements widget
 
 	/**
 	 * Adjusts hint of selected row in current form.
-	 * 
+	 *
 	 * @param string $name name of row, row is added if missing
 	 * @param string $hint text of another hint to add, false to reset
 	 * @return html_form current instance for chaining calls
@@ -375,7 +386,7 @@ class html_form implements widget
 
 	/**
 	 * Adjusts error message of selected row in current form.
-	 * 
+	 *
 	 * @param string $name name of row, row is added if missing
 	 * @param string $error text of another error message to add, false to reset
 	 * @return html_form current instance for chaining calls
@@ -388,7 +399,7 @@ class html_form implements widget
 
 	/**
 	 * Adjusts class of selected row in current form.
-	 * 
+	 *
 	 * @param string $name name of row, row is added if missing
 	 * @param string $class class name(s)
 	 * @return html_form current instance for chaining calls
@@ -400,14 +411,29 @@ class html_form implements widget
 	}
 
 	/**
+	 * Detects whether there is any row with error set or not.
+	 *
+	 * @return boolean true if at least row has an error message, false otherwise
+	 */
+
+	public function hasAnyRowError()
+	{
+		foreach ( $this->rows as $row => $properties )
+			if ( @$properties['error'] )
+				return true;
+
+		return false;
+	}
+
+	/**
 	 * Retrieves template for rendering rows managed by setRow().
-	 * 
-	 * This method manages runtime caching request for template to prevent 
+	 *
+	 * This method manages runtime caching request for template to prevent
 	 * frequent lookups in configuration.
-	 * 
-	 * The provided template is used in a call to sprintf() with HTML class 
+	 *
+	 * The provided template is used in a call to sprintf() with HTML class
 	 * name, compiled label, code, hint and error as further arguments.
-	 * 
+	 *
 	 * @return string template to use on rendering single row of form
 	 */
 

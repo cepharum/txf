@@ -3,25 +3,25 @@
 
 /**
  * Copyright 2012 Thomas Urban, toxA IT-Dienstleistungen
- * 
+ *
  * This file is part of TXF, toxA's web application framework.
- * 
- * TXF is free software: you can redistribute it and/or modify it under the 
- * terms of the GNU General Public License as published by the Free Software 
- * Foundation, either version 3 of the License, or (at your option) any later 
+ *
+ * TXF is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
  * version.
- * 
- * TXF is distributed in the hope that it will be useful, but WITHOUT ANY 
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR 
+ *
+ * TXF is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
  * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License along with 
+ *
+ * You should have received a copy of the GNU General Public License along with
  * TXF. If not, see http://www.gnu.org/licenses/.
  *
  * @copyright 2012, Thomas Urban, toxA IT-Dienstleistungen, www.toxa.de
  * @license GNU GPLv3+
  * @version: $Id$
- * 
+ *
  */
 
 
@@ -254,6 +254,7 @@ class txf extends singleton
 	 * Looks for single extension installed either in context of current
 	 * application or in context of shared code base (framework):
 	 *
+	 * @throws \InvalidArgumentException on providing empty or non-string extension name
 	 * @param string $extensionName extension to look for
 	 * @return string|null absolute pathname of found extension, null on missing it
 	 */
@@ -263,16 +264,35 @@ class txf extends singleton
 		if ( !is_string( $extensionName ) || ( ( $extensionName = trim( $extensionName ) ) === '' ) )
 			throw new \InvalidArgumentException( 'invalid or missing extension name' );
 
+		return $this->findResource( path::glue( 'extensions', $extensionName ) );
+	}
+
+	/**
+	 * Looks for resource file selected by its relative pathname.
+	 *
+	 * This method is used to overload resources in framework by resources in
+	 * current application.
+	 *
+	 * @throws \InvalidArgumentException on providing empty or non-string pathname
+	 * @param string $resourcePathname relative pathname of resource to look for
+	 * @return string|null absolute pathname of found resource, null on mismatch
+	 */
+
+	public function findResource( $resourcePathname )
+	{
+		if ( !is_string( $resourcePathname ) || ( ( $resourcePathname = trim( $resourcePathname ) ) === '' ) )
+			throw new \InvalidArgumentException( 'invalid or missing resource pathname' );
+
 		if ( $this->context )
 		{
 			if ( $this->context->application() )
 			{
-				$pathname = path::glue( $this->context->applicationPathname(), 'extensions', $extensionName );
+				$pathname = path::glue( $this->context->applicationPathname(), $resourcePathname );
 				if ( is_dir( $pathname ) )
 					return $pathname;
 			}
 
-			$pathname = path::glue( $this->context->frameworkPathname(), 'extensions', $extensionName );
+			$pathname = path::glue( $this->context->frameworkPathname(), $resourcePathname );
 			if ( is_dir( $pathname ) )
 				return $pathname;
 		}
@@ -352,14 +372,15 @@ class txf extends singleton
 		$initialRedirections = config::get( 'txf.autoloader.redirections' );
 
 		if ( is_array( $initialRedirections ) )
-		{
-			foreach ( $initialRedirections as $source => $target )
-				if ( self::isValidClassName( $source ) &&
-					 self::isValidClassName( $target ) )
-					$this->classRedirectionMap[trim( $source )] = trim( $target );
-				else
-					trigger_error( sprintf( 'invalid class redirection %s -> %s ignored', $source, $target ), E_USER_WARNING );
-		}
+			foreach ( $initialRedirections as $redirection )
+				try
+				{
+					$this->redirectClass( $redirection['source'], $redirection['target'] );
+				}
+				catch ( \InvalidArgumentException $e )
+				{
+					trigger_error( sprintf( 'invalid class redirection %s -> %s ignored', $redirection['source'], $redirection['target'] ), E_USER_WARNING );
+				}
 	}
 
 	/**
@@ -413,6 +434,16 @@ class txf extends singleton
 		}
 
 		return false;
+	}
+
+
+	public static function redirectTo( $url )
+	{
+		header( 'Location: ' . $url );
+
+		view::callDisableOutput();
+
+		exit;
 	}
 }
 

@@ -3,25 +3,25 @@
 
 /**
  * Copyright 2012 Thomas Urban, toxA IT-Dienstleistungen
- * 
+ *
  * This file is part of TXF, toxA's web application framework.
- * 
- * TXF is free software: you can redistribute it and/or modify it under the 
- * terms of the GNU General Public License as published by the Free Software 
- * Foundation, either version 3 of the License, or (at your option) any later 
+ *
+ * TXF is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
  * version.
- * 
- * TXF is distributed in the hope that it will be useful, but WITHOUT ANY 
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR 
+ *
+ * TXF is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
  * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License along with 
+ *
+ * You should have received a copy of the GNU General Public License along with
  * TXF. If not, see http://www.gnu.org/licenses/.
  *
  * @copyright 2012, Thomas Urban, toxA IT-Dienstleistungen, www.toxa.de
  * @license GNU GPLv3+
  * @version: $Id$
- * 
+ *
  */
 
 
@@ -77,6 +77,11 @@ class singleton
 	 *       txf::current()->getContext() for accessing context instance.
 	 *
 	 *       This feature DOES NOT WORK on actually implemented methods, though.
+	 *       Instead it's providing access on instance methods using their
+	 *       camel-cased name prefixed by "call". First letter succeeding that
+	 *       prefix must be upper-case.
+	 *
+	 *       @example: txf::callFindResource() instead of txf::current()->findResource()
 	 *
 	 * @param string $method name of method initially called
 	 * @param array $arguments set of arguments in call to that method
@@ -91,6 +96,13 @@ class singleton
 			$handler = array( &$current, $method );
 			if ( is_callable( $handler ) )
 				return call_user_func_array( $handler, $arguments );
+
+			if ( preg_match( '^(call|current)(A-Z)(\w+)$/', $method, $matches ) )
+			{
+				$handler = array( &$current, strtolower( $matches[1] ) . $matches[2] );
+				if ( is_callable( $handler ) )
+					return call_user_func_array( $handler, $arguments );
+			}
 
 			throw new \BadMethodCallException( 'unknown method: ' . $method );
 		}

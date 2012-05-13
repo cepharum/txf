@@ -1,5 +1,5 @@
 <div class="exception">
-<?php list( $major, $minor ) = explode( "\n", $exception->getMessage() ); ?>
+<?php list( $major, $minor ) = explode( "\n", \de\toxa\txf\exception::reducePathname( $exception->getMessage(), 0 ) ); ?>
  <h2><?php echo $major ?> (<?php echo $exception->getCode() ?>)</h2>
 <?php if ( $minor ) { ?>
  <h3><?php echo $minor ?></h3>
