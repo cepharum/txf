@@ -206,7 +206,7 @@ class manager extends \de\toxa\txf\singleton
 
 
 		// initialize content of viewports
-		$content = config::getList( 'view.static' );
+		$content = config::get( 'view.static' );
 		foreach ( $content as $name => $content )
 			$this->writeInViewport( $name, $content );
 	}
