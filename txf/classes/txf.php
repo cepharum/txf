@@ -369,7 +369,7 @@ class txf extends singleton
 
 	protected function initializeClassRedirections()
 	{
-		$initialRedirections = config::get( 'txf.autoloader.redirections' );
+		$initialRedirections = config::get( 'txf.autoloader.redirect' );
 
 		if ( is_array( $initialRedirections ) )
 			foreach ( $initialRedirections as $redirection )

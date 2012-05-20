@@ -249,12 +249,21 @@ class pdo extends singleton implements connection
 		{
 			case 'mysql' :
 			case 'sqlite' :
+				if ( strpos( $name, '`' ) !== false )
+					throw new \InvalidArgumentException( 'unquotable name' );
+
 				return '`' . $name . '`';
 
 			case 'sqlsrv' :
+				if ( strpos( $name, ']' ) !== false )
+					throw new \InvalidArgumentException( 'unquotable name' );
+
 				return '[' . $name . ']';
 
 			default :
+				if ( preg_match( '/\w/', $name ) )
+					throw new \InvalidArgumentException( 'unquotable name' );
+
 				return $name;
 		}
 	}
@@ -268,7 +277,7 @@ class pdo extends singleton implements connection
 	 * "Trying" and "test" don't indicate that datasource isn't actually queried
 	 * or modified by some proper query. This method is available in addition to
 	 * cell() etc. to return true or false instead of a resultset. It's also
-	 * differing from other methods in that's capturing any datasource-realted
+	 * different from other methods in that's capturing any datasource-related
 	 * exceptions returning actually false on a failed query.
 	 *
 	 * @throws \BadMethodCallException

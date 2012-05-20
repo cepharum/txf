@@ -81,7 +81,7 @@ class ldap_user extends user
 		return $this->readNode()->attributeByName( 'uidNumber' )->read( 0 );
 	}
 
-	public function getGUID()
+	public function getUUID()
 	{
 		return $this->readNode()->attributeByName( 'uidNumber' )->read( 0 );
 	}

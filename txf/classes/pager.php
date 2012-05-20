@@ -3,25 +3,25 @@
 
 /**
  * Copyright 2012 Thomas Urban, toxA IT-Dienstleistungen
- * 
+ *
  * This file is part of TXF, toxA's web application framework.
- * 
- * TXF is free software: you can redistribute it and/or modify it under the 
- * terms of the GNU General Public License as published by the Free Software 
- * Foundation, either version 3 of the License, or (at your option) any later 
+ *
+ * TXF is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
  * version.
- * 
- * TXF is distributed in the hope that it will be useful, but WITHOUT ANY 
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR 
+ *
+ * TXF is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
  * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License along with 
+ *
+ * You should have received a copy of the GNU General Public License along with
  * TXF. If not, see http://www.gnu.org/licenses/.
  *
  * @copyright 2012, Thomas Urban, toxA IT-Dienstleistungen, www.toxa.de
  * @license GNU GPLv3+
  * @version: $Id$
- * 
+ *
  */
 
 
@@ -30,16 +30,16 @@ namespace de\toxa\txf;
 
 /**
  * Common pager controller implementation
- * 
+ *
  * @author Thomas Urban <thomas.urban@toxa.de>
- * 
+ *
  */
 
 class pager implements widget
 {
 	/**
 	 * name of input parameter selecting first item to show
-	 * 
+	 *
 	 * @var string
 	 */
 
@@ -47,7 +47,7 @@ class pager implements widget
 
 	/**
 	 * name of input parameter selecting number of items per page
-	 * 
+	 *
 	 * @var string
 	 */
 
@@ -55,7 +55,7 @@ class pager implements widget
 
 	/**
 	 * number of items to be pages
-	 * 
+	 *
 	 * @var integer
 	 */
 
@@ -63,10 +63,10 @@ class pager implements widget
 
 	/**
 	 * mark on whether pager input is volatile or not
-	 * 
+	 *
 	 * if true, both input parameter are volatile, if false, both are persisting
 	 * if null, size is persisting while offset is volatile
-	 * 
+	 *
 	 * @var boolean
 	 */
 
@@ -103,7 +103,7 @@ class pager implements widget
 
 	/**
 	 * Retrieves current number of items to show per page.
-	 * 
+	 *
 	 * @return integer number of items per page
 	 */
 
@@ -118,7 +118,7 @@ class pager implements widget
 
 	/**
 	 * Retrieves current number of records to skip.
-	 * 
+	 *
 	 * @return integer number of items to skip
 	 */
 
@@ -132,7 +132,7 @@ class pager implements widget
 
 	/**
 	 * Applies current pager state on provided query.
-	 * 
+	 *
 	 * @param datasource\query $query query to be limited according to pager
 	 */
 
@@ -143,7 +143,7 @@ class pager implements widget
 
 	/**
 	 * Retrieves pager prepared for use with given datasource query.
-	 * 
+	 *
 	 * @param datasource\query $query datasource query pager gets used with
 	 * @return pager pager instance prepared for use with query
 	 */
@@ -159,7 +159,7 @@ class pager implements widget
 
 	/**
 	 * Renders pager widget.
-	 * 
+	 *
 	 * @return string code describing pager widget
 	 */
 
@@ -175,7 +175,7 @@ class pager implements widget
 					'offsetName'  => $this->offsetName,
 					'itemCount'   => $this->itemCount,
 					'pageOffsets' => array(),
-					'sizes'       => config::get( 'pager.sizeOption', array( 10, 20, 50, 100 ) ),
+					'sizes'       => config::getList( 'pager.sizeOption', array( 10, 20, 50, 100 ) ),
 					'size'        => $size,
 					'offset'      => $offset,
 					);

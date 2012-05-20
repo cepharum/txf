@@ -25,70 +25,22 @@
  */
 
 
-namespace de\toxa\txf\datasource;
+namespace de\toxa\txf;
 
 
-interface connection
+class uuid
 {
-	public function __construct( $dsn = null, $username = null, $password = null );
-
-	/**
-	 * @return transaction
-	 */
-
-	public function transaction();
-
-	/**
-	 * @return statement
-	 */
-
-	public function compile( $query );
-
-	/**
-	 * return @boolean
-	 */
-
-	public function test( $query );
-
-	/**
-	 * @return boolean
-	 */
-
-	public function exists( $dataset );
-
-	/**
-	 * @return boolean
-	 */
-
-	public function createDataset( $name, $definition );
-
-	/**
-	 * @return query
-	 */
-
-	public function createQuery( $dataset );
-
-	/**
-	 * @return integer
-	 */
-
-	public function nextID( $dataset );
-
-	/**
-	 * @return string
-	 */
-
-	public function errorText();
-
-	/**
-	 * @return string
-	 */
-
-	public function errorCode();
-
-	/**
-	 * @return string
-	 */
-
-	public function quoteName( $name );
+	public static function createRandom()
+	{
+		return sprintf( '%04X%04X-%04X-%04X-%04X-%04X%04X%04X', 
+					mt_rand( 0, 0xffff ),
+					mt_rand( 0, 0xffff ),
+					mt_rand( 0, 0xffff ),
+					mt_rand( 0, 0x0fff ) | 0x4000,
+					mt_rand( 0, 0x3fff ) | 0x8000,
+					mt_rand( 0, 0xffff ),
+					mt_rand( 0, 0xffff ),
+					mt_rand( 0, 0xffff ) );
+	}
 }
+

@@ -25,70 +25,40 @@
  */
 
 
-namespace de\toxa\txf\datasource;
+namespace de\toxa\txf;
 
 
-interface connection
+class ssha
 {
-	public function __construct( $dsn = null, $username = null, $password = null );
-
 	/**
-	 * @return transaction
+	 * Creates salted hash of provided value.
+	 * 
+	 * @param mixed $value data to be hashed, any non-string gets serialized first
+	 * @param string $salt salt to use explicitly, omit for random salt
+	 * @return string salted hash of provided data
 	 */
 
-	public function transaction();
+	public static function get( $value, $salt = null )
+	{
+		if ( $salt === null )
+			$salt = sha1( mt_rand() );
+
+		if ( !is_string( $value ) )
+			$value = serialize( $value );
+
+		return '{SSHA}' . base64_encode( sha1( $value . $salt, true ) . $salt );
+	}
 
 	/**
-	 * @return statement
+	 * Extracts salt from provided hash.
+	 * 
+	 * @param string $hash salted hash previously returned from a call to ssha::get()
+	 * @return string salt of provided hash
 	 */
 
-	public function compile( $query );
-
-	/**
-	 * return @boolean
-	 */
-
-	public function test( $query );
-
-	/**
-	 * @return boolean
-	 */
-
-	public function exists( $dataset );
-
-	/**
-	 * @return boolean
-	 */
-
-	public function createDataset( $name, $definition );
-
-	/**
-	 * @return query
-	 */
-
-	public function createQuery( $dataset );
-
-	/**
-	 * @return integer
-	 */
-
-	public function nextID( $dataset );
-
-	/**
-	 * @return string
-	 */
-
-	public function errorText();
-
-	/**
-	 * @return string
-	 */
-
-	public function errorCode();
-
-	/**
-	 * @return string
-	 */
-
-	public function quoteName( $name );
+	public static function extractSalt( $hash )
+	{
+		return substr( 20, base64_decode( substr( 6, $hash ) ) );
+	}
 }
+

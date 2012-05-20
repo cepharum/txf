@@ -3,25 +3,25 @@
 
 /**
  * Copyright 2012 Thomas Urban, toxA IT-Dienstleistungen
- * 
+ *
  * This file is part of TXF, toxA's web application framework.
- * 
- * TXF is free software: you can redistribute it and/or modify it under the 
- * terms of the GNU General Public License as published by the Free Software 
- * Foundation, either version 3 of the License, or (at your option) any later 
+ *
+ * TXF is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
  * version.
- * 
- * TXF is distributed in the hope that it will be useful, but WITHOUT ANY 
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR 
+ *
+ * TXF is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
  * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License along with 
+ *
+ * You should have received a copy of the GNU General Public License along with
  * TXF. If not, see http://www.gnu.org/licenses/.
  *
  * @copyright 2012, Thomas Urban, toxA IT-Dienstleistungen, www.toxa.de
  * @license GNU GPLv3+
  * @version: $Id$
- * 
+ *
  */
 
 
@@ -135,6 +135,9 @@ class config extends singleton
 	 * This method enables to select a subset of current configuration by
 	 * utilizing class set and its method read() for addressing subset.
 	 *
+	 * @note Prefer config::getList() whenever you want to fetch a set of
+	 *       homogenic options, e.g. a list of files to include.
+	 *
 	 * @param string $path path of subset
 	 * @param mixed $default value to use by default
 	 * @return mixed selected subset or $default if former is missing
@@ -143,6 +146,43 @@ class config extends singleton
 	public static function get( $path, $default = null )
 	{
 		return static::current()->cached->read( $path, $default );
+	}
+
+	/**
+	 * Reads set of configuration options.
+	 *
+	 * In opposition to config::get() this method is always returning a set of
+	 * matches.
+	 *
+	 * @example config::get( "view.asset" ) is considered to return a set of
+	 *          asset nodes subordinated to a view node. Each expected asset
+	 *          node is considered having further subordinated nodes.
+	 *
+	 *          When there is a single asset node only, config::get() is
+	 *          returning array of that single asset node's subordinated nodes.
+	 *
+	 *          config::getList(), however, tries to detect such situations
+	 *          returning a single asset node containing all the subordinated
+	 *          nodes of config::get(), then.
+	 *
+	 * @param string $path path of subset
+	 * @param array $default default set of options to retrieve by default
+	 * @return array set of configuration options, default on mismatch
+	 */
+
+	public static function getList( $path, $default = array() )
+	{
+		$result = static::current()->cached->read( $path, null );
+		if ( !is_array( $result ) )
+			return is_null( $result ) ? $default : array( $result );
+
+		foreach ( $result as $key => $value )
+		{
+			if ( !is_integer( $key ) )
+				return array( $result );
+		}
+
+		return $result;
 	}
 
 	/**

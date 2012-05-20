@@ -189,17 +189,16 @@ class manager extends \de\toxa\txf\singleton
 
 
 		// read default assets from configuration
-		$assets = config::get( 'view.asset' );
-		if ( is_array( $assets ) )
-			foreach ( $assets as $asset )
-				if ( @$asset['url'] && @$asset['type'] )
-				{
-					$id = trim( @$asset['id'] );
-					if ( $id === '' )
-						$id = md5( @$asset['url'] );
+		$assets = config::getList( 'view.asset' );
+		foreach ( $assets as $asset )
+			if ( @$asset['url'] && @$asset['type'] )
+			{
+				$id = trim( @$asset['id'] );
+				if ( $id === '' )
+					$id = md5( @$asset['url'] );
 
-					$this->assets[$id] = $asset;
-				}
+				$this->assets[$id] = $asset;
+			}
 
 
 		// initialize HTTP defaults
@@ -207,10 +206,9 @@ class manager extends \de\toxa\txf\singleton
 
 
 		// initialize content of viewports
-		$content = config::get( 'view.static' );
-		if ( is_array( $content ) )
-			foreach ( $content as $name => $content )
-				$this->writeInViewport( $name, $content );
+		$content = config::getList( 'view.static' );
+		foreach ( $content as $name => $content )
+			$this->writeInViewport( $name, $content );
 	}
 
 	/**
@@ -505,7 +503,7 @@ EOT
 	{
 		$configs = array(
 						// current application's customization
-						config::get( 'view.region', array() ),
+						config::getList( 'view.region' ),
 
 						// basic page setup
 						array(

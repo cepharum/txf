@@ -3,25 +3,25 @@
 
 /**
  * Copyright 2012 Thomas Urban, toxA IT-Dienstleistungen
- * 
+ *
  * This file is part of TXF, toxA's web application framework.
- * 
- * TXF is free software: you can redistribute it and/or modify it under the 
- * terms of the GNU General Public License as published by the Free Software 
- * Foundation, either version 3 of the License, or (at your option) any later 
+ *
+ * TXF is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
  * version.
- * 
- * TXF is distributed in the hope that it will be useful, but WITHOUT ANY 
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR 
+ *
+ * TXF is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
  * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License along with 
+ *
+ * You should have received a copy of the GNU General Public License along with
  * TXF. If not, see http://www.gnu.org/licenses/.
  *
  * @copyright 2012, Thomas Urban, toxA IT-Dienstleistungen, www.toxa.de
  * @license GNU GPLv3+
  * @version: $Id$
- * 
+ *
  */
 
 
@@ -146,6 +146,14 @@ class application
 			{
 				// use of mod_rewrite detected
 				$query = $_SERVER['REDIRECT_URL'];
+
+				// mark rewrite mode by not selecting any valid used proxy
+				$application->usedProxy = true;
+			}
+			else if ( trim( $_SERVER['REQUEST_URI'] ) !== '' )
+			{
+				// use of lighttpd's rewriting detected
+				$query = $_SERVER['REQUEST_URI'];
 
 				// mark rewrite mode by not selecting any valid used proxy
 				$application->usedProxy = true;
@@ -312,7 +320,7 @@ class application
 			if ( !data::isKeyword( $name ) || input::isPersistent( $name ) )
 				unset( $currentParameters[$name] );
 
-		// merge volatile input with given parameters, but drop all those 
+		// merge volatile input with given parameters, but drop all those
 		// finally set NULL (to support removal per $parameters)
 		$parameters = array_filter( array_merge( $currentParameters, $parameters ), function( $item ) { return $item !== null; } );
 

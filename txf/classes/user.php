@@ -54,12 +54,12 @@ abstract class user
 	abstract public function getID();
 
 	/**
-	 * Retrieves globally unique ID (GUID) of current user.
+	 * Retrieves globally unique ID (UUID) of current user.
 	 *
-	 * @return string GUID of user e.g. for storing related data in a database
+	 * @return string UUID of user e.g. for storing related data in a database
 	 */
 
-	abstract public function getGUID();
+	abstract public function getUUID();
 
 	/**
 	 * Retrieves user's login name.
@@ -122,6 +122,16 @@ abstract class user
 	abstract public function isAuthenticated();
 
 	/**
+	 * Drops any internally cached mark on user being authenticated.
+	 * 
+	 * This is called e.g. on logging of current user. Since several portions of
+	 * code may keep a reference on current user instance, this is required to
+	 * actually enforce loss of authenticated state.
+	 */
+
+	abstract public function unauthenticate();
+
+	/**
 	 * Configures instance for accessing selected source.
 	 *
 	 * @param array $configuration properties required for connecting to source
@@ -138,6 +148,7 @@ abstract class user
 	 *
 	 * @throws \OutOfBoundException when user isn't found
 	 * @param string $userIdOrLoginName ID or name of user to load
+	 * @return user instance of uniquely found user
 	 */
 
 	abstract protected function search( $userIdOrLoginName );
@@ -145,6 +156,10 @@ abstract class user
 
 
 
+	private static function &session()
+	{
+		return txf::session( config::get( 'user.auth.global' ) ? session::SCOPE_APPLICATION : session::SCOPE_GLOBAL );
+	}
 
 	/**
 	 * Returns instance representing current user.
@@ -156,6 +171,11 @@ abstract class user
 	{
 		if ( self::$__current instanceof self )
 			return self::$__current;
+
+		// gain access on persistent session data for fetching any current user
+		$session =& self::session();
+		if ( array_key_exists( 'user', $session ) && $session['user'] instanceof self )
+			self::$__current = $session['user'];
 
 		return guest_user::getInstance();
 	}
@@ -175,7 +195,33 @@ abstract class user
 	final public static function setCurrent( user $user, $credentials = null )
 	{
 		if ( $user->isAuthenticated() || $user->authenticate( $credentials ) )
+		{
 			self::$__current = $user;
+
+			// gain access on persistent session data for storing current user
+			$session =& self::session();
+			if ( array_key_exists( 'user', $session ) && $session['user'] instanceof self )
+				$session['user'] = $user;
+		}
+	}
+
+	/**
+	 * Drops current user.
+	 * 
+	 * This method is used to "log off" any current user.
+	 */
+
+	final public static function dropCurrent()
+	{
+		// enforce drop of user's authenticated state
+		self::$__current->unauthenticate();
+
+		// drop reference on current user
+		unset( self::$__current );
+
+		// gain access on persistent session data for dropping current user there as well
+		$session =& self::session();
+		unset( $session['user'] );
 	}
 
 	/**
@@ -195,52 +241,47 @@ abstract class user
 		array_shift( $sources );
 
 		if ( !count( $sources ) )
-		{
-			$sources = config::get( 'user.sources.enabled' );
-			if ( is_string( $sources ) )
-				$sources = array( $sources );
-		}
+			$sources = config::getList( 'user.sources.enabled' );
 
-		if ( !is_array( $sources ) || !count( $sources ) )
+		if ( !count( $sources ) )
 			throw new \RuntimeException( 'missing/invalid user sources configuration' );
 
 
 		// traverse list of sources ...
-		if ( is_array( $sources ) )
-			foreach ( $sources as $source )
-				if ( trim( $source ) !== '' && ctype_alnum( $source ) )
+		foreach ( $sources as $source )
+			if ( trim( $source ) !== '' && ctype_alnum( $source ) )
+			{
+				// read its configuration
+				$definition = config::get( 'user.sources.setup.' . $source );
+				if ( is_array( $definition ) )
 				{
-					// read its configuration
-					$definition = config::get( 'user.sources.setup.' . $source );
-					if ( is_array( $definition ) )
-					{
-						// read name of class for managing user source from configuration
-						$class = data::isKeyword( $definition['class'] );
-						if ( !$class )
-							$class = data::isKeyword( $definition['type'] . '_user' );
+					// read name of class for managing user source from configuration
+					$class = data::isKeyword( $definition['class'] );
+					if ( !$class )
+						$class = data::isKeyword( $definition['type'] . '_user' );
 
-						// check if selected class exists
-						if ( $class && class_exists( $class, true ) )
-							try
-							{
-								// create instance of managing class
-								$class = new \ReflectionClass( $class );
-								$user = $class->newInstance();
+					// check if selected class exists
+					if ( $class && class_exists( $class, true ) )
+						try
+						{
+							// create instance of managing class
+							$class = new \ReflectionClass( $class );
+							$user = $class->newInstance();
 
-								if ( $user instanceof self )
-									// provide setup data for configuring manager
-									if ( $user->configure( $definition ) )
-									{
-										// search user
-										$user->search( $userIdOrLoginName );
+							if ( $user instanceof self )
+								// provide setup data for configuring manager
+								if ( $user->configure( $definition ) )
+								{
+									// search user
+									$user->search( $userIdOrLoginName );
 
-										// no exception? ... so it's loaded
-										return $user;
-									}
-							}
-							catch ( \OutOfBoundsException $e ) {}
-					}
+									// no exception? ... so it's loaded
+									return $user;
+								}
+						}
+						catch ( \OutOfBoundsException $e ) {}
 				}
+			}
 
 		throw new \OutOfBoundsException( 'no such user: ' . $userIdOrLoginName );
 	}
@@ -263,15 +304,22 @@ class guest_user extends user
 
 	protected function __construct() {}
 	public function getID() { return 0; }
-	public function getGUID() { return '00000000-0000-0000-0000-000000000000'; }
+	public function getUUID() { return '00000000-0000-0000-0000-000000000000'; }
 	public function getLoginName() { return 'guest'; }
 	public function getName() { return _L('guest'); }
 	public function getProperty( $propertyName, $defaultIfMissing = null ) { return $defaultIfMissing; }
 	public function setProperty( $propertyName, $propertyValue = null ) { throw new \RuntimeException( 'property is read-only' ); }
 	public function authenticate( $credentials ) {}
 	public function isAuthenticated() { return false; }
+	public function unauthenticate() {}
 	protected function configure( $configuration ) {}
-	protected function search( $userIdOrLoginName ) { return self::$single; }
+	protected function search( $userIdOrLoginName )
+	{
+		if ( !$userIdOrLoginName || ( $userIdOrLoginName === 'guest' ) )
+			return self::$single;
+
+		throw new \OutOfBoundsException( 'no such user' );
+	}
 
 	public static function getInstance() { return self::$single; }
 	public static function init() { self::$single = new guest_user(); }
