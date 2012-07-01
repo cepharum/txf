@@ -11,3 +11,17 @@ RewriteRule .* run.php [L]
 
 # Multiviews interfere with rewrite rule above, so disable here
 Options -MultiViews
+
+
+#
+# Notes on lighttpd:
+#
+# Follow these steps to use TXF with lighttpd:
+#
+#  1) enable modules mod_rewrite and mod_redirect
+#  2) add these rules to your configuration
+#
+#     url.rewrite-if-not-file = ( "^/.+$"     => "/run.php" )
+#     url.rewrite-once        = ( "^/txf/.*$" => "/run.php" )
+#     url.redirect            = ( "^/?$"      => "/application/action" )
+#
