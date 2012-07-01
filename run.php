@@ -43,20 +43,38 @@ namespace de\toxa\txf;
  *
  */
 
+try
+{
+	include( 'txf/rewritten.php' );
 
-include( 'txf/rewritten.php' );
+	// get application actually requested
+	$application = txf::getContext()->application;
 
-// get application actually requested
-$application = txf::getContext()->application;
+	// get script of application actually requested
+	$script = path::glue( $application->pathname, $application->script );
 
-// get script of application actually requested
-$script = path::glue( $application->pathname, $application->script );
+	// change to that folder for supporting homogenic use of relative pathnames
+	chdir( dirname( $script ) );
 
-// change to that folder for supporting homogenic use of relative pathnames
-chdir( dirname( $script ) );
+	// include selected script
+	include_once( $script );
 
-// include selected script
-include_once( $script );
+	// due to disabled shutdown handler we are required to call related handler manually
+	view::current()->onShutdown();
+}
+catch ( http_exception $e )
+{
+	header( $e->getResponse() );
 
-// due to disabled shutdown handler we are required to call related handler manually
-view::current()->onShutdown();
+	$html = $e->asHtml();
+
+	echo <<<EOT
+<!DOCTYPE html!>
+<html>
+<head></head>
+<body>
+$html
+</body>
+</html>
+EOT;
+}

@@ -74,4 +74,20 @@ class http_exception extends \Exception
 	{
 		return sprintf( 'HTTP/1.0 %d %s', $this->getCode(), $this->state );
 	}
+
+	public function __toString()
+	{
+		return strip_tags( $this->asHTML() );
+	}
+
+	public function asHtml()
+	{
+		$code    = $this->getCode();
+		$message = $this->getMessage();
+
+		return <<<EOT
+<h1>$code {$this->state}</h1>
+<p>$message</p>
+EOT;
+	}
 }

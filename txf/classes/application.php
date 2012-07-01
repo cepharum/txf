@@ -187,6 +187,8 @@ class application
 
 		// extract information on application folder and name
 		$application->name = array_shift( $frames );
+		if ( $application->name == 'txf' )
+			throw new http_exception( 404, 'Requested application doesn\'t exist.' );
 
 		// add some derived properties for conveniently addressing application
 		$application->pathname = path::glue(
