@@ -547,6 +547,9 @@ EOT
 						// support default content to show if a region keeps empty finally
 						if ( trim( $regions[$name] ) === '' )
 							$regions[$name] = trim( @$region['default'] );
+
+						// process any additionally contained markers
+						$regions[$name] = data::qualifyString( $regions[$name] );
 					}
 				}
 

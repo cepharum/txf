@@ -41,6 +41,12 @@ class http_exception extends \Exception
 {
 	protected $state;
 
+	/**
+	 * @param integer $stateCode HTTP state code, e.g. 200 on success, 403 on missing authentication
+	 * @param string $message human-readable description of exception's cause in detail
+	 * @param string $state short description of state as defined in HTTP standard, e.g. "Not found" on 404
+	 */
+
 	public function __construct( $stateCode = 500, $message = null, $state = null )
 	{
 		assert( '( $stateCode >= 100 ) && ( $stateCode <= 999 )' );

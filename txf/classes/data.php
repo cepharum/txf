@@ -275,7 +275,7 @@ class data
 			{
 				$chunks = explode( '::', $matches[1] );
 
-				return @$values[trim( $chunks[0] )];
+				return array_key_exists( $chunks[0], $values ) ? $values[trim( $chunks[0] )] : $matches[1];
 			};
 		else
 			$cb = function( $matches ) use ( $values )
@@ -291,7 +291,7 @@ class data
 						return application::current()->scriptURL( $chunks[1] );
 
 					case 'date' :
-						return date( $chunks[1], count( $chunks ) > 1 ? intval( $chunks[2] ) : time() );
+						return date( $chunks[1], count( $chunks ) > 2 ? intval( $chunks[2] ) : time() );
 
 					default :
 						return '';
