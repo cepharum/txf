@@ -127,6 +127,11 @@ class pager implements widget
 		$offset = ( $this->isVolatile !== false ) ? input::vget( $this->offsetName, 0, input::FORMAT_INTEGER )
 												  : input::get( $this->offsetName, 0, input::FORMAT_INTEGER );
 
+		if ( config::get( 'pager.offset.final', 'full' ) != 'full' )
+		{
+			return max( 0, min( $this->itemCount - 1, $offset ) );
+		}
+
 		return max( 0, min( $this->itemCount - $this->size(), $offset ) );
 	}
 
