@@ -1,0 +1,72 @@
+<?xml version="1.0"?>
+<config>
+	<view>
+		<!-- integrate CSS style definitions -->
+<!--
+		<asset>
+			<type>text/css</type>
+			<url>assets/style.css</url>
+		</asset>
+-->
+<!--
+		<asset>
+			<id>widget-pager</id>
+			<type>text/css</type>
+			<url>assets/pager.css</url>
+		</asset>
+-->
+		<!-- integrate jQuery -->
+<!--
+		<asset>
+			<type>text/javascript</type>
+			<url>assets/jquery.js</url>
+		</asset>
+-->
+		<!-- integrate JS file for UI FX -->
+<!--
+		<asset>
+			<type>text/javascript</type>
+			<url>assets/fx.js</url>
+		</asset>
+-->
+		<static>
+			<!-- declare title to show by default on every page -->
+<!--
+			<title><![CDATA[
+				<h1>INPAS</h1>
+			]]></title>
+-->
+			<!-- declare page footer to show by default on every page -->
+<!--
+			<footer><![CDATA[
+				&copy; <a href="http://www.openprintserver.org">openprintserver.org</a>
+			]]></footer>
+-->
+		</static>
+		<!-- declare page title to use in meta data of every page -->
+<!--
+		<variable>
+			<title>INPAS</title>
+		</variable>
+-->
+		<viewport>
+			<wrap>
+				<error><![CDATA[<div id="page-errors">|</div>]]></error>
+				<debug><![CDATA[<pre id="debug">|</pre>]]></debug>
+			</wrap>
+		</viewport>
+		<!-- move viewport "title" from region "main" to "header" --> 
+<!--
+		<region>
+			<name>head</name>
+			<viewport>title</viewport>
+			<viewport>header</viewport>
+		</region>
+		<region>
+			<name>main</name>
+			<viewport>error</viewport>
+			<viewport>main</viewport>
+		</region>
+-->
+	</view>
+</config>

@@ -65,7 +65,7 @@ class config extends singleton
 
 		// may have separate sources in TXF and application context
 		$patterns = array(
-						TXF_INSTALL_PATH . '/config/%A/%H.xml',
+						TXF_FRAMEWORK_PATH . '/config/%A/%H.xml',
 						TXF_APPLICATION_PATH . '/config/%H.xml',
 						);
 
@@ -121,7 +121,7 @@ class config extends singleton
 		foreach ( $files as $file )
 		{
 			$xml = simplexml_load_file( $file );
-			$setup->extend( set::fromXml( $xml ) );
+			$setup->extendFromXml( $xml );
 		}
 
 

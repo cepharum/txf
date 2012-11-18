@@ -83,6 +83,9 @@ class set
 
 			case 'count' :
 				return count( $this->data );
+
+			default :
+				return $this->read( $name );
 		}
 	}
 
@@ -445,36 +448,75 @@ class set
 		return _A( static::xml2Array( $xml ) );
 	}
 
+	public function extendFromXml( $xml )
+	{
+		if ( string::isString( $xml ) )
+			$xml= simplexml_load_string( (string) $xml );
+
+		if ( !( $xml instanceof \SimpleXMLElement ) )
+			throw new \InvalidArgumentException( 'invalid XML document' );
+
+		$this->data = static::xml2Array( $xml, $this->data );
+
+		return $this;
+	}
+
 	/**
 	 * Converts XML-notated data into array.
 	 *
 	 * @param \SimpleXMLElement $xml XML thread to convert
+	 * @param array $level array to be extended/replaced by extracted XML data
 	 * @return array array representing data found in XML
 	 */
 
-	protected static function xml2Array( \SimpleXMLElement $xml )
+	protected static function xml2Array( \SimpleXMLElement $xml, $level = array() )
 	{
-		$level = array();
-		$names = array();
+		$overlay = array();
 
 		foreach ( $xml->children() as $sub )
 		{
-			$value   = self::xml2Array( $sub );
-			$subName = $sub->getName();
+			// get name of element to convert
+			$name = $sub->getName();
 
-			if ( array_key_exists( $subName, $level ) )
-			{
-				if ( !@$names[$subName] )
-				{
-					$names[$subName] = true;
-					$level[$subName] = array( $level[$subName] );
-				}
+			// want to extend some existing data of element?
+			$extend = trim( $sub['extend'] );
+			$extend = $extend ? preg_match( '/^on|yes|true|y|extend$/i', $extend )
+							  : array_key_exists( $name, $overlay );
 
-				$level[$subName][] = $value;
-			}
+
+			// prepare to actually extend some existing data
+			if ( array_key_exists( $name, $overlay ) )
+				$existing = $overlay[$name];
+			else if ( array_key_exists( $name, $level ) )
+				$existing = $level[$name];
 			else
-				$level[$subName] = $value;
+			{
+				$existing = array();
+				$extend   = false;
+			}
+
+			if ( $extend )
+				// start new set initially containing previously collected sole element
+				$overlay[$name] = is_array( $existing ) && !static::isHash( $existing ) ? $existing : array( $existing );
+
+
+			// get described data of current element
+			$value = self::xml2Array( $sub, $extend || !is_array( $existing ) ? array() : $existing );
+
+
+			if ( $extend )
+				// merge with existing data
+				$overlay[$name][] = $value;
+			else
+				// set data replacing some existing data
+				$overlay[$name] = $value;
 		}
+
+
+		// apply created overlay to initially provided level of data
+		foreach ( $overlay as $name => $value )
+			$level[$name] = $value;
+
 
 		if ( count( $level ) )
 			return $level;
@@ -570,5 +612,25 @@ class set
 
 		return $this;
 	}
-}
 
+	/**
+	 * Extracts hash elements from provided array.
+	 * 
+	 * This method is available to normalize any data to be pure hash.
+	 * 
+	 * @param mixed $in array to be reduced, arbitrary data to be ignored
+	 * @return array all hash elements of provided input, empty array on non-array input
+	 */
+
+	public static function asHash( $in )
+	{
+		$out = array();
+
+		if ( is_array( $in ) )
+			foreach ( $in as $key => $value )
+				if ( !is_integer( $key ) )
+					$out[$key] = $value;
+
+		return $out;
+	}
+}
