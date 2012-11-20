@@ -153,6 +153,9 @@ class nodeset
 
 	public function current()
 	{
+		if ( $this->current === null )
+			$this->next();
+
 		return $this->current;
 	}
 }

@@ -75,6 +75,7 @@ class server
 
 		// ensure to use LDAPv3 protocol (required for proper binding and TLS support)
 		ldap_set_option( $this->link, LDAP_OPT_PROTOCOL_VERSION, 3 );
+		ldap_set_option( $this->link, LDAP_OPT_REFERRALS, 0 );
 	}
 
 	/**
@@ -111,9 +112,9 @@ class server
 	 * @return server current instance
 	 */
 
-	public function simpleBindAs( $userDN, $password )
+	public function simpleBindAs( $dn, $password )
 	{
-		$this->boundAs = ldap_bind( $this->link, $userDN, $password ) ? $userDN : false;
+		$this->boundAs = @ldap_bind( $this->link, $dn, $password ) ? $dn : false;
 
 		return $this;
 	}
@@ -128,9 +129,9 @@ class server
 	 * @return server current instance
 	 */
 
-	public function bindAs( $userDN, $password, $saslMech, $saslRealm )
+	public function bindAs( $dn, $password, $saslMech, $saslRealm )
 	{
-		$this->boundAs = ldap_sasl_bind( $this->link, $userDN, $password, $saslMech, $saslRealm ) ? $userDN : false;
+		$this->boundAs = @ldap_sasl_bind( $this->link, $dn, $password, $saslMech, $saslRealm ) ? $dn : false;
 
 		return $this;
 	}
