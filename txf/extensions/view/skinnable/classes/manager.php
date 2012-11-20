@@ -33,6 +33,7 @@ use de\toxa\txf\i18n\lang;
 use de\toxa\txf\data;
 use de\toxa\txf\config;
 use de\toxa\txf\txf;
+use de\toxa\txf\set;
 
 
 /**
@@ -206,8 +207,7 @@ class manager extends \de\toxa\txf\singleton
 
 
 		// initialize content of viewports
-		$content = config::get( 'view.static', array() );
-		foreach ( $content as $name => $content )
+		foreach ( set::asHash( config::get( 'view.static', array() ) ) as $name => $content )
 			$this->writeInViewport( $name, $content );
 	}
 
@@ -246,7 +246,11 @@ class manager extends \de\toxa\txf\singleton
 
 	public function onError( $code, $text, $file, $line, $context )
 	{
-		self::onException( new \ErrorException( $text, $code, 0, $file, $line ) );
+		if ( error_reporting() != 0 || !( $code & (E_NOTICE|E_WARNING) ) )
+		{
+			// error isn't suppressed notice/warning actually -> pass on to exception handler
+			self::onException( new \ErrorException( $text, $code, 0, $file, $line ) );
+		}
 	}
 
 	/**
@@ -509,7 +513,7 @@ EOT
 						array(
 							array( 'name' => 'main',  'viewport' => array( 'title', 'error', 'main' ) ),
 							array( 'name' => 'head',  'viewport' => array( 'header' ) ),
-							array( 'name' => 'foot',  'viewport' => array( 'footer' ) ),
+							array( 'name' => 'foot',  'viewport' => array( 'footer', 'debug' ) ),
 							array( 'name' => 'left',  'viewport' => array( 'navigation' ) ),
 							array( 'name' => 'right', 'viewport' => array( 'aside' ) ),
 							),
