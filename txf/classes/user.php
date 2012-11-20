@@ -155,7 +155,6 @@ abstract class user
 
 
 
-
 	private static function &session()
 	{
 		return txf::session( config::get( 'user.auth.global' ) ? session::SCOPE_APPLICATION : session::SCOPE_GLOBAL );
@@ -260,8 +259,7 @@ abstract class user
 					if ( !$class )
 						$class = data::isKeyword( $definition['type'] . '_user' );
 
-					// check if selected class exists
-					if ( $class && class_exists( $class, true ) )
+					if ( txf::import( $class ) )
 						try
 						{
 							// create instance of managing class

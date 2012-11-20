@@ -30,15 +30,21 @@ namespace de\toxa\txf;
 use de\toxa\txf\datasource\ldap as LDAP;
 
 
+/**
+ * Supports LDAP-backed user database.
+ *
+ * @author Thomas Urban <thomas.urban@toxa.de>
+ */
+
 class ldap_user extends user
 {
 	/**
 	 * setup as provided in call to ldap_user::configure()
 	 *
-	 * @var array
+	 * @var set
 	 */
 
-	protected $setup = array();
+	protected $setup;
 
 	/**
 	 * established connection to LDAP server
@@ -66,7 +72,7 @@ class ldap_user extends user
 
 
 
-	protected function __construct() {}
+	public function __construct() {}
 
 	protected function readNode()
 	{
@@ -78,22 +84,22 @@ class ldap_user extends user
 
 	public function getID()
 	{
-		return $this->readNode()->attributeByName( 'uidNumber' )->read( 0 );
+		return $this->readNode()->attributeByName( $this->setup->read( 'idAttr', 'uidNumber' ) )->read( 0 );
 	}
 
 	public function getUUID()
 	{
-		return $this->readNode()->attributeByName( 'uidNumber' )->read( 0 );
+		return $this->readNode()->attributeByName( $this->setup->read( 'uuidAttr', 'entryUUID' ) )->read( 0 );
 	}
 
 	public function getLoginName()
 	{
-		return $this->readNode()->attributeByName( 'uid' )->read( 0 );
+		return $this->readNode()->attributeByName( $this->setup->read( 'loginAttr', 'uid' ) )->read( 0 );
 	}
 
 	public function getName()
 	{
-		return $this->readNode()->attributeByName( 'cn' )->read( 0 );
+		return $this->readNode()->attributeByName( $this->setup->read( 'nameAttr', 'cn' ) )->read( 0 );
 	}
 
 	public function getProperty( $propertyName, $defaultIfMissing = null )
@@ -121,37 +127,66 @@ class ldap_user extends user
 		return ( $this->server->getBoundAs() === $this->userDN );
 	}
 
+	public function unauthenticate()
+	{
+
+	}
+
 	protected function bindAs( $dn, $password )
 	{
-		if ( $configuration['sasl-mech'] && $configuration['sasl-realm'] )
-			$this->server->bindAs( $dn, $password, $configuration['sasl-mech'], $configuration['sasl-realm'] );
-		else
-			$this->server->simpleBindAs( $dn, $password );
+		try
+		{
+			if ( $this->setup->saslMech && $this->setup->saslRealm )
+				$this->server->bindAs( $dn, $password, $this->setup->saslMech, $this->setup->saslRealm );
+			else
+				$this->server->simpleBindAs( $dn, $password );
 
-		return $this->server->isBound();
+			return $this->server->isBound();
+		}
+		catch ( \Exception $e )
+		{
+			return false;
+		}
 	}
 
 	protected function configure( $configuration )
 	{
-		$this->server = new LDAP\server( $configuration['server'], $configuration['basedn'] );
+		$this->setup = new set( $configuration );
 
-		if ( $configuration['tls'] )
+		$this->server = new LDAP\server( $this->setup->read( 'server', 'ldapi:///' ), $this->setup->basedn );
+
+		if ( data::autoType( $this->setup->tls, 'boolean' ) )
 			$this->server->startTls();
 
-		if ( $configuration['binddn'] )
-			if ( !$this->bindAs( $configuration['binddn'], $configuration['bindpw'] ) )
+		if ( $this->setup->binddn )
+			if ( !$this->bindAs( $this->setup->binddn, $this->setup->bindpw ) )
 				throw new LDAP\protocol_exception( 'failed to bind' );
 
-		$this->setup = $configuration;
+		return true;
 	}
 
 	protected function search( $userIdOrLoginName )
 	{
-		if ( ctype_digit( $userIdOrLoginName ) )
-			$query = strpos( '(uidNumber=%d)', $userIdOrLoginName );
+		if ( strpos( $userIdOrLoginName, '=' ) !== false )
+		{
+			$match = $this->server->searchBase( $userIdOrLoginName );
+		}
+		else if ( ctype_digit( $userIdOrLoginName ) )
+		{
+			$match = $this->server->searchSub( sprintf( $this->setup->read( 'searchById', '(uidNumber=%d)' ), $userIdOrLoginName ), $this->setup->basedn );
+		}
 		else
-			$query = sprintf( $this->setup['search'], $userIdOrLoginName );
+		{
+			$match = $this->server->searchSub( sprintf( $this->setup->read( 'searchByLogin', '(uid=%s)' ), $userIdOrLoginName ), $this->setup->basedn );
+		}
 
-		$this->userDN = $this->searchSub( $query, $this->setup['basedn'] )->getDN();
+		if ( $match->current() )
+		{
+			$this->userDN = $match->current()->getDN();
+
+			return $this;
+		}
+
+		throw new \OutOfBoundsException( 'no such user' );
 	}
 }

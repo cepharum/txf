@@ -72,7 +72,7 @@ class sql_user extends user
 
 
 
-	protected function __construct() {}
+	public function __construct() {}
 
 	/**
 	 * Retrieves connection to configured datasource containing users database.
