@@ -35,12 +35,12 @@ namespace de\toxa\txf;
  * a third-party software.
  *
  * Instead of accessing $_SESSION this manager is available by accessing
- * array returned from call to session::get()->access().
+ * array returned from call to session::current()->access().
  *
  * The class is designed to work on demand, thus won't require any extra
  * initialization.
  *
- * IMPORTANT! Do not use any TXF ode inside this class unless you're absolutely
+ * IMPORTANT! Do not use any TXF code inside this class unless you're absolutely
  *            sure about what you do!
  */
 
@@ -205,7 +205,7 @@ class session	// don't derive from anything external here!!! That's breaking maj
 	{
 		assert( 'is_array( $this->usable )' );
 
-		$this->storable = serialize( $this->usable );
+		$this->storable = crypt::encrypt( serialize( $this->usable ) );
 	}
 
 	/**
@@ -217,7 +217,7 @@ class session	// don't derive from anything external here!!! That's breaking maj
 	{
 		if ( trim( $this->storable ) )
 		{
-			$space = unserialize( $this->storable );
+			$space = unserialize( crypt::decrypt( $this->storable ) );
 			if ( is_array( $space ) )
 				$this->usable = $space;
 
