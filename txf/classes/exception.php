@@ -35,6 +35,23 @@ class exception extends \Exception
 		parent::__construct( $message, $code, $previous );
 	}
 
+	protected static $sensitiveCounter = 0;
+
+	public static function enterSensitive()
+	{
+		self::$sensitiveCounter++;
+	}
+
+	public static function leaveSensitive()
+	{
+		self::$sensitiveCounter = max( 0, --self::$sensitiveCounter );
+	}
+
+	public static function isSensitive()
+	{
+		return ( self::$sensitiveCounter > 0 );
+	}
+
 	public function reducedTrace( $asString = false )
 	{
 		$trace = static::reduceExceptionTrace( $this );
@@ -51,9 +68,15 @@ class exception extends \Exception
 				$frame['file'] = self::reducePathname( $frame['file'] );
 
 				if ( is_array( $frame['args'] ) )
+				{
+					$isSensitive = self::isSensitive();
+
 					foreach ( $frame['args'] as &$arg )
-						if ( is_string( $arg ) )
+						if ( $isSensitive )
+							$arg = '?';
+						else if ( is_string( $arg ) )
 							$arg = self::reducePathname( $arg );
+				}
 
 				unset( $arg );
 			}
@@ -95,12 +118,30 @@ class exception extends \Exception
 
 	public static function reducePathname( $in )
 	{
-		return preg_replace( array(
+		if ( is_array( $in ) )
+		{
+			foreach ( $in as &$value )
+				$value = static::reducePathname( $value );
+		}
+		else if ( is_object( $in ) )
+		{
+			$class = get_class( $in );
+			$props = get_object_vars( $in );
+
+			foreach ( $props as &$value )
+				$value = static::reducePathname( $value );
+
+			$in = (object) array( 'reducedClass' => $class, 'properties' => $props );
+		}
+		else if ( is_string( $in ) )
+			$in = preg_replace( array(
 						'#' . preg_quote( TXF_APPLICATION_PATH . '/', '#' ) . '#', 
 						'#' . preg_quote( TXF_FRAMEWORK_PATH . '/', '#' ) . '#', 
 						'#' . preg_quote( TXF_INSTALL_PATH . '/', '#' ) . '#', 
 						), array(
 						'[APP]/', '[TXF]/', '[BASE]/',
 						), $in );
+
+		return $in;
 	}
 }
