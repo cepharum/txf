@@ -249,6 +249,22 @@ class txf extends singleton
 		}
 	}
 
+	/**
+	 * Tries to import selected class.
+	 * 
+	 * @param string $className name of class to import
+	 * @return boolean true if class is available, false otherwise
+	 */
+
+	public static function import( &$className )
+	{
+		// qualify provided class name
+		$className = ( $className[0] === '\\' ) ? substr( $className, 1 ) : __NAMESPACE__ . "\\$className";
+
+		// check if selected class exists
+		return $className && class_exists( $className, true );
+	}
+
 
 	/**
 	 * Looks for single extension installed either in context of current
