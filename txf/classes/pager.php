@@ -116,6 +116,11 @@ class pager implements widget
 		return max( config::get( 'pager.size.min', 5 ), min( config::get( 'pager.size.max', 100 ), $size ) );
 	}
 
+	public function showFullFinalPage()
+	{
+		return ( config::get( 'pager.offset.final', 'full' ) == 'full' );
+	}
+
 	/**
 	 * Retrieves current number of records to skip.
 	 *
@@ -127,12 +132,7 @@ class pager implements widget
 		$offset = ( $this->isVolatile !== false ) ? input::vget( $this->offsetName, 0, input::FORMAT_INTEGER )
 												  : input::get( $this->offsetName, 0, input::FORMAT_INTEGER );
 
-		if ( config::get( 'pager.offset.final', 'full' ) != 'full' )
-		{
-			return max( 0, min( $this->itemCount - 1, $offset ) );
-		}
-
-		return max( 0, min( $this->itemCount - $this->size(), $offset ) );
+		return max( 0, min( $this->itemCount - ( $this->showFullFinalPage() ? $this->size() : 1 ), $offset ) );
 	}
 
 	/**
@@ -191,7 +191,7 @@ class pager implements widget
 		$setup['currentPage'] = count( $setup['pageOffsets'] ) - 1;
 
 		for ( $i = $offset + $size; $i < $this->itemCount; $i += $size )
-			array_push( $setup['pageOffsets'], min( $this->itemCount - $size, $i ) );
+			array_push( $setup['pageOffsets'], min( $this->itemCount - ( $this->showFullFinalPage() ? $size : 1 ), $i ) );
 
 
 
