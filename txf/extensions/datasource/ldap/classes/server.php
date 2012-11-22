@@ -46,6 +46,14 @@ class server
 	private $link;
 
 	/**
+	 * URL or name of host to connect with
+	 * 
+	 * @var string
+	 */
+
+	private $host;
+
+	/**
 	 * base DN to use by default on searching for entries
 	 *
 	 * @var string
@@ -69,13 +77,32 @@ class server
 
 	public function __construct( $host, $baseDN )
 	{
-		$this->link = ldap_connect( $host );
-
+		$this->host   = $host;
 		$this->baseDN = $baseDN;
 
-		// ensure to use LDAPv3 protocol (required for proper binding and TLS support)
-		ldap_set_option( $this->link, LDAP_OPT_PROTOCOL_VERSION, 3 );
-		ldap_set_option( $this->link, LDAP_OPT_REFERRALS, 0 );
+		$this->connect();
+	}
+
+	public function __wakeup()
+	{
+		$this->connect();
+	}
+
+	/**
+	 * Establishes connection to LDAP server actually.
+	 * 
+	 */
+
+	protected function connect()
+	{
+		if ( !is_resource( $this->link ) )
+		{
+			$this->link = ldap_connect( $this->host );
+
+			// ensure to use LDAPv3 protocol (required for proper binding and TLS support)
+			ldap_set_option( $this->link, LDAP_OPT_PROTOCOL_VERSION, 3 );
+			ldap_set_option( $this->link, LDAP_OPT_REFERRALS, 0 );
+		}
 	}
 
 	/**
@@ -114,7 +141,7 @@ class server
 
 	public function simpleBindAs( $dn, $password )
 	{
-		$this->boundAs = @ldap_bind( $this->link, $dn, $password ) ? $dn : false;
+		$this->boundAs = ldap_bind( $this->link, $dn, $password ) ? $dn : false;
 
 		return $this;
 	}
