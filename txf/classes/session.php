@@ -180,6 +180,10 @@ class session	// don't derive from anything external here!!! That's breaking maj
 			\session_set_cookie_params( 0, path::addTrailingSlash( $path ), $domain );
 
 
+			// trigger import of class crypt so it may set required cookies
+			crypt::init();
+
+
 			// without existing link in current runtime check for snapshot
 			// stored in session
 			@session_start();
@@ -205,7 +209,10 @@ class session	// don't derive from anything external here!!! That's breaking maj
 	{
 		assert( 'is_array( $this->usable )' );
 
-		$this->storable = crypt::encrypt( serialize( $this->usable ) );
+		if ( data::autoType( config::get( 'session.encrypt', false ), 'boolean' ) )
+			$this->storable = crypt::create()->encrypt( serialize( $this->usable ) );
+		else
+			$this->storable = serialize( $this->usable );
 	}
 
 	/**
@@ -217,7 +224,11 @@ class session	// don't derive from anything external here!!! That's breaking maj
 	{
 		if ( trim( $this->storable ) )
 		{
-			$space = unserialize( crypt::decrypt( $this->storable ) );
+			if ( data::autoType( config::get( 'session.encrypt', false ), 'boolean' ) )
+				$space = unserialize( crypt::create()->decrypt( $this->storable ) );
+			else
+				$space = unserialize( $this->storable );
+
 			if ( is_array( $space ) )
 				$this->usable = $space;
 

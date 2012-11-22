@@ -38,13 +38,63 @@ namespace de\toxa\txf;
 class crypt
 {
 	/**
-	 * handle of mcrypt module to use
+	 * callback for generating IV
+	 * 
+	 * @var function
+	 */
+
+	protected $ivGenerator = null;
+
+	/**
+	 * handle of mcrypt module to use in current instance
+	 *
+	 * @var resource
+	 */
+
+	protected $cryptModule = null;
+	
+	/**
+	 * handle of a shared module used by multiple instances of crypt missing 
+	 * provision of specific module overruling this one
 	 *
 	 * @var resource
 	 */
 
 	protected static $module = null;
 
+
+
+	public function __construct( $ivGenerator = null, $module = null )
+	{
+		if ( $ivGenerator !== null )
+		{
+			if ( !is_callable( $ivGenerator ) )
+				throw new \InvalidArgumentException( 'missing IV generator callback' );
+
+			$this->ivGenerator = $ivGenerator;
+		}
+
+		$this->cryptModule = ( $module !== null ) ? $module : static::getModule();
+	}
+
+	public static function init()
+	{
+		static::getKey();
+	}
+
+	/**
+	 * Conveniently wraps constructor of class to instantly chain calls of 
+	 * methods.
+	 *
+	 * @param function $ivGenerator callback method providing constant IV to use 
+	 * @param resource $module result of calling mcrypt_module_open() 
+	 * @return crypt
+	 */
+
+	public static function create( $ivGenerator = null, $module = null )
+	{
+		return new static( $ivGenerator, $module );
+	}
 
 	/**
 	 * Instantiates module of mcrypt to use.
@@ -55,11 +105,44 @@ class crypt
 	protected static function getModule()
 	{
 		if ( self::$module === null )
-		{
 			self::$module = mcrypt_module_open( MCRYPT_3DES, null, MCRYPT_MODE_CFB, null );
-		}
 
 		return self::$module;
+	}
+
+	/**
+	 * Extract key from context preparing in context if missing.
+	 * 
+	 * This method must be called once on initialization due to accessing and
+	 * optionally adjusting set of cookies. It's thus implicitly called on
+	 * importing this class.
+	 */
+
+	protected static function getKey()
+	{
+		if ( !array_key_exists( '_txf', $_COOKIE ) )
+		{
+			$key = ssha::get( uniqid( mt_rand(), true ) . uniqid( mt_rand(), true ) ) .
+				   ssha::get( uniqid( mt_rand(), true ) . uniqid( mt_rand(), true ) );
+
+			\setcookie( '_txf', $_COOKIE['_txf'] = base64_encode( $key ) );
+		}
+
+		return $_COOKIE['_txf'];
+	}
+
+	/**
+	 * Retrieves key and creates one on demand.
+	 *
+	 * This key might be random but has to be stored in user's cookies to be
+	 * available in requests of user's current session, only!
+	 *
+	 * @return string key to use
+	 */
+
+	protected function preparedKey()
+	{
+		return substr( base64_decode( $_COOKIE['_txf'] ), 0, mcrypt_enc_get_key_size( $this->cryptModule ) );
 	}
 
 	/**
@@ -74,36 +157,23 @@ class crypt
 
 	protected static function getIV()
 	{
-		// request key for creating cookie to be included with IV
-		$key = static::getKey();
-
-		$iv  = ssha::get( $_SERVER['REMOTE_ADDR'] . $_COOKIE['_txf'] . $_SERVER['HTTP_USER_AGENT'], $_SERVER['HTTP_HOST'] ) .
+		return ssha::get( $_SERVER['REMOTE_ADDR'] . $_COOKIE['_txf'] . $_SERVER['HTTP_USER_AGENT'], $_SERVER['HTTP_HOST'] ) .
 			   ssha::get( $_SERVER['HTTP_HOST'] . $_COOKIE['_txf'] . $_SERVER['HTTP_USER_AGENT'], $_SERVER['REMOTE_ADDR'] );
-
-		return substr( $iv, 0, mcrypt_enc_get_iv_size( static::getModule() ) );
 	}
 
 	/**
-	 * Retrieves key and creates one on demand.
+	 * Retrieves IV prepared for use with current crypt module.
 	 *
-	 * This key might be random but has to be stored in user's cookies to be
-	 * available in requests of user's current session, only!
+	 * This IV must be constant on encrypting and decrypting!
 	 *
-	 * @return string key to use
+	 * @return string IV to use
 	 */
 
-	protected static function getKey()
+	protected function preparedIV()
 	{
-		if ( !array_key_exists( '_txf', $_COOKIE ) )
-		{
-			$key = ssha::get( uniqid( mt_rand(), true ) . uniqid( mt_rand(), true ) ) .
-				   ssha::get( uniqid( mt_rand(), true ) . uniqid( mt_rand(), true ) );
+		$iv = $this->ivGenerator ? call_user_func( $this->ivGenerator ) : static::getIV();
 
-			\setcookie( '_txf', base64_encode( $key ) );
-			$_COOKIE['_txf'] = base64_encode( $key );
-		}
-
-		return substr( base64_decode( $_COOKIE['_txf'] ), 0, mcrypt_enc_get_key_size( static::getModule() ) );
+		return substr( $iv, 0, mcrypt_enc_get_iv_size( $this->cryptModule ) );
 	}
 
 	/**
@@ -116,7 +186,7 @@ class crypt
 	 * @return string cipher or provided cleartext (on missing mcrypt support)
 	 */
 
-	public static function encrypt( $cleartext )
+	public function encrypt( $cleartext )
 	{
 		// pass back cleartext if mcrypt is missing
 		if ( !is_callable( 'mcrypt_module_open' ) )
@@ -127,13 +197,11 @@ class crypt
 
 
 		// encrypt provided cleartext prefixed by hash for checking integrity on decryption
-		$module = static::getModule();
+		mcrypt_generic_init( $this->cryptModule, $this->preparedKey(), $this->preparedIV() );
 
-		mcrypt_generic_init( $module, static::getKey(), static::getIV() );
+		$cipher = mcrypt_generic( $this->cryptModule, sha1( $cleartext, true ) . $cleartext );
 
-		$cipher = mcrypt_generic( $module, sha1( $cleartext, true ) . $cleartext );
-
-		mcrypt_generic_deinit( $module );
+		mcrypt_generic_deinit( $this->cryptModule );
 
 
 		// return cipher properly tagged to be detected as such on decryption
@@ -154,7 +222,7 @@ class crypt
 	 * @return string decrypted message
 	 */
 
-	public static function decrypt( $cipher )
+	public function decrypt( $cipher )
 	{
 		// test for tag on cipher and pass back provided cipher as is if tag is missing
 		if ( substr( $cipher, 0, 8 ) !== 'TXF!CIPH' )
@@ -168,13 +236,11 @@ class crypt
 
 
 		// actually decrypt provided cipher
-		$module = static::getModule();
+		mcrypt_generic_init( $this->cryptModule, $this->preparedKey(), $this->preparedIV() );
 
-		mcrypt_generic_init( $module, static::getKey(), static::getIV() );
+		$decrypted = mdecrypt_generic( $this->cryptModule, substr( $cipher, 8 ) );
 
-		$decrypted = mdecrypt_generic( $module, substr( $cipher, 8 ) );
-
-		mcrypt_generic_deinit( $module );
+		mcrypt_generic_deinit( $this->cryptModule );
 
 
 		// check integrity of decrypted message
@@ -188,3 +254,6 @@ class crypt
 		return $cleartext;
 	}
 }
+
+crypt::init();
+
