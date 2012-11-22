@@ -117,6 +117,19 @@ class view extends view\skinnable\manager
 	}
 
 	/**
+	 * Adds message to be flashed on next rendered page.
+	 * 
+	 * @param string $message message to flash
+	 * @param string $context context/kind of message, e.g. notice, error, alert
+	 */
+
+	public static function flash( $message, $context = 'notice' )
+	{
+		$session =& txf::session( session::SCOPE_GLOBAL );
+		$session['view']['flashes'][$context][] = $message;
+	}
+
+	/**
 	 * Renders template using provided data.
 	 * 
 	 * This method is managing exceptions thrown inside to bubble up to current 

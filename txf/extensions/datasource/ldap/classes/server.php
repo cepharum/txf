@@ -141,7 +141,7 @@ class server
 
 	public function simpleBindAs( $dn, $password )
 	{
-		$this->boundAs = ldap_bind( $this->link, $dn, $password ) ? $dn : false;
+		$this->boundAs = @ldap_bind( $this->link, $dn, $password ) ? $dn : false;
 
 		return $this;
 	}

@@ -511,7 +511,7 @@ EOT
 
 						// basic page setup
 						array(
-							array( 'name' => 'main',  'viewport' => array( 'title', 'error', 'main' ) ),
+							array( 'name' => 'main',  'viewport' => array( 'flash', 'title', 'error', 'main' ) ),
 							array( 'name' => 'head',  'viewport' => array( 'header' ) ),
 							array( 'name' => 'foot',  'viewport' => array( 'footer', 'debug' ) ),
 							array( 'name' => 'left',  'viewport' => array( 'navigation' ) ),
@@ -582,6 +582,23 @@ EOT
 	}
 
 	/**
+	 * Renders previously registered flash messages.
+	 */
+
+	protected static function renderFlashes()
+	{
+		$session =& txf::session( \de\toxa\txf\session::SCOPE_GLOBAL );
+		if ( is_array( @$session['view'] ) && is_array( @$session['view']['flashes'] ) )
+		{
+			foreach ( $session['view']['flashes'] as $context => $messages )
+				if ( is_array( $messages ) && count( $messages ) )
+					self::viewport( 'flash', \de\toxa\txf\markup::flash( $context, $messages ) );
+
+			unset( $session['view']['flashes'] );
+		}
+	}
+
+	/**
 	 * Disables rendering of current view.
 	 *
 	 * This method is useful to suppress any output e.g. on trying to redirect.
@@ -608,6 +625,9 @@ EOT
 
 		try
 		{
+			static::renderFlashes();
+
+
 			$rawOutput = $this->getRawOutput();
 
 			$viewports = array();
@@ -616,6 +636,7 @@ EOT
 
 			if ( !\array_key_exists( 'main', $viewports ) )
 				$viewports['main'] = $rawOutput;
+
 
 			$regions = $this->collectRegions( $viewports );
 
