@@ -228,13 +228,17 @@ abstract class user
 
 	final public static function dropCurrent()
 	{
-		// enforce drop of user's authenticated state
-		self::$__current->unauthenticate();
+		if ( self::$__current instanceof self )
+		{
+			// enforce drop of user's authenticated state
+			self::$__current->unauthenticate();
 
-		// drop reference on current user
-		unset( self::$__current );
+			// drop reference on current user
+			unset( self::$__current );
+		}
 
-		// gain access on persistent session data for dropping current user there as well
+		// gain access on persistent session data for dropping current user's 
+		// data there as well
 		$session =& self::session();
 		unset( $session['user'] );
 	}

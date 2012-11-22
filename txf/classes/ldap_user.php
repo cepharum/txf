@@ -186,6 +186,8 @@ class ldap_user extends user
 
 	public function unauthenticate()
 	{
+		// drop all data associated with previously authenticated user
+		$this->userDN = $this->credentials = $this->userNode = null;
 	}
 
 	protected function bindAs( $dn, $password )
