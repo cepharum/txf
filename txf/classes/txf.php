@@ -251,7 +251,7 @@ class txf extends singleton
 
 	/**
 	 * Tries to import selected class.
-	 * 
+	 *
 	 * @param string $className name of class to import
 	 * @return boolean true if class is available, false otherwise
 	 */
