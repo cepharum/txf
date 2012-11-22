@@ -114,6 +114,18 @@ abstract class user
 	abstract public function authenticate( $credentials );
 
 	/**
+	 * Reauthenticates user on restoring current user from session.
+	 * 
+	 * This method is required since website is using multiple runtimes each
+	 * requiring current user to reauthenticate.
+	 * 
+	 * @throws unauthorized_exception when authentication fails
+	 * @return user current instance for chaining calls
+	 */
+
+	abstract public function reauthenticate();
+
+	/**
 	 * Detects whether user is authenticated or not.
 	 *
 	 * @return boolean true if user is authenticated, false otherwise
@@ -157,7 +169,7 @@ abstract class user
 
 	private static function &session()
 	{
-		return txf::session( config::get( 'user.auth.global' ) ? session::SCOPE_APPLICATION : session::SCOPE_GLOBAL );
+		return txf::session( config::get( 'user.auth.global' ) ? session::SCOPE_GLOBAL : session::SCOPE_APPLICATION );
 	}
 
 	/**
@@ -174,8 +186,13 @@ abstract class user
 		// gain access on persistent session data for fetching any current user
 		$session =& self::session();
 		if ( array_key_exists( 'user', $session ) && $session['user'] instanceof self )
+		{
 			self::$__current = $session['user'];
 
+			return self::$__current->reauthenticate();
+		}
+
+		// provide instance describing guest user on fallback
 		return guest_user::getInstance();
 	}
 
@@ -199,8 +216,7 @@ abstract class user
 
 			// gain access on persistent session data for storing current user
 			$session =& self::session();
-			if ( array_key_exists( 'user', $session ) && $session['user'] instanceof self )
-				$session['user'] = $user;
+			$session['user'] = $user;
 		}
 	}
 
@@ -307,7 +323,8 @@ class guest_user extends user
 	public function getName() { return _L('guest'); }
 	public function getProperty( $propertyName, $defaultIfMissing = null ) { return $defaultIfMissing; }
 	public function setProperty( $propertyName, $propertyValue = null ) { throw new \RuntimeException( 'property is read-only' ); }
-	public function authenticate( $credentials ) {}
+	public function authenticate( $credentials ) { return $this; }
+	public function reauthenticate() { return $this; }
 	public function isAuthenticated() { return false; }
 	public function unauthenticate() {}
 	protected function configure( $configuration ) {}

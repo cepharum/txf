@@ -70,6 +70,14 @@ class ldap_user extends user
 
 	protected $userNode = null;
 
+	/**
+	 * encrypted credentials of current user
+	 * 
+	 * @var string
+	 */
+
+	private $credentials = null;
+
 
 
 	public function __construct() {}
@@ -111,14 +119,63 @@ class ldap_user extends user
 	{
 	}
 
-	public function authenticate( $credentials )
+	/**
+	 * Encrypts provided credentials in property of current instance.
+	 * 
+	 * @param string $credentials password used on authentication
+	 */
+
+	private function saveCredentials( $credentials )
 	{
-		if ( !$this->bindAs( $this->userDN, $credentials ) )
-			throw new unauthorized_exception( 'invalid credentials' );
+		$this->credentials = crypt::create( function()
+		{
+			return ssha::get( $_COOKIE['_txf'] . $_SERVER['REMOTE_ADDR'] . $_COOKIE['_txf'] . $_SERVER['HTTP_HOST'], md5( $_SERVER['HTTP_USER_AGENT'] ) ) .
+				   ssha::get( $_SERVER['HTTP_HOST'] . $_COOKIE['_txf'] . $_SERVER['HTTP_USER_AGENT'] . $_COOKIE['_txf'], md5( $_SERVER['REMOTE_ADDR'] ) );
+		} )->encrypt( $credentials );
+	}
+
+	/**
+	 * Decrypts credentials previously stored in property of current instance.
+	 * 
+	 * @return string password previously used on authentication
+	 */
+
+	private function getCredentials()
+	{
+		return crypt::create( function()
+		{
+			return ssha::get( $_COOKIE['_txf'] . $_SERVER['REMOTE_ADDR'] . $_COOKIE['_txf'] . $_SERVER['HTTP_HOST'], md5( $_SERVER['HTTP_USER_AGENT'] ) ) .
+				   ssha::get( $_SERVER['HTTP_HOST'] . $_COOKIE['_txf'] . $_SERVER['HTTP_USER_AGENT'] . $_COOKIE['_txf'], md5( $_SERVER['REMOTE_ADDR'] ) );
+		} )->decrypt( $this->credentials );
+	}
+
+	public function reauthenticate()
+	{
+		exception::enterSensitive();
+
+		// rebind using credentials stored in session
+		if ( !$this->bindAs( $this->userDN, $this->getCredentials() ) )
+			throw new unauthorized_exception( 'invalid/missing credentials' );
+
+		exception::leaveSensitive();
 
 		// reset any previously cached copy of user's node
 		$this->userNode = null;
+	
+		return $this;
+	}
 
+	public function authenticate( $credentials )
+	{
+		if ( !$this->bindAs( $this->userDN, $credentials ) )
+			throw new unauthorized_exception( 'invalid/missing credentials' );
+
+		// store credentials in session
+		$this->saveCredentials( $credentials );
+
+		// reset any previously cached copy of user's node
+		$this->userNode = null;
+	
 		return $this;
 	}
 
@@ -129,7 +186,6 @@ class ldap_user extends user
 
 	public function unauthenticate()
 	{
-
 	}
 
 	protected function bindAs( $dn, $password )
@@ -139,7 +195,9 @@ class ldap_user extends user
 			if ( $this->setup->saslMech && $this->setup->saslRealm )
 				$this->server->bindAs( $dn, $password, $this->setup->saslMech, $this->setup->saslRealm );
 			else
+			{
 				$this->server->simpleBindAs( $dn, $password );
+			}
 
 			return $this->server->isBound();
 		}

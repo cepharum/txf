@@ -230,6 +230,11 @@ class sql_user extends user
 		return $this;
 	}
 
+	public function reauthenticate()
+	{
+		// TODO
+	}
+
 	/**
 	 * Authenticates current user.
 	 *
