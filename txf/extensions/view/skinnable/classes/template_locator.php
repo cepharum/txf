@@ -78,7 +78,7 @@ class template_locator
 					return $pathname;
 			}
 
-		throw new \UnexpectedValueException( 'template not found' );
+		throw new \UnexpectedValueException( sprintf( 'template not found: %s (%s)', $templateName, $currentSkin ) );
 	}
 }
 
