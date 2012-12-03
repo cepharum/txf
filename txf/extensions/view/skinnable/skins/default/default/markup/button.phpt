@@ -1,2 +1,2 @@
-<?php namespace de\toxa\txf; list( $name, $value, $label ) = $arguments ?>
-<button name="<?php echo html::idname( $name, true ) ?>" type="submit" value="<?php echo html::inAttribute( $value ) ?>"><?php echo $label ? $label : $value ?></button>
+<?php namespace de\toxa\txf; list( $name, $value, $label, $class, $title ) = $arguments ?>
+<button name="<?php echo html::idname( $name, true ) ?>" type="submit" value="<?php echo html::inAttribute( $value ) ?>"<?php if ( trim( $class ) !== '' ) { ?> class="<?php echo html::inAttribute( $class ) ?>"<?php } ?><?php if ( trim( $title ) !== '' ) { ?> title="<?php echo html::inAttribute( $title ) ?>"<?php } ?>><?php echo $label ? $label : $value ?></button>

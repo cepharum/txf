@@ -97,15 +97,26 @@ class html_form implements widget
 
 	protected static $rowTemplate = null;
 
+	/**
+	 * class name(s) of form
+	 *
+	 * @var string
+	 */
+
+	protected $class = null;
 
 
-	public function __construct( $name )
+
+	public function __construct( $name, $class = null )
 	{
 		$name = trim( $name );
 		if ( !$name )
 			throw new \InvalidArgumentException( 'missing valid form name' );
 
 		$this->name = $name;
+
+		if ( $class !== null )
+			$this->class = trim( preg_replace( '/\s+/', ' ', $class ) );
 	}
 
 	/**
@@ -494,8 +505,10 @@ EOT
 		$code = str_replace( '%%%%ROWS_STACK%%%%', implode( '', $rows ), $this->code );
 
 
+		$class = ( $this->class !== null ) ? ' class="' . html::inAttribute( $this->class ) . '"' : '';
+
 		return <<<EOT
-<form action="$action" method="$method"$mime id="$name">
+<form action="$action" method="$method"$mime id="$name"$class>
 	$size<input type="hidden" name="$idName" value="$idValue"/>
 $code
 </form>
