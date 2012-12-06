@@ -105,6 +105,14 @@ class html_form implements widget
 
 	protected $class = null;
 
+	/**
+	 * set of hidden variables
+	 *
+	 * @var array
+	 */
+
+	protected $hidden = array();
+
 
 
 	public function __construct( $name, $class = null )
@@ -237,6 +245,30 @@ class html_form implements widget
 
 		$this->usePost = true;
 		$this->maxFileSize = intval( $maxSize );
+
+		return $this;
+	}
+
+	/**
+	 * Sets named value to be passed with form hiddenly.
+	 *
+	 * @throws \InvalidArgumentException on providing invalid name
+	 * @param string $name name of value to pass
+	 * @param mixed $value value to pass
+	 * @return html_form
+	 */
+
+	public function setHidden( $name, $value )
+	{
+		if ( !preg_match( '/^[a-z_]\S+/i', $name ) )
+			throw new \InvalidArgumentException( 'invalid variable name' );
+
+		$name = trim( $name );
+
+		if ( $value !== null )
+			$this->hidden[$name] = $value;
+		else
+			unset( $this->hidden[$name] );
 
 		return $this;
 	}
@@ -470,8 +502,8 @@ EOT
 
 	public function getCode()
 	{
-		$method = $this->usePost ? 'POST' : 'GET';
-		$action = is_null( $this->processorUrl ) ? application::current()->selfUrl() : $this->processorUrl;
+		$method = $this->usePost ? 'post' : 'get';
+		$action = is_null( $this->processorUrl ) ? application::current()->selfUrl( $this->usePost ? array() : false ) : $this->processorUrl;
 
 		$mime = $this->maxFileSize > 0 ? ' enctype="multipart/form-data"' : '';
 		$size = $this->maxFileSize > 0 ? '<input type="hidden" name="MAX_FILE_SIZE" value="' . $this->maxFileSize . "\"/>\n\t" : '';
@@ -505,11 +537,16 @@ EOT
 		$code = str_replace( '%%%%ROWS_STACK%%%%', implode( '', $rows ), $this->code );
 
 
+		$hidden = "<input type=\"hidden\" name=\"$idName\" value=\"$idValue\"/>";
+		foreach ( $this->hidden as $name => $value )
+			if ( $value !== null )
+				$hidden .= '<input type="hidden" name="' . html::inAttribute( $name ) . '" value="' . html::inAttribute( $value ) . '"/>';
+
 		$class = ( $this->class !== null ) ? ' class="' . html::inAttribute( $this->class ) . '"' : '';
 
 		return <<<EOT
 <form action="$action" method="$method"$mime id="$name"$class>
-	$size<input type="hidden" name="$idName" value="$idValue"/>
+	$size$hidden
 $code
 </form>
 EOT;
