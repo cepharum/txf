@@ -1,4 +1,4 @@
-<?php namespace de\toxa\txf; list( $name, $value, $checked, $label ) = $arguments ?>
+<?php namespace de\toxa\txf; list( $name, $value, $checked, $label, $title ) = $arguments ?>
 <?php
 
 if ( trim( $value ) === '' )
@@ -26,6 +26,8 @@ if ( count( $arguments ) < 3 )
 		$checked = ( $data == $value );
 }
 
+$checked = $checked ? ' checked="checked"' : '';
+$title   = trim( $title ) !== '' ? ' title="' . html::inAttribute( $title ) . '"' : '';
 
 $name = html::idname( $name, true );
 
@@ -33,5 +35,5 @@ echo view::wrapNotEmpty( $label, "<label for=\"$name\">|:</label>" );
 
 ?>
 <span>
- <input type="checkbox" class="checkbox" name="<?php echo $name ?>" value="<?php echo html::inAttribute( $value ) ?>"/>
+ <input type="checkbox" class="checkbox" name="<?php echo $name ?>" value="<?php echo html::inAttribute( $value ) ?>"<?php echo $checked . $title ?>/>
 </span>
