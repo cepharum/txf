@@ -3,25 +3,25 @@
 
 /**
  * Copyright 2012 Thomas Urban, toxA IT-Dienstleistungen
- * 
+ *
  * This file is part of TXF, toxA's web application framework.
- * 
- * TXF is free software: you can redistribute it and/or modify it under the 
- * terms of the GNU General Public License as published by the Free Software 
- * Foundation, either version 3 of the License, or (at your option) any later 
+ *
+ * TXF is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
  * version.
- * 
- * TXF is distributed in the hope that it will be useful, but WITHOUT ANY 
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR 
+ *
+ * TXF is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
  * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License along with 
+ *
+ * You should have received a copy of the GNU General Public License along with
  * TXF. If not, see http://www.gnu.org/licenses/.
  *
  * @copyright 2012, Thomas Urban, toxA IT-Dienstleistungen, www.toxa.de
  * @license GNU GPLv3+
  * @version: $Id$
- * 
+ *
  */
 
 
@@ -107,7 +107,7 @@ class html
 
 	/**
 	 * Converts provided two-dimensional array to HTML markup describing table.
-	 * 
+	 *
 	 * @param array $arrData two-dimensional array to render in HTML
 	 * @param string $id optional ID to use on table
 	 * @param function $cellFormat method called to render value of a cell
@@ -196,10 +196,10 @@ class html
 	}
 
 	/**
-	 * Converts provided single-dimensional array to HTML markup describing 
-	 * two-column grid ("card") with labels in its left and related values in 
+	 * Converts provided single-dimensional array to HTML markup describing
+	 * two-column grid ("card") with labels in its left and related values in
 	 * its right column.
-	 * 
+	 *
 	 * @param array $arrData single-dimensional array to render in HTML
 	 * @param string $id optional ID to use on rendered card
 	 * @param function $cellFormat method called to render value of a cell in right column
@@ -214,7 +214,7 @@ class html
 		if ( !is_array( $arrData ) )
 			throw new \InvalidArgumentException( 'not an array' );
 
-			
+
 		$id = trim( $id ) ? ' id="' . static::idname( $id ) . '"' : '';
 
 
@@ -225,7 +225,7 @@ class html
 
 		foreach ( $arrData as $header => $cell )
 		{
-			$cell = is_callable( $cellFormat ) ? $cellFormat( $cell, $header ) : htmlspecialchars( $cell );
+			$cell = is_callable( $cellFormat ) ? call_user_func( $cellFormat, $header, $cell, $arrData ) : htmlspecialchars( $cell );
 			if ( $cell !== null )
 			{
 				$rowClass = ( ( $rowIndex % 2 ) ? 'even' : 'odd' ) . ( $rowIndex ? '' : ' first' ) . ( ( ++$rowIndex == count( $arrData ) ) ? ' last' : '' );
@@ -235,7 +235,7 @@ class html
 				if ( trim( $cell ) === '' )
 					$cell = $empty;
 
-				$label = trim( is_callable( $headerFormat ) ? $headerFormat( $header ) : htmlspecialchars( "$header:" ) );
+				$label = trim( is_callable( $headerFormat ) ? call_user_func( $headerFormat, $header ) : htmlspecialchars( "$header:" ) );
 				if ( $label[0] == '|' )
 					$label = '';
 
