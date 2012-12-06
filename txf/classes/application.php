@@ -298,7 +298,7 @@ class application
 	/**
 	 * Compiles URL addressing current script of current application.
 	 *
-	 * @param array $parameters set of parameters to pass in query
+	 * @param array|false $parameters set of parameters to pass in query, false to drop all current parameters (e.g. on creating GET form)
 	 * @param mixed $selector first of multiple optional selectors to include
 	 * @return string URL of addressed script including optional parameters
 	 */
@@ -316,15 +316,20 @@ class application
 		 * merge current script's input parameters with provided one
 		 */
 
-		// find all non-persistent input parameters of current script
-		$currentParameters = input::source( input::SOURCE_ACTUAL_GET )->getAllValues();
-		foreach ( $currentParameters as $name => $value )
-			if ( !data::isKeyword( $name ) || input::isPersistent( $name ) )
-				unset( $currentParameters[$name] );
+		if ( $parameters === false )
+			$parameters = array();
+		else
+		{
+			// find all non-persistent input parameters of current script
+			$currentParameters = input::source( input::SOURCE_ACTUAL_GET )->getAllValues();
+			foreach ( $currentParameters as $name => $value )
+				if ( !data::isKeyword( $name ) || input::isPersistent( $name ) )
+					unset( $currentParameters[$name] );
 
-		// merge volatile input with given parameters, but drop all those
-		// finally set NULL (to support removal per $parameters)
-		$parameters = array_filter( array_merge( $currentParameters, $parameters ), function( $item ) { return $item !== null; } );
+			// merge volatile input with given parameters, but drop all those
+			// finally set NULL (to support removal per $parameters)
+			$parameters = array_filter( array_merge( $currentParameters, $parameters ), function( $item ) { return $item !== null; } );
+		}
 
 
 		/*
