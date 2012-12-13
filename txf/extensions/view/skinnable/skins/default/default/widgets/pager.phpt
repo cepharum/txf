@@ -1,7 +1,7 @@
 <?php namespace de\toxa\txf; ?>
-<?php 
+<?php
 
-if ( count( $pageOffsets ) > 1 || ( $itemCount > min( $sizes ) ) )
+if ( config::get( 'pager.visible' ) || count( $pageOffsets ) > 1 || ( $itemCount > min( $sizes ) ) )
 {
 	view::addAsset( 'widget-pager', 'pager.css', 'text/css', null, true );
 
