@@ -162,6 +162,11 @@ class pager implements widget
 		return $pager;
 	}
 
+	public function processInput()
+	{
+		return $this;
+	}
+
 	/**
 	 * Renders pager widget.
 	 *

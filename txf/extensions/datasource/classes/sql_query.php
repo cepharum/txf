@@ -102,7 +102,7 @@ use de\toxa\txf\shortcuts as shortcuts;
  */
 
 
-class sql_query implements query
+class sql_query implements query, browseable
 {
 
 	/**
@@ -502,5 +502,56 @@ class sql_query implements query
 
 		$this->connection = $connection;
 	}
-}
 
+	/*
+	 * implementation of browseable interface
+	 */
+
+	public function sortBy( $property, $ascending = true )
+	{
+		return $this->addOrder( $property, $ascending );
+	}
+
+	public function offset( $count )
+	{
+		if ( ctype_digit( trim( $count ) ) )
+		{
+			if ( $this->size == null )
+				$this->size = 10;
+
+			$this->offset = intval( $count );
+
+			return $this;
+		}
+
+		throw new \InvalidArgumentException( 'invalid skip' );
+	}
+
+	public function size( $count )
+	{
+		$count = intval( $count );
+		if ( $count > 0 )
+		{
+			$this->size = $count;
+
+			return $this;
+		}
+
+		throw new \InvalidArgumentException( 'invalid size' );
+	}
+
+	public function items()
+	{
+		return $this->execute()->all();
+	}
+
+	public function count()
+	{
+		return intval( $this->execute( true )->cell() );
+	}
+
+	public function name()
+	{
+		return implode( '-', array_keys( $this->tables ) );
+	}
+}

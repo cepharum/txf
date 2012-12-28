@@ -117,7 +117,7 @@ class html
 	 * @return string HTML code describing table
 	 */
 
-	public static function arrayToTable( $arrData, $id = '', $cellFormat = null, $headerFormat = null, $empty = '', $basicIndent = '' )
+	public static function arrayToTable( $arrData, $id = '', $cellFormat = null, $headerFormat = null, $empty = '', $basicIndent = '', $class = '' )
 	{
 		if ( !is_array( $arrData ) )
 			throw new \InvalidArgumentException( 'not an array' );
@@ -146,7 +146,7 @@ class html
 		{
 			$cellClass = html::classname( ( ( $index % 2 ) ? 'even' : 'odd' ) . ( $index ? '' : ' first' ) . ( ( $index == count( $header ) - 1 ) ? ' last' : '' ) . ' ' . $name );
 
-			$label = trim( is_callable( $headerFormat ) ? $headerFormat( $name ) : htmlspecialchars( $name ) );
+			$label = trim( is_callable( $headerFormat ) ? call_user_func( $headerFormat, $name ) : htmlspecialchars( $name ) );
 			if ( $label[0] == '|' )
 				$label = '';
 
@@ -173,7 +173,7 @@ class html
 				$cellClass = html::classname( ( ( $cell % 2 ) ? 'even' : 'odd' ) . ( $cell ? '' : ' first' ) . ( ( $cell == count( $row ) - 1 ) ? ' last' : '' ) . ' ' . $name );
 
 				if ( array_key_exists( $name, $record ) )
-					$cell = is_callable( $cellFormat ) ? $cellFormat( $record[$name], $name ) : htmlspecialchars( $record[$name] );
+					$cell = is_callable( $cellFormat ) ? call_user_func( $cellFormat, $record[$name], $name, $record, $index ) : htmlspecialchars( $record[$name] );
 				else
 					$cell = $empty;
 
@@ -190,9 +190,10 @@ class html
 
 
 		// combine table's header and body into complete table
-		$id = $id ? " id=\"$id\"" : '';
+		$id    = $id    ? " id=\"$id\"" : '';
+		$class = $class ? " class=\"$class\"" : '';
 
-		return "\n$basicIndent<table$id>\n$out$basicIndent</table>\n";
+		return "\n$basicIndent<table$id$class>\n$out$basicIndent</table>\n";
 	}
 
 	/**

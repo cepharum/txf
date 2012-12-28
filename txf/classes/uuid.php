@@ -3,25 +3,25 @@
 
 /**
  * Copyright 2012 Thomas Urban, toxA IT-Dienstleistungen
- * 
+ *
  * This file is part of TXF, toxA's web application framework.
- * 
- * TXF is free software: you can redistribute it and/or modify it under the 
- * terms of the GNU General Public License as published by the Free Software 
- * Foundation, either version 3 of the License, or (at your option) any later 
+ *
+ * TXF is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
  * version.
- * 
- * TXF is distributed in the hope that it will be useful, but WITHOUT ANY 
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR 
+ *
+ * TXF is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
  * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License along with 
+ *
+ * You should have received a copy of the GNU General Public License along with
  * TXF. If not, see http://www.gnu.org/licenses/.
  *
  * @copyright 2012, Thomas Urban, toxA IT-Dienstleistungen, www.toxa.de
  * @license GNU GPLv3+
  * @version: $Id$
- * 
+ *
  */
 
 
@@ -32,7 +32,7 @@ class uuid
 {
 	public static function createRandom()
 	{
-		return sprintf( '%04X%04X-%04X-%04X-%04X-%04X%04X%04X', 
+		return sprintf( '%04X%04X-%04X-%04X-%04X-%04X%04X%04X',
 					mt_rand( 0, 0xffff ),
 					mt_rand( 0, 0xffff ),
 					mt_rand( 0, 0xffff ),
@@ -41,6 +41,11 @@ class uuid
 					mt_rand( 0, 0xffff ),
 					mt_rand( 0, 0xffff ),
 					mt_rand( 0, 0xffff ) );
+	}
+
+	public static function isValid( $uuid )
+	{
+		return !!preg_match( '/^[\xa-f]{8}-[\xa-f]{4}-[\xa-f]{4}-[\xa-f]{4}-[\xa-f]{12}$/i', $uuid );
 	}
 }
 

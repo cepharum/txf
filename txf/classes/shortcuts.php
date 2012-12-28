@@ -29,11 +29,13 @@ namespace de\toxa\txf;
 
 
 /**
+ * Looks up localized version of provided text matching selected number of items
+ * text is referring to.
  *
- * @param <type> $singular
- * @param <type> $plural
- * @param <type> $count
- * @return string
+ * @param string $singular default text to show on single item
+ * @param string $plural default text to show on no/multiple items
+ * @param integer $count number of items text is considered to refer to
+ * @return string localized version of text or related text in $singular/$plural on mismatch
  */
 
 function _L( $singular, $plural = null, $count = 1 )

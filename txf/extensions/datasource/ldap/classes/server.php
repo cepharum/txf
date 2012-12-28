@@ -47,7 +47,7 @@ class server
 
 	/**
 	 * URL or name of host to connect with
-	 * 
+	 *
 	 * @var string
 	 */
 
@@ -90,7 +90,7 @@ class server
 
 	/**
 	 * Establishes connection to LDAP server actually.
-	 * 
+	 *
 	 */
 
 	protected function connect()
@@ -267,12 +267,22 @@ class server
 	 *
 	 * @throws protocol_exception
 	 * @param string $dn DN of entry to read
+	 * @param array|string $attributes (comma-separated) list of attributes to fetch, omit to get all attributes fetched by default
 	 * @return node entry selected by DN
 	 */
 
-	public function read( $dn )
+	public function read( $dn, $attributes = null )
 	{
-		$resultset = ldap_read( $this->link, $dn, 'objectClass=*' );
+		if ( is_string( $attributes ) )
+			$attributes = preg_split( '/,+/', $attributes );
+		if ( is_array( $attributes ) )
+		{
+			$attributes = array_filter( $attributes );
+			if ( !count( $attributes ) )
+				$attributes = null;
+		}
+
+		$resultset = ldap_read( $this->link, $dn, 'objectClass=*', $attributes );
 		if ( $resultset )
 		{
 			$entry = ldap_first_entry( $this->link, $resultset );

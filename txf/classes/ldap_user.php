@@ -72,7 +72,7 @@ class ldap_user extends user
 
 	/**
 	 * encrypted credentials of current user
-	 * 
+	 *
 	 * @var string
 	 */
 
@@ -82,8 +82,11 @@ class ldap_user extends user
 
 	public function __construct() {}
 
-	protected function readNode()
+	protected function readNode( $attributes = null )
 	{
+		if ( $attributes !== null )
+			return $this->server->read( $this->userDN, $attributes );
+
 		if ( !$this->userNode )
 			$this->userNode = $this->server->read( $this->userDN );
 
@@ -97,7 +100,7 @@ class ldap_user extends user
 
 	public function getUUID()
 	{
-		return $this->readNode()->attributeByName( $this->setup->read( 'uuidAttr', 'entryUUID' ) )->read( 0 );
+		return $this->readNode( 'entryUUID' )->attributeByName( $this->setup->read( 'uuidAttr', 'entryUUID' ) )->read( 0 );
 	}
 
 	public function getLoginName()
@@ -121,7 +124,7 @@ class ldap_user extends user
 
 	/**
 	 * Encrypts provided credentials in property of current instance.
-	 * 
+	 *
 	 * @param string $credentials password used on authentication
 	 */
 
@@ -136,7 +139,7 @@ class ldap_user extends user
 
 	/**
 	 * Decrypts credentials previously stored in property of current instance.
-	 * 
+	 *
 	 * @return string password previously used on authentication
 	 */
 
@@ -161,7 +164,7 @@ class ldap_user extends user
 
 		// reset any previously cached copy of user's node
 		$this->userNode = null;
-	
+
 		return $this;
 	}
 
@@ -175,7 +178,7 @@ class ldap_user extends user
 
 		// reset any previously cached copy of user's node
 		$this->userNode = null;
-	
+
 		return $this;
 	}
 

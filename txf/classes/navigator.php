@@ -3,25 +3,25 @@
 
 /**
  * Copyright 2012 Thomas Urban, toxA IT-Dienstleistungen
- * 
+ *
  * This file is part of TXF, toxA's web application framework.
- * 
- * TXF is free software: you can redistribute it and/or modify it under the 
- * terms of the GNU General Public License as published by the Free Software 
- * Foundation, either version 3 of the License, or (at your option) any later 
+ *
+ * TXF is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
  * version.
- * 
- * TXF is distributed in the hope that it will be useful, but WITHOUT ANY 
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR 
+ *
+ * TXF is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
  * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License along with 
+ *
+ * You should have received a copy of the GNU General Public License along with
  * TXF. If not, see http://www.gnu.org/licenses/.
  *
  * @copyright 2012, Thomas Urban, toxA IT-Dienstleistungen, www.toxa.de
  * @license GNU GPLv3+
  * @version: $Id$
- * 
+ *
  */
 
 
@@ -30,16 +30,16 @@ namespace de\toxa\txf;
 
 /**
  * Navigator collecting links and actions for navigating in an application.
- * 
+ *
  * @author Thomas Urban <thomas.urban@toxa.de>
- * 
+ *
  */
 
 class navigator implements widget
 {
 	/**
 	 * set of registered navigators
-	 * 
+	 *
 	 * @var array[navigator]
 	 */
 
@@ -47,7 +47,7 @@ class navigator implements widget
 
 	/**
 	 * unique name of current navigator
-	 * 
+	 *
 	 * @var string
 	 */
 
@@ -55,7 +55,7 @@ class navigator implements widget
 
 	/**
 	 * items of current navigator
-	 * 
+	 *
 	 * @var array
 	 */
 
@@ -63,7 +63,7 @@ class navigator implements widget
 
 	/**
 	 * mark on whether detecting currently selected items or not
-	 * 
+	 *
 	 * @var function
 	 */
 
@@ -91,7 +91,7 @@ class navigator implements widget
 	 * Normalizes name of navigator/item.
 	 *
 	 * @throws InvalidArgumentException on a missing/invalid name
-	 *  
+	 *
 	 * @param string $name caller-provided name to use
 	 * @param string normalized name to use actually
 	 */
@@ -108,7 +108,7 @@ class navigator implements widget
 
 	/**
 	 * Selects registered navigator or creates it if not registered before.
-	 * 
+	 *
 	 * @param string $name name of navigator to select/create
 	 * @return navigator created/selected navigator instance
 	 */
@@ -125,7 +125,7 @@ class navigator implements widget
 
 	/**
 	 * Tests whether selected navigator exists or not.
-	 * 
+	 *
 	 * @param string $name name of navigator to test
 	 * @return boolean true if selected navigator exists, false otherwise
 	 */
@@ -137,7 +137,7 @@ class navigator implements widget
 
 	/**
 	 * Tests if selected navigator exists and contains any item.
-	 * 
+	 *
 	 * @param string $name name of navigator to test
 	 * @return boolean true if navigator exists and has items, false otherwise
 	 */
@@ -152,7 +152,7 @@ class navigator implements widget
 	/**
 	 * Conveniently wraps method navigator::select() to support method's name
 	 * selecting navigator instantly.
-	 * 
+	 *
 	 * @param string $name name of navigator to select
 	 */
 
@@ -163,26 +163,26 @@ class navigator implements widget
 
 	/**
 	 * Adjusts existing item of current navigator.
-	 * 
+	 *
 	 * If selected item does not exist, it's appended/inserted accordingly.
-	 * 
+	 *
 	 * Any item consists of a selection of these properties:
-	 * 
+	 *
 	 *  label     text for labelling item in navigator
 	 *  asset     some asset (image) to illustrate item in navigator
 	 *  action    action to perform on activating/clicking item in navigator (e.g. target URL to be opened)
 	 *  selected  mark on whether item is selected or not
 	 *  sub       subordinated set of items
-	 * 
+	 *
 	 * In addition every item requires name unique in set of current navigator's
 	 * items for selecting the item individually.
-	 * 
+	 *
 	 * Selecting item isn't proofing for having selected single item, only. Thus
-	 * caller needs to ensure to have only one selected item. On using 
+	 * caller needs to ensure to have only one selected item. On using
 	 * auto-select this constraint is achieved internally.
-	 * 
+	 *
 	 * @note Resulting widget contains items with label or asset, only.
-	 * 
+	 *
 	 * @param string $name name of item in current navigator to adjust/add
 	 * @param string|null|false $label label of item to set, null to keep previous one, false to drop previous one
 	 * @param string|null|false $action action to associate with item (target URL), null to keep previous one, false to drop previous one
@@ -244,7 +244,7 @@ class navigator implements widget
 
 	/**
 	 * Removes selected item from current navigator.
-	 * 
+	 *
 	 * @param string $name name of item to remove
 	 * @return navigator current navigator instance for chaining calls
 	 */
@@ -260,9 +260,9 @@ class navigator implements widget
 
 	/**
 	 * Attaches subordinated navigator to selected item of current navigator.
-	 * 
+	 *
 	 * This method is a convenience wrapper around method setItem().
-	 * 
+	 *
 	 * @param string $itemName name of item in current navigator to select
 	 * @param navigator $sub navigator instance to subordinate to selected item
 	 * @return navigator current navigator instance for chaining calls
@@ -275,11 +275,11 @@ class navigator implements widget
 
 	/**
 	 * Selects/unselects item of navigator.
-	 * 
+	 *
 	 * Selecting item this way disables auto-select mode for current navigator.
 	 * In addition it's not ensuring to have only one selected item, thus it's
 	 * up to caller checking for multiple selected items.
-	 * 
+	 *
 	 * @param string $itemName name of item in current navigator to select
 	 * @param boolean $select if true, item is selected
 	 * @return navigator current navigator instance for chaining calls
@@ -292,18 +292,18 @@ class navigator implements widget
 
 	/**
 	 * Enables or disables auto-select mode.
-	 * 
+	 *
 	 * In auto-select mode the widget tries to find any currently selected item
 	 * and its containing superordinated navigators for marking them properly.
-	 * 
-	 * Auto-select mode is initially enabled on every navigator and gets 
+	 *
+	 * Auto-select mode is initially enabled on every navigator and gets
 	 * disabled as soon as a single item is selected explicitly.
-	 * 
-	 * Providing true in $enable enables auto-select mode using built-in 
+	 *
+	 * Providing true in $enable enables auto-select mode using built-in
 	 * detector matching script's URL with an item's action. Optionally $enable
 	 * might be function to be called instead of that built-in detector. If
 	 * $enable is false auto-select mode gets disabled.
-	 * 
+	 *
 	 * @param boolean|function $enable see description
 	 * @return navigator current navigator instance for chaining calls
 	 */
@@ -326,7 +326,7 @@ class navigator implements widget
 
 	/**
 	 * Detects if provided item is selected unless auto-select mode is disabled.
-	 * 
+	 *
 	 * @param array $item item to test
 	 * @return boolean true if item is considered selected, false otherwise
 	 */
@@ -343,10 +343,10 @@ class navigator implements widget
 	/**
 	 * Converts current set of items into multi-dimensional array containing
 	 * subordinated navigators' items as ordinary arrays as well.
-	 * 
-	 * Additionally this method tries to detect active/selected items and 
+	 *
+	 * Additionally this method tries to detect active/selected items and
 	 * threads of navigator.
-	 * 
+	 *
 	 * @return array set items with subordinated items resolved to arrays
 	 */
 
@@ -398,9 +398,11 @@ class navigator implements widget
 		return $out;
 	}
 
+	public function processInput() {}
+
 	/**
 	 * Renders code of widget for embedding it in a script's output.
-	 * 
+	 *
 	 * @return string code of widget
 	 */
 

@@ -494,6 +494,8 @@ EOT
 		return self::$rowTemplate;
 	}
 
+	public function processInput() {}
+
 	/**
 	 * Renders HTML code of form.
 	 *
