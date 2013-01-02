@@ -127,6 +127,64 @@ class html_form implements widget
 			$this->class = trim( preg_replace( '/\s+/', ' ', $class ) );
 	}
 
+	public function __call( $method, $arguments )
+	{
+		/**
+		 * implement convenience methods for describing forms
+		 *
+		 * @example
+		 *  $form->setTexteditRow( 'username', 'Your Login' );
+		 *  $form->setTextAreaRow( 'message', 'Your Message', 'Type your message here ...' );
+		 *  $form->setPASSWoRDRow( 'token', 'Your Password' );
+		 *
+		 *  $form->setButtonRow( 'Submit', 'Cancel' );
+		 *
+		 *  $form->setSelectorRow( 'gender', 'Your Gender', array( 'm' => 'male', 'f' => 'female' ), 'm' );
+		 *
+		 */
+
+		if ( ( substr( $method, 0, 3 ) === 'set' ) &&
+		     ( substr( $method, -3 ) === 'Row' ) )
+		{
+			// normalize segment in method name to match markup-template
+			$type = strtolower( substr( $method, 3, -3 ) );
+
+			// get arguments depending on selected template
+			switch ( $type )
+			{
+				case 'selector' :
+					list( $name, $label, $options, $value ) = $arguments;
+					break;
+				default :
+					list( $name, $label, $value ) = $arguments;
+			}
+
+			// auto-integrate available input
+			$value = input::vget( $name, $value );
+
+			// recompile arguments to use in call for markup-template
+			switch ( $type )
+			{
+				case 'selector' :
+					$args = array( $name, $options, $value );
+					break;
+				case 'button' :
+					$args = array( $name, $value, $label );
+					break;
+				default :
+					$args = array( $name, $value );
+			}
+
+			// add row to form using markup-template for rendering content
+			$template = array( 'de\toxa\txf\markup', $type );
+
+			$this->setRow( $name, $label, call_user_func_array( $template, $args ) );
+		}
+
+
+		return $this;
+	}
+
 	/**
 	 * Conveniently creates instance of html_form or any derived class.
 	 *
