@@ -170,6 +170,10 @@ class html_form implements widget
 					break;
 				case 'button' :
 					$args = array( $name, $value, $label );
+					$label = null;
+					break;
+				case 'file' :
+					$args = array( $name, $label );
 					break;
 				default :
 					$args = array( $name, $value );
@@ -204,7 +208,7 @@ class html_form implements widget
 
 	protected function idName()
 	{
-		return md5( 'formid::' . application::current()->name . '::' . $this->name );
+		return preg_replace( '/^[^a-z]+/i', '', md5( 'formid::' . application::current()->name . '::' . $this->name ) );
 	}
 
 	/**
@@ -215,7 +219,7 @@ class html_form implements widget
 
 	protected function idValue()
 	{
-		return preg_replace( '/[^a-z0-9_]/i', '', base64_encode( gzcompress( sha1( $this->name . '|' . application::current()->name . '|' . $_SERVER['REMOTE_ADDR'] ), 9 ) ) );
+		return preg_replace( '/[^a-z0-9_]/i', '', base64_encode( gzcompress( sha1( $this->name . '|' . application::current()->name . '|' . $_SERVER['REMOTE_ADDR'] . '|' . session_id() ), 9 ) ) );
 	}
 
 	/**

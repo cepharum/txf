@@ -126,20 +126,7 @@ class application
 
 		if ( txf::getContextMode() == txf::CTXMODE_REWRITTEN )
 		{
-			// rewriting works different with cherokee web server, thus try to fix
-			if ( !strcasecmp( $_SERVER['SERVER_SOFTWARE'], 'Cherokee' ) )
-			{
-				if ( !array_key_exists( 'REDIRECT_URL', $_SERVER ) )
-				{
-					if ( $_SERVER['REQUEST_URI'] != $_SERVER['SCRIPT_URL'] )
-					{
-						$_SERVER['REDIRECT_URL'] = $_SERVER['REQUEST_URI'];
-					}
-				}
-			}
-
-
-			assert( '$_SERVER[REDIRECT_URL] || $_SERVER[PATH_INFO]' );
+			assert( '$_SERVER[REDIRECT_URL] || $_SERVER[PATH_INFO] || $_SERVER[REQUEST_URI]' );
 
 			// get originally requested script (e.g. prior to rewrite)
 			if ( trim( $_SERVER['REDIRECT_URL'] ) !== '' )
@@ -153,7 +140,7 @@ class application
 			else if ( trim( $_SERVER['REQUEST_URI'] ) !== '' )
 			{
 				// use of lighttpd's rewriting detected
-				$query = $_SERVER['REQUEST_URI'];
+				$query = strtok( $_SERVER['REQUEST_URI'], '?' );
 
 				// mark rewrite mode by not selecting any valid used proxy
 				$application->usedProxy = true;
@@ -169,12 +156,12 @@ class application
 
 			// derive list of application and script selectors
 			$frames = path::stripCommonPrefix( explode( '/', trim( $query, '/' ) ), $context->prefixPathname );
-
 		}
 		else // txf::CTXMODE_NORMAL
 			// expect application and script selectors being part of requested
 			// script pathname
 			$frames = explode( '/', $context->applicationScriptPathname );
+
 
 
 		/*

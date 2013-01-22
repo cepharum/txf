@@ -72,10 +72,19 @@ class pager implements widget
 
 	protected $isVolatile;
 
+	/**
+	 * mark on whether using buttons instead of links or not
+	 *
+	 * @var boolean
+	 */
+
+	protected $useButtons;
+
+
 
 	/**
 	 * @param integer $itemCount number of records to be paged
-	 * @param boolean $isVolatile if true, offset/items per page must be always in actual input
+	 * @param boolean $isVolatile if true, offset/items per page must be always found in actual input
 	 *                            if false, both are retrieved from cache unless contained in actual input
 	 *                            if null, offset is expected in actual input while size is not
 	 * @param string $offsetName name of input selecting offset
@@ -99,6 +108,20 @@ class pager implements widget
 		$this->itemCount  = $itemCount;
 
 		$this->isVolatile = is_null( $isVolatile ) ? null : !!$isVolatile;
+	}
+
+	/**
+	 * Enables/disables buttons to use instead of links on rendering pager.
+	 *
+	 * @param boolean $enableButtons true to select use of buttons instead of links
+	 * @return \de\toxa\txf\pager current pager instance
+	 */
+
+	public function enableButtons( $enableButtons )
+	{
+		$this->useButtons = !!$enableButtons;
+
+		return $this;
 	}
 
 	/**
@@ -188,6 +211,7 @@ class pager implements widget
 					'sizes'       => config::getList( 'pager.sizeOption', array( 10, 20, 50, 100 ) ),
 					'size'        => $size,
 					'offset'      => $offset,
+					'useButtons'  => $this->useButtons,
 					);
 
 		for ( $i = $offset; $i > -$size; $i -= $size )

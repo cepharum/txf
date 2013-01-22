@@ -282,6 +282,10 @@ class server
 				$attributes = null;
 		}
 
+		if ( $attributes == null )
+			$attributes = array();
+
+
 		$resultset = ldap_read( $this->link, $dn, 'objectClass=*', $attributes );
 		if ( $resultset )
 		{

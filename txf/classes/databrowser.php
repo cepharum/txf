@@ -93,12 +93,12 @@ class databrowser implements widget
 	protected $rowCommander;
 
 	/**
-	 * mark on whether embedding widget in a separate HTML form or not
+	 * HTML form instance used internally for managing browser input
 	 *
-	 * @var boolean
+	 * @var html_form
 	 */
 
-	protected $embedInForm = true;
+	protected $form = null;
 
 	/**
 	 * optional class name of rendered databrowser widget's code
@@ -107,6 +107,14 @@ class databrowser implements widget
 	 */
 
 	protected $className;
+
+	/**
+	 * mark on whether embedded pager is using volatile input or not
+	 *
+	 * @var boolean|null
+	 */
+
+	protected $volatilePager;
 
 
 
@@ -163,6 +171,32 @@ class databrowser implements widget
 	}
 
 	/**
+	 * Selects embedded pager's volatility.
+	 *
+	 * @param string $mode one of "full", "none", "partial" (default)
+	 * @return \de\toxa\txf\databrowser current databrowser instance
+	 */
+
+	public function setPagerVolatility( $mode )
+	{
+		switch ( strtolower( trim( $mode ) ) )
+		{
+			case 'partial' :
+			default :
+				$this->volatilePager = null;
+				break;
+			case 'full' :
+				$this->volatilePager = true;
+				break;
+			case 'none' :
+				$this->volatilePager = false;
+				break;
+		}
+
+		return $this;
+	}
+
+	/**
 	 * Disables use of internally managed form wrapping databrowser.
 	 *
 	 * By default databrowser widget is embedded in a separate form due to
@@ -176,7 +210,7 @@ class databrowser implements widget
 
 	public function disableForm()
 	{
-		$this->embedInForm = false;
+		$this->form = false;
 
 		return $this;
 	}
@@ -233,11 +267,14 @@ class databrowser implements widget
 		if ( !$this->pager )
 		{
 			// process all input once USING pager for semaphore
-			$this->pager = new pager( $this->datasource->count() );
+			$this->pager = new pager( $this->datasource->count(), $this->volatilePager );
 
 			$this->datasource
 						->size( $this->pager->size() )
 						->offset( $this->pager->offset() );
+
+			if ( $this->getForm() )
+				$this->pager->enableButtons( true );
 		}
 
 		return $this;
@@ -264,7 +301,7 @@ class databrowser implements widget
 				$out[$key][$name] = @$item[$name];
 
 			if ( is_callable( $this->rowCommander ) )
-				$out[$key]['|command'] = call_user_func( $this->rowCommander, $key, $row );
+				$out[$key]['|command'] = call_user_func( $this->rowCommander, $key, $item );
 		}
 
 		return $out;
@@ -301,6 +338,20 @@ class databrowser implements widget
 	}
 
 	/**
+	 * Retrieves form used by current databrowser instance.
+	 *
+	 * @return html_form
+	 */
+
+	public function getForm()
+	{
+		if ( $this->form === null )
+			$this->form = html_form::create( $this->datasource->name() . '_browser' );
+
+		return $this->form;
+	}
+
+	/**
 	 * Retrieves markup/code of databrowser to be embedded in view.
 	 *
 	 * @return string markup/code of databrowser
@@ -324,7 +375,11 @@ class databrowser implements widget
 		// render table including related pager widget
 		if ( count( $items ) )
 		{
-			$id    = $this->embedInForm ? null : $this->datasource->name();
+			// fetch form to use optionally
+			$form = $this->getForm();
+
+			// render table view
+			$id    = $form ? null : $this->datasource->name();
 			$table = html::arrayToTable( $items, $id, array( &$this, 'formatCell' ),
 			                             array( &$this, 'formatHeader' ),
 			                             '', '', $this->className );
@@ -332,9 +387,9 @@ class databrowser implements widget
 			$code = $this->pager . $table;
 
 
-			// optionally embed widget in its own form
-			if ( $this->embedInForm )
-				$code = (string) html_form::create( $this->datasource->name() )->addContent( $code );
+			// wrap rendered table view in form
+			if ( $form )
+				$code = (string) $form->addContent( $code );
 
 
 			// return code of rendered databrowser

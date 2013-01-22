@@ -48,7 +48,7 @@ class txf extends singleton
 	private $session;
 
 
-	protected $classRedirectionMap;
+	protected $classRedirectionMap = array();
 
 
 	/**
@@ -195,12 +195,14 @@ class txf extends singleton
 			// optionally support class redirection
 			if ( self::hasCurrent() )
 			{
-				if ( \array_key_exists( $relativeClassName, self::current()->getClassRedirectionMap() ) )
-					$relativeClassName = self::current()->$classRedirectionMap[$relativeClassName];
+				$map = self::current()->getClassRedirectionMap();
+
+				if ( \array_key_exists( $relativeClassName, $map ) )
+					$relativeClassName = $map[$relativeClassName];
 
 				if ( !$relativeClassName )
 					// loader disabled by class redirection
-					return null;
+					return;
 			}
 
 
@@ -385,7 +387,7 @@ class txf extends singleton
 
 	protected function initializeClassRedirections()
 	{
-		$initialRedirections = config::get( 'txf.autoloader.redirect' );
+		$initialRedirections = config::getList( 'txf.autoloader.redirect' );
 
 		if ( is_array( $initialRedirections ) )
 			foreach ( $initialRedirections as $redirection )
@@ -444,9 +446,9 @@ class txf extends singleton
 	{
 		if ( string::isString( $name ) )
 		{
-			$name = trim( $name->string );
+			$name = trim( $name );
 
-			return preg_match( '/^([a-z_][a-z0-9_]*\\)*[a-z_][a-z0-9_]*$/i', $name );
+			return preg_match( '/^([a-z_][a-z0-9_]*\\\\)*[a-z_][a-z0-9_]*$/i', $name );
 		}
 
 		return false;
