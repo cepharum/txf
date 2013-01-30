@@ -39,7 +39,7 @@ class crypt
 {
 	/**
 	 * callback for generating IV
-	 * 
+	 *
 	 * @var function
 	 */
 
@@ -52,9 +52,9 @@ class crypt
 	 */
 
 	protected $cryptModule = null;
-	
+
 	/**
-	 * handle of a shared module used by multiple instances of crypt missing 
+	 * handle of a shared module used by multiple instances of crypt missing
 	 * provision of specific module overruling this one
 	 *
 	 * @var resource
@@ -83,11 +83,11 @@ class crypt
 	}
 
 	/**
-	 * Conveniently wraps constructor of class to instantly chain calls of 
+	 * Conveniently wraps constructor of class to instantly chain calls of
 	 * methods.
 	 *
-	 * @param function $ivGenerator callback method providing constant IV to use 
-	 * @param resource $module result of calling mcrypt_module_open() 
+	 * @param function $ivGenerator callback method providing constant IV to use
+	 * @param resource $module result of calling mcrypt_module_open()
 	 * @return crypt
 	 */
 
@@ -112,7 +112,7 @@ class crypt
 
 	/**
 	 * Extract key from context preparing in context if missing.
-	 * 
+	 *
 	 * This method must be called once on initialization due to accessing and
 	 * optionally adjusting set of cookies. It's thus implicitly called on
 	 * importing this class.
@@ -248,7 +248,10 @@ class crypt
 		$hash      = substr( $decrypted, 0, 20 );
 
 		if ( sha1( $cleartext, true ) !== $hash )
+		{
+			log::error( 'decryption failed' );
 			throw new \InvalidArgumentException( 'decryption failed' );
+		}
 
 
 		return $cleartext;

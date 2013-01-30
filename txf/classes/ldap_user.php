@@ -238,6 +238,10 @@ class ldap_user extends user
 		{
 			$match = $this->server->searchSub( sprintf( $this->setup->read( 'searchById', '(uidNumber=%d)' ), $userIdOrLoginName ), $this->setup->basedn );
 		}
+		else if ( uuid::isValid( $userIdOrLoginName ) )
+		{
+			$match = $this->server->searchSub( sprintf( $this->setup->read( 'searchByUuid', '(entryUUID=%s)' ), $userIdOrLoginName ), $this->setup->basedn );
+		}
 		else
 		{
 			$match = $this->server->searchSub( sprintf( $this->setup->read( 'searchByLogin', '(uid=%s)' ), $userIdOrLoginName ), $this->setup->basedn );

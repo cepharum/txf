@@ -225,7 +225,17 @@ class session	// don't derive from anything external here!!! That's breaking maj
 		if ( trim( $this->storable ) )
 		{
 			if ( data::autoType( config::get( 'session.encrypt', false ), 'boolean' ) )
-				$space = unserialize( crypt::create()->decrypt( $this->storable ) );
+			{
+				try
+				{
+					$space = unserialize( crypt::create()->decrypt( $this->storable ) );
+				}
+				catch ( \InvalidArgumentException $e )
+				{
+					log::warning( 'session lost due to failed decryption, might be okay if browser lost cookie in between' );
+					$space = array();
+				}
+			}
 			else
 				$space = unserialize( $this->storable );
 
