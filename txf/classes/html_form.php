@@ -184,6 +184,8 @@ class html_form implements widget
 
 			$this->setRow( $name, $label, call_user_func_array( $template, $args ) );
 		}
+		else
+			throw new \BadMethodCallException( sprintf( 'invalid call for method html_form::%s(), choose set*Row() instead', $method ) );
 
 
 		return $this;

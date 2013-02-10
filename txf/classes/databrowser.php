@@ -101,6 +101,15 @@ class databrowser implements widget
 	protected $form = null;
 
 	/**
+	 * Mark on whether form in $this->form was provided by caller explicitly or
+	 * not.
+	 *
+	 * @var boolean
+	 */
+
+	protected $callerForm = false;
+
+	/**
 	 * optional class name of rendered databrowser widget's code
 	 *
 	 * @var string
@@ -211,6 +220,28 @@ class databrowser implements widget
 	public function disableForm()
 	{
 		$this->form = false;
+
+		return $this;
+	}
+
+	/**
+	 * Provides HTML form to use instead of any internal one.
+	 *
+	 * This method fails if databrowser has started to managed its own form
+	 * internally before. You need to explicitly disable that form first.
+	 *
+	 * @param \de\toxa\txf\html_form $form form to be used by databrowser
+	 * @return \de\toxa\txf\databrowser current instance
+	 * @throws \InvalidArgumentException
+	 */
+
+	public function useForm( html_form $form )
+	{
+		if ( $this->form instanceof html_form )
+			throw new \InvalidArgumentException( 'must not replace form of databrowser' );
+
+		$this->form       = $form;
+		$this->callerForm = true;
 
 		return $this;
 	}
@@ -346,7 +377,10 @@ class databrowser implements widget
 	public function getForm()
 	{
 		if ( $this->form === null )
-			$this->form = html_form::create( $this->datasource->name() . '_browser' );
+		{
+			$this->form       = html_form::create( $this->datasource->name() . '_browser' );
+			$this->callerForm = false;
+		}
 
 		return $this->form;
 	}
@@ -388,7 +422,7 @@ class databrowser implements widget
 
 
 			// wrap rendered table view in form
-			if ( $form )
+			if ( $form && !$this->callerForm )
 				$code = (string) $form->addContent( $code );
 
 
