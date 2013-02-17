@@ -206,6 +206,11 @@ class manager extends \de\toxa\txf\singleton
 		header( 'Content-Type: text/html; charset=utf-8' );
 
 
+		// initialize variables from configuration
+		foreach ( config::get( 'view.variable', array() ) as $name => $content )
+			$this->variable( $name, $content );
+
+
 		// initialize content of viewports
 		foreach ( set::asHash( config::get( 'view.static', array() ) ) as $name => $content )
 			$this->writeInViewport( $name, $content );
