@@ -132,9 +132,9 @@ class nodeset
 			return ( $this->current = false );
 
 		if ( $this->cursor )
-			$this->cursor = ldap_next_entry( $this->link, $this->cursor );
+			$this->cursor = @ldap_next_entry( $this->link, $this->cursor );
 		else if ( $this->cursor === null )
-			$this->cursor = ldap_first_entry( $this->link, $this->result );
+			$this->cursor = @ldap_first_entry( $this->link, $this->result );
 
 		if ( !$this->cursor )
 			return ( $this->current = false );

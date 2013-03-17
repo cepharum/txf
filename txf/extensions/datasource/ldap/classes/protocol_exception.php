@@ -32,6 +32,6 @@ class protocol_exception extends \Exception
 {
 	public function __construct( $message, $ldapLink, $dn = null )
 	{
-		parent::__construct( sprintf( 'LDAP exception (%s): %s (%s)', $dn ? $dn : 'global', $message, ldap_error( $ldapLink ) ), ldap_errno( $ldapLink ) );
+		parent::__construct( sprintf( 'LDAP exception (%s): %s (%s)', $dn ? $dn : 'global', $message, @ldap_error( $ldapLink ) ), @ldap_errno( $ldapLink ) );
 	}
 }

@@ -107,7 +107,7 @@ class attribute
 		if ( $this->faking )
 			return $atIndex === null ? array() : null;
 
-		$values = ldap_get_values( $this->node->getLink(), $this->node->getID(), $this->name );
+		$values = @ldap_get_values( $this->node->getLink(), $this->node->getID(), $this->name );
 		if ( is_array( $values ) && array_key_exists( 'count', $values ) )
 			unset( $values['count'] );
 
@@ -151,7 +151,7 @@ class attribute
 
 			if ( $this->node->isAdjusting() )
 				$this->node->adjust( $this, $values );
-			else if ( !ldap_modify( $this->node->getLink(), $this->node->getDN(), array( $this->name => $values ) ) )
+			else if ( !@ldap_modify( $this->node->getLink(), $this->node->getDN(), array( $this->name => $values ) ) )
 				throw new protocol_exception( sprintf( 'failed to modify attribute %s', $this->name ), $this->node->getLink(), $this->node->getDN() );
 		}
 
@@ -196,7 +196,7 @@ class attribute
 			{
 				if ( $this->node->isAdjusting() )
 					$this->node->adjust( $this, array_diff( $this->read(), $values ) );
-				else if ( !ldap_mod_del( $this->node->getLink(), $this->node->getDN(), array( $this->name => $values ) ) )
+				else if ( !@ldap_mod_del( $this->node->getLink(), $this->node->getDN(), array( $this->name => $values ) ) )
 					throw new protocol_exception( sprintf( 'failed to delete values of attribute %s', $this->name ), $this->node->getLink(), $this->node->getDN() );
 			}
 		}

@@ -97,11 +97,11 @@ class server
 	{
 		if ( !is_resource( $this->link ) )
 		{
-			$this->link = ldap_connect( $this->host );
+			$this->link = @ldap_connect( $this->host );
 
 			// ensure to use LDAPv3 protocol (required for proper binding and TLS support)
-			ldap_set_option( $this->link, LDAP_OPT_PROTOCOL_VERSION, 3 );
-			ldap_set_option( $this->link, LDAP_OPT_REFERRALS, 0 );
+			@ldap_set_option( $this->link, LDAP_OPT_PROTOCOL_VERSION, 3 );
+			@ldap_set_option( $this->link, LDAP_OPT_REFERRALS, 0 );
 		}
 	}
 
@@ -114,7 +114,7 @@ class server
 	public function startTls()
 	{
 		// start TLS on connection
-		ldap_start_tls( $this->link );
+		@ldap_start_tls( $this->link );
 
 		return $this;
 	}
@@ -214,7 +214,7 @@ class server
 		if ( $query === null )
 			$query = 'objectClass=*';
 
-		return new nodeset( $this->link, ldap_search( $this->link, $baseDN ? $baseDN : $this->baseDN, $query ) );
+		return new nodeset( $this->link, @ldap_search( $this->link, $baseDN ? $baseDN : $this->baseDN, $query ) );
 	}
 
 	/**
@@ -230,7 +230,7 @@ class server
 		if ( $query === null )
 			$query = 'objectClass=*';
 
-		return new nodeset( $this->link, ldap_list( $this->link, $baseDN ? $baseDN : $this->baseDN, $query ) );
+		return new nodeset( $this->link, @ldap_list( $this->link, $baseDN ? $baseDN : $this->baseDN, $query ) );
 	}
 
 	/**
@@ -259,7 +259,7 @@ class server
 		if ( $query === null )
 			$query = 'objectClass=*';
 
-		return new nodeset( $this->link, ldap_read( $this->link, $baseDN ? $baseDN : $this->baseDN, $query ) );
+		return new nodeset( $this->link, @ldap_read( $this->link, $baseDN ? $baseDN : $this->baseDN, $query ) );
 	}
 
 	/**
@@ -286,10 +286,10 @@ class server
 			$attributes = array();
 
 
-		$resultset = ldap_read( $this->link, $dn, 'objectClass=*', $attributes );
+		$resultset = @ldap_read( $this->link, $dn, 'objectClass=*', $attributes );
 		if ( $resultset )
 		{
-			$entry = ldap_first_entry( $this->link, $resultset );
+			$entry = @ldap_first_entry( $this->link, $resultset );
 			if ( $entry )
 			{
 				return new node( $this->link, $entry );

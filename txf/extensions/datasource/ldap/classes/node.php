@@ -166,7 +166,7 @@ class node
 
 	public function getDN()
 	{
-		return $this->createAsDN ? $this->createAsDN : ldap_get_dn( $this->link, $this->node );
+		return $this->createAsDN ? $this->createAsDN : @ldap_get_dn( $this->link, $this->node );
 	}
 
 	/**
@@ -207,12 +207,12 @@ class node
 	{
 		if ( $this->cursor )
 		{
-			$name = ldap_next_attribute( $this->link, $this->node );
+			$name = @ldap_next_attribute( $this->link, $this->node );
 			$this->cursor = ( $name !== false );
 		}
 		else if ( $this->cursor === null )
 		{
-			$name = ldap_first_attribute( $this->link, $this->node );
+			$name = @ldap_first_attribute( $this->link, $this->node );
 			$this->cursor = ( $name !== false );
 		}
 
@@ -317,14 +317,14 @@ class node
 		if ( !$this->actuallyExists() )
 		{
 			// entry has been prepared to create a new entry ... it's time to add entry now
-			if ( !ldap_add( $this->link, $this->getDN(), $this->adjustment ) )
+			if ( !@ldap_add( $this->link, $this->getDN(), $this->adjustment ) )
 				throw new protocol_exception( 'failed to add entry', $this->link, $this->getDN() );
 
 			// convert instance to prevent it from adding further entries
-			$this->node = ldap_read( $this->link, $this->getDN(), "objectClass" );
+			$this->node = @ldap_read( $this->link, $this->getDN(), "objectClass" );
 			$this->createAsDN = null;
 		}
-		else if ( !ldap_modify( $this->link, $this->getDN(), $this->adjustment ) )
+		else if ( !@ldap_modify( $this->link, $this->getDN(), $this->adjustment ) )
 			throw new protocol_exception( 'failed to adjust', $this->link, $this->getDN() );
 
 		return $this;
@@ -369,7 +369,7 @@ class node
 
 		$dn = $this->getDN();
 
-		if ( !ldap_delete( $this->link, $dn ) )
+		if ( !@ldap_delete( $this->link, $dn ) )
 			throw new protocol_exception( 'failed to delete entry', $this->link, $this->getDN() );
 
 		// convert instance into manager of entry to be created
@@ -407,7 +407,7 @@ class node
 		else
 			$superRDN = trim( preg_replace( '/^[^,]+,/', '', $this->getDN() ) );
 
-		if ( !ldap_rename( $this->link, $this->getDN(), $newRDN, $superRDN, !!$keepPreviousRDN ) )
+		if ( !@ldap_rename( $this->link, $this->getDN(), $newRDN, $superRDN, !!$keepPreviousRDN ) )
 			throw new protocol_exception( 'failed to move entry', $this->link, $this->getDN() );
 
 		return $this;

@@ -115,10 +115,10 @@ abstract class user
 
 	/**
 	 * Reauthenticates user on restoring current user from session.
-	 * 
+	 *
 	 * This method is required since website is using multiple runtimes each
 	 * requiring current user to reauthenticate.
-	 * 
+	 *
 	 * @throws unauthorized_exception when authentication fails
 	 * @return user current instance for chaining calls
 	 */
@@ -135,7 +135,7 @@ abstract class user
 
 	/**
 	 * Drops any internally cached mark on user being authenticated.
-	 * 
+	 *
 	 * This is called e.g. on logging of current user. Since several portions of
 	 * code may keep a reference on current user instance, this is required to
 	 * actually enforce loss of authenticated state.
@@ -222,7 +222,7 @@ abstract class user
 
 	/**
 	 * Drops current user.
-	 * 
+	 *
 	 * This method is used to "log off" any current user.
 	 */
 
@@ -237,7 +237,7 @@ abstract class user
 			unset( self::$__current );
 		}
 
-		// gain access on persistent session data for dropping current user's 
+		// gain access on persistent session data for dropping current user's
 		// data there as well
 		$session =& self::session();
 		unset( $session['user'] );
@@ -283,8 +283,8 @@ abstract class user
 						try
 						{
 							// create instance of managing class
-							$class = new \ReflectionClass( $class );
-							$user = $class->newInstance();
+							$factory = new \ReflectionClass( $class );
+							$user = $factory->newInstance();
 
 							if ( $user instanceof self )
 								// provide setup data for configuring manager
@@ -298,6 +298,10 @@ abstract class user
 								}
 						}
 						catch ( \OutOfBoundsException $e ) {}
+						catch ( \ErrorException $e )
+						{
+							log::warning( "failed to search user source: ". $e );
+						}
 				}
 			}
 
