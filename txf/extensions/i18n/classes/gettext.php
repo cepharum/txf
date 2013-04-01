@@ -34,6 +34,12 @@ namespace de\toxa\txf;
  * This class is considered to be available by redirection, thus class is called
  * "de\toxa\txf\locale" here. See txf::redirectClass() for more.
  *
+ * Create POT files using xgettext like this.
+ *
+ * cd <TXF app folder>
+ * mkdir -p locale
+ * find -name "*.php" | xgettext -f /dev/stdin -L PHP -k_L -k_L:1,2 -o locale/inpas.pot
+ * 
  */
 
 
