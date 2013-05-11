@@ -3,25 +3,25 @@
 
 /**
  * Copyright 2012 Thomas Urban, toxA IT-Dienstleistungen
- * 
+ *
  * This file is part of TXF, toxA's web application framework.
- * 
- * TXF is free software: you can redistribute it and/or modify it under the 
- * terms of the GNU General Public License as published by the Free Software 
- * Foundation, either version 3 of the License, or (at your option) any later 
+ *
+ * TXF is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
  * version.
- * 
- * TXF is distributed in the hope that it will be useful, but WITHOUT ANY 
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR 
+ *
+ * TXF is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
  * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License along with 
+ *
+ * You should have received a copy of the GNU General Public License along with
  * TXF. If not, see http://www.gnu.org/licenses/.
  *
  * @copyright 2012, Thomas Urban, toxA IT-Dienstleistungen, www.toxa.de
  * @license GNU GPLv3+
  * @version: $Id$
- * 
+ *
  */
 
 
@@ -70,6 +70,9 @@ class pdo_statement implements statement
 		{
 			case 'command' :
 				return trim( $this->command ) ? trim( $this->command ) : null;
+			case 'failed' :
+				$this->hasExecuted( true );
+				return ( $this->executed === false );
 		}
 	}
 
@@ -118,7 +121,7 @@ class pdo_statement implements statement
 
 	public function errorText()
 	{
-		$this->hasExecuted();
+		$this->hasExecuted( true );
 
 		$info = $this->statement->errorInfo();
 		return $info[2];
@@ -132,15 +135,17 @@ class pdo_statement implements statement
 
 	public function errorCode()
 	{
-		$this->hasExecuted();
+		$this->hasExecuted( true );
 
 		return $this->statement->errorCode();
 	}
 
-	protected function hasExecuted()
+	protected function hasExecuted( $mayHaveFailed = false )
 	{
-		if ( !$this->executed )
+		if ( $this->executed === null || ( !$mayHaveFailed && !$this->executed ) )
 			throw new \BadMethodCallException( 'executing statement missing or failed before' );
+
+		return $this->executed;
 	}
 
 	public function cell()

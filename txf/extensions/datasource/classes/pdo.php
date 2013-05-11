@@ -87,7 +87,7 @@ class pdo extends singleton implements connection
 			$setup = config::get( 'datasource' );
 
 			$dsn = data::qualifyString( @$setup['dsn'] );
-			$username = @$setup['username'];
+			$username = @$setup['user'];
 			$password = @$setup['password'];
 		}
 

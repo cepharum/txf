@@ -102,7 +102,7 @@ use de\toxa\txf\shortcuts as shortcuts;
  */
 
 
-class sql_query implements query, browseable
+class sql_query implements query, \de\toxa\txf\browseable
 {
 
 	/**
@@ -213,7 +213,7 @@ class sql_query implements query, browseable
 
 		$table = \de\toxa\txf\_S($table,null,'')->trim();
 		if ( $table->isEmpty )
-			throw new InvalidArgumentException( 'bad table name' );
+			throw new \InvalidArgumentException( 'bad table name' );
 
 		$this->tables[$table->asUtf8] = false;
 	}
@@ -281,7 +281,7 @@ class sql_query implements query, browseable
 		$condition = static::qualifyTerm( $condition, $joinParameters );
 
 		if ( $condition->isEmpty )
-			throw new InvalidArgumentException( 'missing/invalid join condition' );
+			throw new \InvalidArgumentException( 'missing/invalid join condition' );
 
 
 		// finally inspect $table
@@ -311,12 +311,12 @@ class sql_query implements query, browseable
 			$dataset = \de\toxa\txf\_S($dataset,null,'');
 
 			if ( $dataset->isEmpty )
-				throw new InvalidArgumentException( 'bad table name' );
+				throw new \InvalidArgumentException( 'bad table name' );
 
 			$dataset = $dataset->asUtf8;
 
 			if ( $this->tables[$dataset] === false )
-				throw new InvalidArgumentException( 'cannot rejoin base table' );
+				throw new \InvalidArgumentException( 'cannot rejoin base table' );
 		}
 
 		$this->tables[$dataset] = array( $condition->asUtf8, $joinParameters );
@@ -328,12 +328,12 @@ class sql_query implements query, browseable
 	public function addProperty( $name, $alias = null, $parameters = null )
 	{
 		if ( !is_string( $name ) || !( $name = trim( $name ) ) )
-			throw new InvalidArgumentException( 'bad column name' );
+			throw new \InvalidArgumentException( 'bad column name' );
 
 		if ( is_null( $alias ) )
 			$alias = $name;
 		else if ( !is_string( $alias ) || !( $alias = trim( $alias ) ) )
-			throw new InvalidArgumentException( 'bad column alias' );
+			throw new \InvalidArgumentException( 'bad column alias' );
 
 		$this->columns[$alias] = $name;
 
@@ -345,7 +345,7 @@ class sql_query implements query, browseable
 	public function addCondition( $term, $union = true, $parameters = null )
 	{
 		if ( !is_string( $term ) || !( $term = trim( $term ) ) )
-			throw new InvalidArgumentException( 'bad condition term' );
+			throw new \InvalidArgumentException( 'bad condition term' );
 
 		$conditionParameters = array();
 
@@ -364,7 +364,7 @@ class sql_query implements query, browseable
 	public function addFilter( $term, $union = true, $parameters = null )
 	{
 		if ( !is_string( $term ) || !( $term = trim( $term ) ) )
-			throw new InvalidArgumentException( 'bad filter term' );
+			throw new \InvalidArgumentException( 'bad filter term' );
 
 		if ( !count( $this->filters ) )
 			$union = true;
@@ -379,7 +379,7 @@ class sql_query implements query, browseable
 	public function addGroup( $name )
 	{
 		if ( !is_string( $name ) || !( $name = trim( $name ) ) )
-			throw new InvalidArgumentException( 'bad group column' );
+			throw new \InvalidArgumentException( 'bad group column' );
 
 		$this->groups[] = $name;
 
@@ -389,7 +389,7 @@ class sql_query implements query, browseable
 	public function addOrder( $name, $ascending = true )
 	{
 		if ( !is_string( $name ) || !( $name = trim( $name ) ) )
-			throw new InvalidArgumentException( 'bad order column' );
+			throw new \InvalidArgumentException( 'bad order column' );
 
 		$this->orders[] = $name . ( $ascending ? ' ASC' : ' DESC');
 
@@ -475,9 +475,13 @@ class sql_query implements query, browseable
 
 		$query = $this->compile( $gettingMatchCount );
 
-		$statement = call_user_func( array( $this->connection, 'compile' ), $query );
+		$statement = $this->connection->compile( $query );
 
-		return call_user_func_array( array( $statement, 'execute' ), $this->compileParameters( $gettingMatchCount ) );
+		$statement->execute( $this->compileParameters( $gettingMatchCount ) );
+		if ( $statement->failed )
+			throw new datasource_exception( $statement );
+
+		return $statement;
 	}
 
 	public function __toString()
@@ -502,6 +506,12 @@ class sql_query implements query, browseable
 
 		$this->connection = $connection;
 	}
+
+	public function datasource()
+	{
+		return $this->connection;
+	}
+
 
 	/*
 	 * implementation of browseable interface

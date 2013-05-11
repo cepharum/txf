@@ -32,7 +32,7 @@ class sql_user extends user
 {
 	/**
 	 * unique numeric ID of user's record in database
-	 * 
+	 *
 	 * @var integer
 	 */
 
@@ -40,7 +40,7 @@ class sql_user extends user
 
 	/**
 	 * cached copy of user's record
-	 * 
+	 *
 	 * @var array
 	 */
 
@@ -48,7 +48,7 @@ class sql_user extends user
 
 	/**
 	 * cached mark on whether user is authenticated or not
-	 * 
+	 *
 	 * @var boolean
 	 */
 
@@ -56,7 +56,7 @@ class sql_user extends user
 
 	/**
 	 * set of cached datasource connections
-	 * 
+	 *
 	 * @var array
 	 */
 
@@ -64,7 +64,7 @@ class sql_user extends user
 
 	/**
 	 * configuration of user's datasource as provided in call to sql_user::configure()
-	 * 
+	 *
 	 * @var array
 	 */
 
@@ -76,7 +76,7 @@ class sql_user extends user
 
 	/**
 	 * Retrieves connection to configured datasource containing users database.
-	 * 
+	 *
 	 * @return datasource\connection connection to datasource
 	 */
 
@@ -85,11 +85,15 @@ class sql_user extends user
 		if ( !is_array( $this->configuration ) )
 			throw new \RuntimeException( 'missing user source configuration' );
 
-		$hash = hash( serialize( $this->configuration ) );
+		$hash = sha1( serialize( $this->configuration ) );
 
 		if ( !array_key_exists( $hash, self::$datasources ) )
 		{
-			$ds = call_user_func( array( 'datasource', $this->configuration['datasource'] ) );
+			if ( $this->configuration['datasource'] )
+				$ds = datasource::selectConfigured( $this->configuration['datasource'] );
+			else
+				$ds = datasource\pdo::current();
+
 			if ( $ds )
 				$ds->createDataset( $this->configuration['set'], array(
 						'id'        => 'INTEGER PRIMARY KEY',
@@ -108,7 +112,7 @@ class sql_user extends user
 
 	/**
 	 * Retrieves record of user selected by ID unless cached before.
-	 * 
+	 *
 	 * @return array record describing single user
 	 */
 
@@ -230,9 +234,59 @@ class sql_user extends user
 		return $this;
 	}
 
+
+
+	/**
+	 * Encrypts provided credentials in property of current instance.
+	 *
+	 * @param string $credentials password used on authentication
+	 */
+
+	private function saveCredentials( $credentials )
+	{
+		$this->credentials = crypt::create( function()
+		{
+			return ssha::get( $_COOKIE['_txf'] . $_SERVER['REMOTE_ADDR'] . $_COOKIE['_txf'] . $_SERVER['HTTP_HOST'], md5( $_SERVER['HTTP_USER_AGENT'] ) ) .
+				   ssha::get( $_SERVER['HTTP_HOST'] . $_COOKIE['_txf'] . $_SERVER['HTTP_USER_AGENT'] . $_COOKIE['_txf'], md5( $_SERVER['REMOTE_ADDR'] ) );
+		} )->encrypt( $credentials );
+	}
+
+	/**
+	 * Decrypts credentials previously stored in property of current instance.
+	 *
+	 * @return string password previously used on authentication
+	 */
+
+	private function getCredentials()
+	{
+		return crypt::create( function()
+		{
+			return ssha::get( $_COOKIE['_txf'] . $_SERVER['REMOTE_ADDR'] . $_COOKIE['_txf'] . $_SERVER['HTTP_HOST'], md5( $_SERVER['HTTP_USER_AGENT'] ) ) .
+				   ssha::get( $_SERVER['HTTP_HOST'] . $_COOKIE['_txf'] . $_SERVER['HTTP_USER_AGENT'] . $_COOKIE['_txf'], md5( $_SERVER['REMOTE_ADDR'] ) );
+		} )->decrypt( $this->credentials );
+	}
+
+	public function unauthenticate()
+	{
+		// drop all data associated with previously authenticated user
+		$this->rowID = $this->credentials = $this->record = null;
+	}
+
 	public function reauthenticate()
 	{
-		// TODO
+		exception::enterSensitive();
+
+		$record = $this->getRecord();
+
+		if ( @$record['password'] && ssha::get( $this->getCredentials(), ssha::extractSalt( @$record['password'] ) ) !== @$record['password'] )
+			throw new unauthorized_exception( 'invalid/missing credentials' );
+
+		exception::leaveSensitive();
+
+		// reset any previously cached copy of user's node
+		$this->record = null;
+
+		return $this;
 	}
 
 	/**
@@ -249,22 +303,28 @@ class sql_user extends user
 
 	public function authenticate( $credentials )
 	{
-		if ( !$this->isAuthenticated() )
+		if ( $this->isAuthenticated() )
+			return $this;
+
+		$record = $this->getRecord();
+
+		if ( $credentials && @$record['password'] )
 		{
-			$record = $this->getRecord();
-
-			if ( $credentials && @$record['password'] )
+			if ( ssha::get( $credentials, ssha::extractSalt( $record['password'] ) ) === $record['password'] )
 			{
-				if ( ssha::get( $credentials, ssha::extractSalt( $record['password'] ) ) === $record['password'] )
-				{
-					$this->_authenticated = true;
+				$this->_authenticated = true;
 
-					return $this;
-				}
+				// store credentials in session
+				$this->saveCredentials( $credentials );
+
+				// reset any previously cached copy of user's node
+				$this->record = null;
+
+				return $this;
 			}
-
-			throw new unauthorized_exception( 'invalid password' );
 		}
+
+		throw new unauthorized_exception( 'invalid/missing password' );
 	}
 
 	/**
@@ -276,9 +336,7 @@ class sql_user extends user
 	public function isAuthenticated()
 	{
 		if ( is_null( $this->_authenticated ) )
-		{
-			// check for permanent 
-		}
+			$this->reauthenticate();
 
 		return !!$this->_authenticated;
 	}
@@ -297,13 +355,13 @@ class sql_user extends user
 			if ( !array_key_exists( 'set', $configuration ) )
 				$configuration['set'] = 'users';
 
-			if ( !array_key_exists( 'datasource', $configuration ) )
-				$configuration['datasource'] = 'users';
+//			if ( !array_key_exists( 'datasource', $configuration ) )
+//				$configuration['datasource'] = 'users';
 
 			$this->configuration = $configuration;
 		}
 
-		return !!$this->datasource(); 
+		return !!$this->datasource();
 	}
 
 	/**
@@ -322,7 +380,9 @@ class sql_user extends user
 
 		$ds = $this->datasource();
 
-		$matches = $ds->allNumeric( sprintf( 'SELECT id FROM %s WHERE %s=?', $ds->quoteName( $this->configuration['set'] ), $ds->quoteName( $property ) ), $userIdOrLoginName );
+		$query = sprintf( 'SELECT id FROM %s WHERE %s=?', $ds->quoteName( $this->configuration['set'] ), $ds->quoteName( $property ) );
+
+		$matches = $ds->allNumeric( $query, $userIdOrLoginName );
 		if ( $matches && count( $matches ) === 1 && ctype_digit( trim( $matches[0][0] ) ) )
 		{
 			$this->rowID = intval( $matches[0][0] );

@@ -1,2 +1,2 @@
 <?php namespace de\toxa\txf; list( $href, $label, $class, $title, $external ) = $arguments ?>
-<a<?php echo view::wrapNotEmpty( html::classname( $class ), ' class="|"' ) ?><?php echo view::wrapNotEmpty( html::inAttribute( trim( $title ) ), ' title="|"' ) ?> href="<?php echo html::inAttribute( $href ) ?>"<?php if ( $external ) echo ' onclick="window.open(this.href);return false;"' ?>><?php echo $label ? $label : $href ?></a>
+<a<?php echo view::wrapNotEmpty( html::classname( $class ), ' class="|"' ) ?><?php echo view::wrapNotEmpty( html::inAttribute( trim( $title ) ), ' title="|"' ) ?> href="<?php echo html::inAttribute( $href, true ) ?>"<?php if ( $external ) echo ' onclick="window.open(this.href);return false;"' ?>><?php echo $label ? $label : $href ?></a>

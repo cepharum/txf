@@ -48,9 +48,9 @@ class html
 	 * @return string HTML code containing literal text, only
 	 */
 
-	public static function inAttribute( $value )
+	public static function inAttribute( $value, $escapeQuotesOnly = false )
 	{
-		return htmlspecialchars( strip_tags( $value ) );
+		return $escapeQuotesOnly ? strtr( $value, array( '"' => '&quot;' ) ) : htmlspecialchars( strip_tags( $value ) );
 	}
 
 	/**

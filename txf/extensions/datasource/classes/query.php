@@ -3,25 +3,25 @@
 
 /**
  * Copyright 2012 Thomas Urban, toxA IT-Dienstleistungen
- * 
+ *
  * This file is part of TXF, toxA's web application framework.
- * 
- * TXF is free software: you can redistribute it and/or modify it under the 
- * terms of the GNU General Public License as published by the Free Software 
- * Foundation, either version 3 of the License, or (at your option) any later 
+ *
+ * TXF is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
  * version.
- * 
- * TXF is distributed in the hope that it will be useful, but WITHOUT ANY 
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR 
+ *
+ * TXF is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
  * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License along with 
+ *
+ * You should have received a copy of the GNU General Public License along with
  * TXF. If not, see http://www.gnu.org/licenses/.
  *
  * @copyright 2012, Thomas Urban, toxA IT-Dienstleistungen, www.toxa.de
  * @license GNU GPLv3+
  * @version: $Id$
- * 
+ *
  */
 
 
@@ -31,7 +31,7 @@ namespace de\toxa\txf\datasource;
 /**
  * Query interface
  *
- * Conveniently features cumulative and distributed construction of a query to 
+ * Conveniently features cumulative and distributed construction of a query to
  * fetch records from a (set of) dataset(s).
  *
  * Since most methods are returning reference on current instance it is possible
@@ -62,7 +62,7 @@ namespace de\toxa\txf\datasource;
  *         ->limit( 10, 65 );
  *
  * @author <thomas.urban@toxa.de>
- * 
+ *
  */
 
 interface query
@@ -83,7 +83,7 @@ interface query
 	 * subselect and gets instantly compiled prior to joining here.
 	 *
 	 * The number of parameters must match number of markers in term.
-	 * 
+	 *
 	 * @param string|query $dataset name and optionally appended alias of dataset to join
 	 * @param string $condition condition for selecting columns of joined table
 	 * @param mixed $parameters array of parameters or first of additional arguments providing one parameter each
@@ -100,7 +100,7 @@ interface query
 	 * case $parameters may include some parameters replacing markers in term.
 	 *
 	 * The number of parameters must match number of markers in term.
-	 * 
+	 *
 	 * @param string $name property to fetch or term to evaluate on all matches
 	 * @param string $alias alias to assign for addressing fetched value in filter
 	 * @param mixed $parameters array of parameters or first of additional arguments providing one parameter each
@@ -111,20 +111,20 @@ interface query
 
 	/**
 	 * Requests to fetch records matching provided conditional term, only.
-	 * 
+	 *
 	 * Conditions provided here are selecting records of dataset(s) included in
 	 * query and thus apply prior to any optional grouping or late filtering.
-	 * 
+	 *
 	 * Parameter $union selects how to combine matches of currently added filter
 	 * with matches of all previously added filters. If true, union of matches
 	 * are returned. If false, merge of all matches is returned. First condition
 	 * of query is ignoring this selector.
-	 * 
+	 *
 	 * If term requires some parameters they are given in additional arguments
 	 * replacing existing parameter markers.
-	 * 
+	 *
 	 * The number of parameters must match number of markers in term.
-	 * 
+	 *
 	 * @param string $term term evaluating true on records/matches to keep
 	 * @param boolean $union true to select union of matches, false for merge
 	 * @param mixed $parameters array of parameters or first of additional arguments providing one parameter each
@@ -135,20 +135,20 @@ interface query
 
 	/**
 	 * Requests to remove matches failing on provided conditional term.
-	 * 
+	 *
 	 * Filters are applied after selecting matches depending on given conditions
 	 * and their optional grouping.
-	 * 
+	 *
 	 * Parameter $union selects how to combine matches of currently added filter
 	 * with matches of all previously added filters. If true, union of matches
 	 * are returned. If false, merge of all matches is returned. First condition
 	 * of query is ignoring this selector.
-	 * 
+	 *
 	 * If term requires some parameters they are given in additional arguments
 	 * replacing existing parameter markers.
-	 * 
+	 *
 	 * The number of parameters must match number of markers in term.
-	 * 
+	 *
 	 * @param string $term term evaluating true on records/matches to keep
 	 * @param boolean $union true to select union of matches, false for merge
 	 * @param mixed $parameters array of parameters or first of additional arguments providing one parameter each
@@ -159,7 +159,7 @@ interface query
 
 	/**
 	 * Requests to group resulting records by a single property.
-	 * 
+	 *
 	 * @param string $name name of property in dataset of query
 	 * @return query current instance for chaining calls
 	 */
@@ -168,10 +168,10 @@ interface query
 
 	/**
 	 * Selects another rule on sorting result to be applied.
-	 * 
+	 *
 	 * Any succeeding rule on sorting is used if all previously added rules
 	 * have equal result entries.
-	 * 
+	 *
 	 * @param string $name name of property in dataset of query
 	 * @param boolean $ascending if true sorting rule requests ascending order
 	 * @return query current instance for chaining calls
@@ -218,16 +218,24 @@ interface query
 
 	/**
 	 * Switches datasource this query is operating on when executing.
-	 * 
+	 *
 	 * This method may require special implementation of connection due to
 	 * semantical dependencies.
-	 * 
+	 *
 	 * Reconnecting datasource may be required after restoring a serialized
 	 * query, e.g. on having stored in session.
-	 * 
+	 *
 	 * @param connection $connection datasource to use furtheron
 	 */
 
 	public function reconnectDatasource( connection $connection );
+
+	/**
+	 * Fetches datasource current query is operating on.
+	 *
+	 * @return \de\toxa\txf\datasource\connection
+	 */
+
+	public function datasource();
 }
 

@@ -175,6 +175,9 @@ class html_form implements widget
 				case 'file' :
 					$args = array( $name, $label );
 					break;
+				case 'password' :
+					$args = array( $name );
+					break;
 				default :
 					$args = array( $name, $value );
 			}
