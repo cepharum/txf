@@ -50,7 +50,7 @@ interface browseable
 	 * @return browseable current instance
 	 */
 
-	public function sortBy( $property, $ascending );
+	public function sortBy( $property, $ascending = true );
 
 	/**
 	 * Requests to fetch selected number of items on fetching data.

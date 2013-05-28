@@ -70,6 +70,14 @@ class sql_user extends user
 
 	private $configuration = null;
 
+	/**
+	 * encrypted credentials of current user
+	 *
+	 * @var string
+	 */
+
+	private $credentials = null;
+
 
 
 	public function __construct() {}
@@ -83,31 +91,61 @@ class sql_user extends user
 	protected function datasource()
 	{
 		if ( !is_array( $this->configuration ) )
-			throw new \RuntimeException( 'missing user source configuration' );
+			throw new \RuntimeException( _L('Missing user source configuration.') );
 
-		$hash = sha1( serialize( $this->configuration ) );
+		$conf = $this->configuration;
+		$hash = sha1( serialize( $conf ) );
 
 		if ( !array_key_exists( $hash, self::$datasources ) )
 		{
-			if ( $this->configuration['datasource'] )
-				$ds = datasource::selectConfigured( $this->configuration['datasource'] );
+			// gain access on datasource configured to contain users
+			if ( $conf['datasource'] )
+				$ds = datasource::selectConfigured( $conf['datasource'] );
 			else
 				$ds = datasource\pdo::current();
 
-			if ( $ds )
-				$ds->createDataset( $this->configuration['set'], array(
-						'id'        => 'INTEGER PRIMARY KEY',
-						'uuid'      => 'CHAR(36) NOT NULL',
-						'loginname' => 'CHAR(64) NOT NULL',
-						'password'  => 'CHAR(64) NOT NULL',
-						'name'      => 'CHAR(128)',
-						) );
+			// create dataset in datasource on demand
+			if ( !$ds->createDataset( $conf['set'], array(
+						$this->colname( 'uuid' )      => 'CHAR(36) NOT NULL',
+						$this->colname( 'loginname' ) => 'CHAR(64) NOT NULL',
+						$this->colname( 'password' )  => 'CHAR(128) NOT NULL',
+						$this->colname( 'name' )      => 'CHAR(128)',
+						) ) )
+				throw $ds->exception( _L('failed to created dataset for managing users') );
+
+			// ensure to have a single user at least by default
+			$count = $ds->cell( sprintf( 'SELECT COUNT(*) FROM %s', $ds->quoteName( $conf['set'] ) ) );
+			if ( trim( $count ) === '0' )
+			{
+				$ctx = $this;
+
+				$ds->transaction()->wrap( function( $conn ) use ( $ctx, $conf )
+				{
+					if ( !$conn->test( sprintf( 'INSERT INTO %s (id,%s,%s,%s,%s) VALUES (?,?,?,?,?)',
+							$conn->quoteName( $conf['set'] ), $ctx->colname( 'uuid' ),
+							$ctx->colname( 'loginname' ), $ctx->colname( 'password' ),
+							$ctx->colname( 'name' ) ),
+							$conn->nextID ( $conf['set'] ), uuid::createRandom(),
+							'admin', ssha::get( 'nimda' ),
+							_L('Admin User') ) )
+						throw $conn->exception( _L('failed to create default user') );
+
+					return true;
+				} );
+			}
 
 			self::$datasources[$hash] = $ds;
 		}
 
-
 		return self::$datasources[$hash];
+	}
+
+	public function colname( $original )
+	{
+		if ( array_key_exists( 'properties', $this->configuration ) && array_key_exists( $original, $this->configuration['properties'] ) )
+			return $this->configuration['properties'][$original];
+
+		return $original;
 	}
 
 	/**
@@ -124,7 +162,11 @@ class sql_user extends user
 		{
 			$ds = $this->datasource();
 
-			$this->record = $ds->row( sprintf( 'SELECT * FROM %s WHERE id=?', $ds->quoteName( $this->configuration['set'] ) ), $this->rowID );
+			$this->record = array();
+
+			// translate property names according to configuration
+			foreach ( $ds->row( sprintf( 'SELECT * FROM %s WHERE id=?', $ds->quoteName( $this->configuration['set'] ) ), $this->rowID ) as $name => $value )
+				$this->record[$this->colname( $name )] = $value;
 		}
 
 		return $this->record;
@@ -225,7 +267,10 @@ class sql_user extends user
 				// update property in datasource
 				$ds = static::datasource();
 
-				$ds->query( sprintf( 'UPDATE %s SET %s=? WHERE id=?', $ds->quoteName( $this->configuration['set'] ), $ds->quoteName( $propertyName ) ), $propertyValue, $this->rowID );
+				if ( $propertyName == 'password' )
+					$propertyValue = ssha::get( $propertyValue );
+
+				$ds->query( sprintf( 'UPDATE %s SET %s=? WHERE id=?', $ds->quoteName( $this->configuration['set'] ), $ds->quoteName( $this->colname( $propertyName ) ) ), $propertyValue, $this->rowID );
 
 				// update value in cached copy of record as well
 				$this->record[$propertyName] = $propertyValue;
@@ -277,8 +322,9 @@ class sql_user extends user
 		exception::enterSensitive();
 
 		$record = $this->getRecord();
+		$token  = @$record['password'];
 
-		if ( @$record['password'] && ssha::get( $this->getCredentials(), ssha::extractSalt( @$record['password'] ) ) !== @$record['password'] )
+		if ( $token && $this->credentials && ssha::get( $this->getCredentials(), ssha::extractSalt( $token ) ) !== $token )
 			throw new unauthorized_exception( 'invalid/missing credentials' );
 
 		exception::leaveSensitive();
@@ -306,11 +352,15 @@ class sql_user extends user
 		if ( $this->isAuthenticated() )
 			return $this;
 
-		$record = $this->getRecord();
 
-		if ( $credentials && @$record['password'] )
+		exception::enterSensitive();
+
+		$record = $this->getRecord();
+		$token  = @$record['password'];
+
+		if ( $credentials && $token )
 		{
-			if ( ssha::get( $credentials, ssha::extractSalt( $record['password'] ) ) === $record['password'] )
+			if ( ssha::get( $credentials, ssha::extractSalt( $token ) ) === $token )
 			{
 				$this->_authenticated = true;
 
@@ -319,12 +369,16 @@ class sql_user extends user
 
 				// reset any previously cached copy of user's node
 				$this->record = null;
-
-				return $this;
 			}
 		}
 
-		throw new unauthorized_exception( 'invalid/missing password' );
+		exception::leaveSensitive();
+
+
+		if ( $this->_authenticated )
+			return $this;
+
+		throw new unauthorized_exception( _L('invalid/missing password.') );
 	}
 
 	/**
@@ -335,7 +389,7 @@ class sql_user extends user
 
 	public function isAuthenticated()
 	{
-		if ( is_null( $this->_authenticated ) )
+		if ( is_null( $this->_authenticated ) && $this->credentials )
 			$this->reauthenticate();
 
 		return !!$this->_authenticated;
@@ -376,7 +430,7 @@ class sql_user extends user
 
 	protected function search( $userIdOrLoginName )
 	{
-		$property = ctype_digit( trim( $userIdOrLoginName ) ) ? 'id' : 'loginname';
+		$property = ctype_digit( trim( $userIdOrLoginName ) ) ? 'id' : $this->colname( 'loginname' );
 
 		$ds = $this->datasource();
 

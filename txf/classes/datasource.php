@@ -46,6 +46,7 @@ namespace de\toxa\txf;
  * retrieves connection to explicitly selected default datasource or first
  * configured datasource.
  *
+ * Datasources are defined in configuration.
  */
 
 class datasource
@@ -72,6 +73,18 @@ class datasource
 	/**
 	 * Ensures to read set of connection definitions from configuration.
 	 *
+	 * This method is prefetching all named datasource definitions from current
+	 * configuration. A named datasource link (here called "customlink") is
+	 * defined like this:
+	 *
+	 * <datasource>
+	 *  <link>
+	 *   <id>customlink</id>
+	 *   <dsn>DSN of my datasource</dsn>
+	 *   <user>myloginname</user>
+	 *   <password>mysecretpassword</password>
+	 *  </link>
+	 * </datasource>
 	 */
 
 	protected static function getLinks()
