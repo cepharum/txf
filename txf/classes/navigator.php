@@ -200,7 +200,7 @@ class navigator implements widget
 		// create compact description of new item to be collected internally
 		$newItem = array_filter( compact( 'name', 'label', 'action', 'asset', 'selected', 'sub' ), function( $property ) { return $property !== null; } );
 
-		if ( $selected )
+		if ( $selected !== null )
 			$this->autoselect( false );
 
 
