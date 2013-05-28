@@ -190,13 +190,17 @@ class pdo extends singleton implements connection
 
 	protected function __fastQuery( $retrievor, $arguments )
 	{
+		// compile statement
 		$stmt = $this->compile( array_shift( $arguments ) );
 
-		if ( !call_user_func_array( array( $stmt, 'execute' ), $arguments ) )
+		// execute compiled statement
+		if ( !call_user_func_array( array( $stmt, 'execute' ), $arguments ) || $stmt->failed )
 			throw new datasource_exception( $stmt );
 
+		// read result using optionally named method of compiled statement
 		$match = $retrievor ? call_user_func( array( $stmt, $retrievor ) ) : true;
 
+		// close statement
 		$stmt->close();
 
 		return $match;
@@ -425,5 +429,18 @@ class pdo extends singleton implements connection
 
 
 		return $previousId;
+	}
+
+	/**
+	 * Retrieves exception instance bound to current datasource connection for
+	 * describing an occurred error.
+	 *
+	 * @param string $message optional custom message describing context of error
+	 * @return datasource_exception
+	 */
+
+	public function exception( $message = null )
+	{
+		return new datasource_exception( $this, $message );
 	}
 }
