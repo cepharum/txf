@@ -170,7 +170,7 @@ class application
 
 		if ( empty( $frames ) )
 			// require both application and script selector
-			throw new http_exception( 400 );
+			throw new http_exception( 400, 'Request missing application. Check your setup!' );
 
 		// extract information on application folder and name
 		$application->name = array_shift( $frames );
