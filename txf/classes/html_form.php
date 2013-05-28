@@ -200,9 +200,9 @@ class html_form implements widget
 	 * @return html_form created instance
 	 */
 
-	public static function create( $name )
+	public static function create( $name, $class = null )
 	{
-		return new static( $name );
+		return new static( $name, $class );
 	}
 
 	/**
@@ -589,8 +589,8 @@ EOT
 		$rows = array_filter( $this->rows, function( $row ) { return !!count( $row ); } );
 		$rows = array_map( function( $row ) use ( $template )
 		{
-			$label = view::wrapNotEmpty( @$row['label'], '', "\n" );
-			$code  = view::wrapNotEmpty( @$row['htmlCode'], '', "\n" );
+			$label = view::wrapNotEmpty( @$row['label'], '', '' );
+			$code  = view::wrapNotEmpty( @$row['htmlCode'], '', '' );
 			$hint  = view::wrapNotEmpty( @$row['hint'], '<span class="hint">', "</span>\n" );
 			$error = view::wrapNotEmpty( @$row['error'], '<span class="error">', "</span>\n" );
 
