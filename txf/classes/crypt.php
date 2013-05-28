@@ -83,6 +83,17 @@ class crypt
 	}
 
 	/**
+	 * Detects whether current runtime environment supports crypting or not.
+	 *
+	 * @return boolean true if crypting is available, false otherwise
+	 */
+
+	public static function supported()
+	{
+		return is_callable( 'mcrypt_module_open' );
+	}
+
+	/**
 	 * Conveniently wraps constructor of class to instantly chain calls of
 	 * methods.
 	 *
@@ -104,7 +115,7 @@ class crypt
 
 	protected static function getModule()
 	{
-		if ( self::$module === null )
+		if ( self::$module === null && static::supported() )
 			self::$module = mcrypt_module_open( MCRYPT_3DES, null, MCRYPT_MODE_CFB, null );
 
 		return self::$module;
@@ -189,7 +200,7 @@ class crypt
 	public function encrypt( $cleartext )
 	{
 		// pass back cleartext if mcrypt is missing
-		if ( !is_callable( 'mcrypt_module_open' ) )
+		if ( !static::supported() )
 		{
 			log::warning( 'missing mcrypt for actually encrypting data, keeping it cleartext' );
 			return $cleartext;
