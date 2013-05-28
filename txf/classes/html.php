@@ -226,7 +226,7 @@ class html
 
 		foreach ( $arrData as $header => $cell )
 		{
-			$cell = is_callable( $cellFormat ) ? call_user_func( $cellFormat, $header, $cell, $arrData ) : htmlspecialchars( $cell );
+			$cell = is_callable( $cellFormat ) ? call_user_func( $cellFormat, $cell, $header, $arrData, null ) : htmlspecialchars( $cell );
 			if ( $cell !== null )
 			{
 				$rowClass = ( ( $rowIndex % 2 ) ? 'even' : 'odd' ) . ( $rowIndex ? '' : ' first' ) . ( ( ++$rowIndex == count( $arrData ) ) ? ' last' : '' );
