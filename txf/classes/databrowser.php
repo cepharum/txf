@@ -353,7 +353,7 @@ class databrowser implements widget
 		if ( is_callable( $this->columns[$name]['formatter'] ) )
 			$value = call_user_func( $this->columns[$name]['formatter'], $value, $name, $item, $itemId );
 
-		return $value !== null ? $value : _L( '-' );
+		return $value !== null ? $value : _L('-');
 	}
 
 	/**
@@ -378,7 +378,7 @@ class databrowser implements widget
 	{
 		if ( $this->form === null )
 		{
-			$this->form       = html_form::create( $this->datasource->name() . '_browser' );
+			$this->form       = html_form::create( $this->datasource->name() . '_browser', $this->className );
 			$this->callerForm = false;
 		}
 
