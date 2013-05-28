@@ -48,7 +48,7 @@ class ssha
 
 		$hash = sha1( $value . $salt, true ) . $salt;
 
-		return $raw ? '{SSHA}' . base64_encode( $hash ) : $hash;
+		return $raw ? $hash : '{SSHA}' . base64_encode( $hash );
 	}
 
 	/**
@@ -61,7 +61,7 @@ class ssha
 	public static function extractSalt( $hash )
 	{
 		if ( substr( $hash, 0, 6 ) === '{SSHA}' )
-			return substr( base64_decode( substr( 6, $hash ) ), 20 );
+			return substr( base64_decode( substr( $hash, 6 ) ), 20 );
 
 		return substr( $hash, 20 );
 	}
