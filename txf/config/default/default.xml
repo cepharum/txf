@@ -1,5 +1,8 @@
 <?xml version="1.0"?>
 <config>
+	<!-- declare some defaults here -->
+	<default>
+	</default>
 	<view>
 		<!-- integrate CSS style definitions -->
 <!--
@@ -55,7 +58,7 @@
 				<debug><![CDATA[<pre id="debug">|</pre>]]></debug>
 			</wrap>
 		</viewport>
-		<!-- move viewport "title" from region "main" to "header" --> 
+		<!-- move viewport "title" from region "main" to "header" -->
 <!--
 		<region>
 			<name>head</name>
@@ -69,4 +72,24 @@
 		</region>
 -->
 	</view>
+	<user>
+		<sources>
+			<setup>
+				<mycustomsetup>
+					<type>sql</type>
+					<!-- optional properties -->
+					<datasource>name_particular_datasource_to_use_instead_of_current_one</datasource>
+					<set>myusertable</set>
+					<properties>
+						<id>different_name_of_id_column</id>
+						<uuid>different_name_of_uuid_column</uuid>
+						<loginname>different_name_of_loginname_column</loginname>
+						<name>different_name_of_name_column</name>
+						<password>different_name_of_password_column</password>
+					</properties>
+				</mycustomsetup>
+			</setup>
+			<enabled>mycustomsetup</enabled>
+		</sources>
+	</user>
 </config>
