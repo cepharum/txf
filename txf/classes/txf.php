@@ -153,6 +153,7 @@ class txf extends singleton
 		define( 'TXF_APPLICATION_PATH', $this->context->application->pathname );
 		define( 'TXF_APPLICATION_URL', $this->context->application->url );
 		define( 'TXF_SCRIPT_PATH', $this->context->application->script );
+		define( 'TXF_SCRIPT_NAME', pathinfo( TXF_SCRIPT_PATH, PATHINFO_FILENAME ) );
 
 		// start runtime configuration support
 		config::init();
@@ -457,6 +458,9 @@ class txf extends singleton
 
 	public static function redirectTo( $url )
 	{
+		if ( func_num_args() > 1 )
+			$url = call_user_func_array( array( __NAMESPACE__ . '\context', 'scriptURL' ), func_get_args() );
+
 		header( 'Location: ' . $url );
 
 		view::callDisableOutput();
