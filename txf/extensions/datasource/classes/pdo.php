@@ -27,6 +27,7 @@
 
 namespace de\toxa\txf\datasource;
 
+use de\toxa\txf as txf;
 use de\toxa\txf\config as config;
 use de\toxa\txf\data as data;
 use de\toxa\txf\singleton as singleton;
@@ -300,6 +301,8 @@ class pdo extends singleton implements connection
 		}
 		catch ( datasource_exception $e )
 		{
+			txf\log::debug( sprintf( 'PDO exception on testing: %s', $e->getMessage() ) );
+
 			return false;
 		}
 	}
@@ -425,7 +428,7 @@ class pdo extends singleton implements connection
 			// there is no track of previously fetching ID for this dataset -> add now
 			$this->cell( 'INSERT INTO __keys (dataset,previousId) VALUES (?,?)', $dataset, $previousId = 1 );
 		else
-			$this->cell( 'UPDATE __keys SET previousId=? WHERE dataset=?', ++$previousId, $dataset );
+			$this->cell( 'UPDATE __keys SET previousId=? WHERE dataset=?', ( $previousId += 1 ), $dataset );
 
 
 		return $previousId;
