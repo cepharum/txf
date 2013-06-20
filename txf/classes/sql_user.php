@@ -102,7 +102,10 @@ class sql_user extends user
 			if ( $conf['datasource'] )
 				$ds = datasource::selectConfigured( $conf['datasource'] );
 			else
-				$ds = datasource\pdo::current();
+				$ds = datasource::selectConfigured( 'default' );
+
+			if ( !( $ds instanceof datasource\pdo ) )
+				throw new \UnexpectedValueException( _L('Unsupported kind of datasource for managing users.') );
 
 			// create dataset in datasource on demand
 			if ( !$ds->createDataset( $conf['set'], array(
