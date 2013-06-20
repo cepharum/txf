@@ -160,7 +160,8 @@ class html_form implements widget
 			}
 
 			// auto-integrate available input
-			$value = input::vget( $name, $value );
+			if ( $type !== 'button' )
+				$value = input::vget( $name, $value );
 
 			// recompile arguments to use in call for markup-template
 			switch ( $type )
