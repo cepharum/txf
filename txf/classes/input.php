@@ -466,7 +466,7 @@ class input extends singleton
 			{
 				case self::FORMAT_STRING :
 					return array(
-								'valid'   => true,
+								'valid'   => function( $value, $format ) { return !preg_match( '/<\s*script\W/i', $value ); },
 								'convert' => function( $value, $format ) { return strval( $value ); },
 								);
 

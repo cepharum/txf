@@ -74,6 +74,8 @@ catch ( http_exception $e )
 <head></head>
 <body>
 $html
+<hr />
+TXF
 </body>
 </html>
 EOT;
