@@ -206,7 +206,7 @@ class datasource
 
 	public static function __callStatic( $name, $arguments )
 	{
-		static::selectConfigured( $name );
+		return static::selectConfigured( $name === 'getDefault' ? 'default' : $name );
 	}
 }
 
