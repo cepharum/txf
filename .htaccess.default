@@ -25,3 +25,25 @@ Options -MultiViews
 #     url.rewrite-once        = ( "^/txf/.*$" => "/run.php" )
 #     url.redirect            = ( "^/?$"      => "/application/action" )
 #
+
+#
+# Notes on nginx
+#
+# For running TXF with nginx you need to update your configuration like this:
+#
+#  1) in your site's location stanza: add/replace try_files rule for rewriting requests:
+#
+#     try_files $uri /run.php?$args;
+#
+#  2) add location stanza for managing site's default:
+#
+#     location = / {
+#         rewrite / /application/action permanent;
+#     }
+#
+#     if your site is located in a subfolder, the stanza has to look like this:
+#
+#     location = /website/ {
+#         rewrite /website /website/application/action permanent;
+#     }
+#
