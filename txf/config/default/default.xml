@@ -72,13 +72,30 @@
 		</region>
 -->
 	</view>
+<!--
+	<datasource>
+		<link>
+			<id>nameOfLink</id>
+			<dsn>driver=dsn:of=link</dsn>
+			<user>loginname</user>
+			<password>secret token to login</password>
+		</link>
+		<link>
+			<id>nameOfAnotherLink</id>
+			<dsn>driver=dsn:of=separateLink</dsn>
+			<user>loginname</user>
+			<password>secret token to login here</password>
+		</link>
+		<default>valueOfIdInLinkToUseByDefault</default>
+	</datasource>
+-->
 	<user>
 		<sources>
 			<setup>
 				<mycustomsetup>
 					<type>sql</type>
 					<!-- optional properties -->
-					<datasource>name_particular_datasource_to_use_instead_of_current_one</datasource>
+					<datasource>idOfParticularDatasourceToUseInsteadOfCurrentOne</datasource>
 					<set>myusertable</set>
 					<properties>
 						<id>different_name_of_id_column</id>
