@@ -61,6 +61,7 @@ class input extends singleton
 	const FORMAT_GUID    = 'guid';
 
 
+
 	protected $sources = array();
 
 
@@ -409,6 +410,9 @@ class input extends singleton
 		if ( !$name )
 			throw new \InvalidArgumentException( 'invalid input variable name' );
 
+		// normalize format once to be used in normalized form
+		$format = self::normalizeFormat( $format );
+
 		foreach ( $this->sources as $source )
 			if ( $source['enabled'] )
 				if ( $checkPersistents || $source['volatile'] )
@@ -421,7 +425,6 @@ class input extends singleton
 						{
 							// got an array
 							// --> its elements are validated separately
-							$format = self::normalizeFormat( $format );
 							foreach ( $value as $key => $element )
 								if ( $this->valueIsValid( $element, $format ) )
 									$value[$key] = $this->convertValue( $element, $format );
@@ -460,6 +463,9 @@ class input extends singleton
 	{
 		if ( is_null( $format ) )
 			return array();
+
+		if ( is_callable( $format ) )
+			return $format;
 
 		if ( is_string( $format ) )
 			switch ( trim( $format ) )
@@ -534,6 +540,9 @@ class input extends singleton
 	{
 		$format = self::normalizeFormat( $format );
 
+		if ( is_callable( $format ) )
+			return !!call_user_func( $format, $value, 'valid' );
+
 		if ( is_callable( $format['prepare'] ) )
 			$value = call_user_func( $format['prepare'], $value, $format );
 
@@ -560,6 +569,9 @@ class input extends singleton
 	final protected function convertValue( $value, $format = null )
 	{
 		$format = self::normalizeFormat( $format );
+
+		if ( is_callable( $format ) )
+			return call_user_func( $format, $value, 'convert' );
 
 		if ( is_callable( $format['prepare'] ) )
 			$value = call_user_func( $format['prepare'], $value, $format );

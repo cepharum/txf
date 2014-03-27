@@ -35,12 +35,14 @@ namespace de\toxa\txf;
  * @param string $singular default text to show on single item
  * @param string $plural default text to show on no/multiple items
  * @param integer $count number of items text is considered to refer to
+ * @param string $fallbackSingular optional translation to provide on missing (match in) translation table for singular form
+ * @param string $fallbackPlural optional translation to provide on missing (match in) translation table for plural form
  * @return string localized version of text or related text in $singular/$plural on mismatch
  */
 
-function _L( $singular, $plural = null, $count = 1 )
+function _L( $singular, $plural = null, $count = 1, $fallbackSingular = null, $fallbackPlural = null )
 {
-	return locale::get( $singular, is_null( $plural ) ? $singular : $plural, $count );
+	return locale::get( $singular, is_null( $plural ) ? $singular : $plural, $count, $fallbackSingular, $fallbackPlural );
 }
 
 
@@ -84,3 +86,41 @@ function _A()
 	return set::wrap( $arguments );
 }
 
+/**
+ * Removes any <script>-tags from provided HTML code.
+ *
+ * @param string $code HTML code to be sanitized for not containing any script code
+ * @return string code escaped for proper embedding
+ */
+
+function _H( $code )
+{
+	return html::noscript( $code );
+}
+
+/**
+ * Escapes provided string to be used in value of an XML/HTML element's attribute.
+ *
+ * @param string $attribute code to embed in an attribute's value
+ * @return string code escaped for proper embedding
+ */
+
+function _HA( $attribute )
+{
+	return html::inAttribute( $code );
+}
+
+/**
+ * Retrieves first provided argument evaluating as true.
+ *
+ * This method is useful for implicitly providing some default values.
+ *
+ * @return mixed
+ */
+
+function _1()
+{
+	for ( $i = 0; $i < func_num_args(); $i++ )
+		if ( func_get_arg( $i ) )
+			return func_get_arg( $i );
+}

@@ -21,22 +21,29 @@ class model_editor_text implements model_editor_element
 
 	public function normalize( $input, $property, model_editor $editor )
 	{
-		return trim( $input );
+		$input = trim( $input );
+
+		return ( $input === '' ) ? null : $input;
 	}
 
 	public function validate( $input, $property, model_editor $editor )
 	{
-		if ( $this->isMandatory && $input === '' )
-			throw new \InvalidArgumentException( _L('This information is required.') );
+		if ( $input === null )
+		{
+			if ( $this->isMandatory )
+				throw new \InvalidArgumentException( _L('This information is required.') );
+		}
+		else
+		{
+			if ( $this->minLength > 0 && strlen( $input ) < $this->minLength )
+				throw new \InvalidArgumentException( _L('Your input is too short.') );
 
-		if ( $this->minLength > 0 && strlen( $input ) < $this->minLength )
-			throw new \InvalidArgumentException( _L('Your input is too short.') );
+			if ( $this->maxLength > 0 && strlen( $input ) < $this->maxLength )
+				throw new \InvalidArgumentException( _L('Your input is too long.') );
 
-		if ( $this->maxLength > 0 && strlen( $input ) < $this->maxLength )
-			throw new \InvalidArgumentException( _L('Your input is too long.') );
-
-		if ( $this->pattern && $input !== '' && !preg_match( $this->pattern, $input ) )
-			throw new \InvalidArgumentException( _L('Your input is invalid.') );
+			if ( $this->pattern && $input !== null && !preg_match( $this->pattern, $input ) )
+				throw new \InvalidArgumentException( _L('Your input is invalid.') );
+		}
 
 		return true;
 	}
@@ -44,6 +51,13 @@ class model_editor_text implements model_editor_element
 	public function render( html_form $form, $name, $input, $label, model_editor $editor )
 	{
 		$form->setTexteditRow( $name, $label, $input );
+
+		return $this;
+	}
+
+	public function renderStatic( html_form $form, $name, $input, $label, model_editor $editor )
+	{
+		$form->setRow( $name, $label, markup::inline( $input, 'static' ) );
 
 		return $this;
 	}

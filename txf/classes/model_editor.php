@@ -28,6 +28,14 @@ class model_editor
 	protected $form;
 
 	/**
+	 * desired name/ID of form managed in editor
+	 *
+	 * @var string
+	 */
+
+	protected $formName;
+
+	/**
 	 * class of model to be edited
 	 *
 	 * @var \ReflectionClass
@@ -50,6 +58,14 @@ class model_editor
 	 */
 
 	protected $enabled = array();
+
+	/**
+	 * set of additional permissions of current user on editing
+	 *
+	 * @var array
+	 */
+
+	protected $may = array( 'edit' => true );
 
 	/**
 	 * map of property names into definition of related editor element
@@ -75,18 +91,44 @@ class model_editor
 
 	protected $errors = array();
 
+	/**
+	 * set of implicitly or explicitly fixed properties
+	 *
+	 * @var array[string->mixed]
+	 */
 
-	protected function __construct( datasource\connection $datasource = null )
+	protected $fixedValues = null;
+
+	/**
+	 * Marks if editor was called for creating new item (instead of adjusting
+	 * existing one).
+	 *
+	 * @var boolean
+	 */
+
+	protected $onCreating = false;
+
+
+
+	protected function __construct( datasource\connection $datasource = null, $formName = null )
 	{
 		if ( $datasource === null )
 			$datasource = datasource::getDefault();
 
 		$this->datasource = $datasource;
+		$this->formName   = _1($formName,'model_editor');
 	}
 
-	public static function createOnModel( datasource\connection $datasource = null, \ReflectionClass $model )
+	/**
+	 *
+	 * @param \de\toxa\txf\datasource\connection $datasource
+	 * @param \ReflectionClass $model
+	 * @return model_editor
+	 */
+
+	public static function createOnModel( datasource\connection $datasource = null, \ReflectionClass $model, $formName = null )
 	{
-		$editor = new static( $datasource, $model, null );
+		$editor = new static( $datasource, $formName, $model, null );
 
 		$editor->class = $model;
 		$editor->item  = null;
@@ -94,10 +136,10 @@ class model_editor
 		return $editor;
 	}
 
-	public static function createOnItem( datasource\connection $datasource = null, model $item )
+	public static function createOnItem( datasource\connection $datasource = null, model $item, $formName = null )
 	{
 		$model  = new \ReflectionClass( $item );
-		$editor = new static( $datasource, $model, $item );
+		$editor = new static( $datasource, $formName, $model, $item );
 
 		$editor->class = $model;
 		$editor->item  = $item;
@@ -105,15 +147,15 @@ class model_editor
 		return $editor;
 	}
 
-	public static function create( datasource\connection $datasource, \ReflectionClass $model, model $item = null )
+	public static function create( datasource\connection $datasource, \ReflectionClass $model, model $item = null, $formName = null )
 	{
 		if ( !$item )
-			return static::createOnModel( $datasource, $model );
+			return static::createOnModel( $datasource, $model, $formName );
 
 		if ( !$model->isInstance( $item ) )
 			throw new \InvalidArgumentException( _L('Selected item is not instance of requested model.') );
 
-		return static::createOnItem( $datasource, $item );
+		return static::createOnItem( $datasource, $item, $formName );
 	}
 
 	public function enable( $property, $enabled = true )
@@ -121,6 +163,39 @@ class model_editor
 		$this->enabled[$property] = !!$enabled;
 
 		return $this;
+	}
+
+	/**
+	 * Grants (or revokes) permission to delete currently edited item.
+	 *
+	 * @param boolean $revoke true to revoke instead of granting permission
+	 * @return model_editor current editor instance
+	 */
+
+	public function mayDelete( $revoke = false )
+	{
+		$this->may['delete'] = !$revoke;
+
+		return $this;
+	}
+
+	/**
+	 * Grants (or revokes) permission to actually modify currently edited item.
+	 *
+	 * @param boolean $revoke true to revoke instead of granting permission
+	 * @return model_editor current editor instance
+	 */
+
+	public function mayEdit( $revoke = false )
+	{
+		$this->may['edit'] = !$revoke;
+
+		return $this;
+	}
+
+	public function isCreating()
+	{
+		return !!$this->onCreating;
 	}
 
 	public function describeField( $property, $label, model_editor_element $type = null )
@@ -157,12 +232,85 @@ class model_editor
 	public function form()
 	{
 		if ( !( $this->form instanceof html_form ) )
-			$this->form = html_form::create( 'model_editor' );
+			$this->form = html_form::create( $this->formName );
 
 		return $this->form;
 	}
 
-	public function processInput()
+	/**
+	 * Fetches all currently fixed data.
+	 *
+	 * @return array
+	 */
+
+	protected function getFixed()
+	{
+		if ( is_null( $this->fixedValues ) )
+		{
+			$this->fixedValues = input::vget( '_fix' );
+
+			if ( !is_array( $this->fixedValues ) )
+				$this->fixedValues = array();
+		}
+
+		return $this->fixedValues;
+	}
+
+	/**
+	 * Detects whether selected property is currently fixed or not.
+	 *
+	 * @param string $property name of property to test
+	 * @return boolean true if property is fixed, false otherwise
+	 */
+
+	protected function isFixedValue( $property )
+	{
+		$fixed = $this->getFixed();
+
+		return is_array( $fixed ) && array_key_exists( $property, $fixed );
+	}
+
+	/**
+	 * Explicitly requests to fix selected properties.
+	 *
+	 * @param string $property first property to fix, add more on demand
+	 * @return model_editor current editor instance
+	 */
+
+	public function fixOnEditing( $property )
+	{
+		$this->getFixed();
+
+		$properties = func_get_args();
+
+		foreach ( $properties as $property )
+			if ( !array_key_exists( $property, $this->fixedValues ) && $this->item )
+				$this->fixedValues[$property] = $this->item->__get( $property );
+
+		return $this;
+	}
+
+	public function fixProperty( $property, $value )
+	{
+		$this->getFixed();
+
+		if ( !array_key_exists( $property, $this->fixedValues ) )
+			$this->fixedValues[$property] = $value;
+
+		return $this;
+	}
+
+	public function __get( $property )
+	{
+		$fixed = $this->getFixed();
+
+		if ( is_array( $fixed ) && array_key_exists( $property, $fixed ) )
+			return $fixed[$property];
+
+		return input::vget( $this->propertyToField( $property ), $this->item ? $this->item->__get( $property ) : null );
+	}
+
+	public function processInput( $validatorCallback = null )
 	{
 		if ( $this->isEditable() && $this->form()->hasInput() )
 		{
@@ -171,6 +319,19 @@ class model_editor
 				case 'cancel' :
 					// permit closing editor due to user requesting to cancel editing
 					return true;
+
+				case 'delete' :
+					// delete current edited item
+					if ( $this->may['delete'] && $this->item )
+					{
+						if ( $this->item->delete() )
+							$this->item = null;
+
+						return true;
+					}
+
+					view::flash( _L('You must not delete this item!'), 'error' );
+					return false;
 
 				case 'save' :
 					// extract some protected properties from current instance to be used in transaction-wrapped callback
@@ -182,8 +343,15 @@ class model_editor
 					$item    = $this->item;
 					$errors  = array();
 
+					$this->onCreating = !$this->hasItem();
+					if ( !$this->onCreating && !$this->may['edit'] )
+					{
+						view::flash( _L('You must not edit this item!'), 'error' );
+						return false;
+					}
+
 					// wrap modification on model in transaction
-					$success = $source->transaction()->wrap( function() use ( $ctx, $class, $source, $fields, $enabled, &$item, &$errors )
+					$success = $source->transaction()->wrap( function() use ( $ctx, $class, $source, $fields, $enabled, &$item, &$errors, $validatorCallback )
 					{
 						$properties = array();
 
@@ -192,20 +360,18 @@ class model_editor
 								try
 								{
 									// normalize input
-									$input = input::vget( $property, $item ? $item->__get( $property ) : null );
-									$input = call_user_func( array( $definition['type'], 'normalize' ), $input, $property, $ctx );
+									$input = call_user_func( array( $definition['type'], 'normalize' ), $ctx->__get( $property ), $property, $ctx );
 
 									// validate input
-									$success = true;
 									$success = call_user_func( array( $definition['type'], 'validate' ), $input, $property, $ctx );
 
 									// save input if valid
 									if ( $success )
 									{
+										$properties[$property] = $input;
+
 										if ( $item )
 											$item->__set( $property, $input );
-										else
-											$properties[$property] = $input;
 									}
 									else
 										$errors[$property] = _L('Your input is invalid!');
@@ -217,6 +383,20 @@ class model_editor
 
 						if ( count( $errors ) )
 							return false;
+
+						if ( is_callable( $validatorCallback ) )
+						{
+							$localErrors = call_user_func( $validatorCallback, $properties, $errors );
+							if ( $localErrors === false || is_string( $localErrors ) || ( is_array( $localErrors ) && count( $localErrors ) ) )
+							{
+								if ( is_array( $localErrors ) )
+									$errors = array_merge( $errors, $localErrors );
+								else if ( is_string( $localErrors ) )
+									view::flash( $localErrors, 'error' );
+
+								return false;
+							}
+						}
 
 						if ( !$item )
 							$item = $class->getMethod( 'create' )->invoke( null, $source, $properties );
@@ -256,35 +436,59 @@ class model_editor
 			throw new \LogicException( _L('Model editor is not enabled.') );
 
 
-		if ( $this->item )
-			$this->form()->setHidden( 'id', $this->item->id );
+		$form = $this->form();
 
-		if ( !array_key_exists( 'list', $this->fields ) )
-			$this->form()->setHidden( 'list', input::vget( 'list' ) );
+		if ( $this->item )
+			$form->setHidden( 'id', $this->item->id );
+
+		if ( !array_key_exists( '_referer', $this->fields ) )
+			$form->setHidden( '_referer', input::vget( '_referer' ) );
+
+		$fixed = array();
 
 		foreach ( $this->fields as $property => $definition )
 			if ( !count( $this->enabled ) || !@$this->enabled[$property] )
 			{
-				$field = $this->propertyToField( $property );
-				$input = input::vget( $field, $this->item ? $this->item->__get( $property ) : null );
 				$label = $definition['label'];
+				$input = $this->__get( $property );
+				$field = $this->propertyToField( $property );
 
-				call_user_func( array( $definition['type'], 'render' ), $this->form(), $field, $input, $label, $this );
+				if ( $this->isFixedValue( $property ) )
+				{
+					$fixed[$property] = $input;
 
-				if ( array_key_exists( $property, $this->errors ) )
-					$this->form()->setRowError( $field, $this->errors[$property] );
+					call_user_func( array( $definition['type'], 'renderStatic' ), $form, $field, $input, $label, $this );
+				}
+				else
+				{
+					call_user_func( array( $definition['type'], 'render' ), $form, $field, $input, $label, $this );
 
-				$this->form()->setRowHint( $field, @$definition['hint'] );
-				$this->form()->setRowIsMandatory( $field, call_user_func( array( $definition['type'], 'isMandatory' ) ) );
+					if ( array_key_exists( $property, $this->errors ) )
+						$form->setRowError( $field, $this->errors[$property] );
+
+					$form->setRowHint( $field, @$definition['hint'] );
+					$form->setRowIsMandatory( $field, call_user_func( array( $definition['type'], 'isMandatory' ) ) );
+				}
 			}
 
-		return $this->form()
-			->setButtonRow( '_cmd', $this->item ? _L('Save') : _L('Create'), 'save' )
-			->setButtonRow( '_cmd', _L('Cancel'), 'cancel' )
-			->getCode();
+		if ( count( $fixed ) )
+			$form->setHidden( '_fix', $fixed );
+
+		// compile buttons to show at end of editor
+		if ( !$this->item || $this->may['edit'] )
+			$form->setButtonRow( '_cmd', $this->item ? _L('Save') : _L('Create'), 'save' );
+
+		$form->setButtonRow( '_cmd', _L('Cancel'), 'cancel' );
+
+		if ( $this->item && $this->may['delete'] )
+			$form->setButtonRow( '_cmd', _L('Delete'), 'delete' );
+
+
+		// return HTML code of editor
+		return $form->getCode();
 	}
 
-	protected function propertyToField( $propertyName )
+	public function propertyToField( $propertyName )
 	{
 		return $propertyName;
 	}

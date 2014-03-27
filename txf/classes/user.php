@@ -28,6 +28,18 @@
 namespace de\toxa\txf;
 
 
+/**
+ * Abstract implementation of user management providing generic functionality
+ * and declaring user management API.
+ *
+ * This class isn't relying on model API by intention for supporting user
+ * management w/o need for model support (e.g. for using reduced-size TXF). Same
+ * rule applies to integrating role management: this class prevents hard links
+ * to class role for supporting very simple user management not relying on
+ * additional classes such as role.
+ *
+ */
+
 abstract class user
 {
 	/**
@@ -132,6 +144,19 @@ abstract class user
 	 */
 
 	abstract public function isAuthenticated();
+
+	/**
+	 * Checks if user is authorized to act in requested role.
+	 *
+	 * @note keep this method loosely bound to class role for supporting user
+	 *       management not relying on roles.
+	 *
+	 * @param string|role $role role to check on current user
+	 * @param boolean $skipCache true to circumvent any caches used by User API implementors
+	 * @return boolean true if user is authorized to act in requested role
+	 */
+
+	abstract public function is( $role, $skipCache = false );
 
 	/**
 	 * Drops any internally cached mark on user being authenticated.
@@ -334,6 +359,7 @@ class guest_user extends user
 	public function authenticate( $credentials ) { return $this; }
 	public function reauthenticate() { return $this; }
 	public function isAuthenticated() { return false; }
+	public function is( $role, $skipCache = false ) { return false; }
 	public function unauthenticate() {}
 	protected function configure( $configuration ) {}
 	protected function search( $userIdOrLoginName )

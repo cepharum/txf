@@ -187,6 +187,12 @@ class ldap_user extends user
 		return ( $this->server->getBoundAs() === $this->userDN );
 	}
 
+	public function is( $role )
+	{
+		// @todo implement some role checking
+		return false;
+	}
+
 	public function unauthenticate()
 	{
 		// drop all data associated with previously authenticated user

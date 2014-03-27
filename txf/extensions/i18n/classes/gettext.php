@@ -34,12 +34,33 @@ namespace de\toxa\txf;
  * This class is considered to be available by redirection, thus class is called
  * "de\toxa\txf\locale" here. See txf::redirectClass() for more.
  *
+ * For using gettext configuration must be adopted to contain this XML-fragment:
+ *
+ * <txf>
+ *  <autoloader>
+ *   <redirect>
+ *    <source>locale</source>
+ *    <target>i18n\gettext</target>
+ *   </redirect>
+ *  </autoloader>
+ * </txf>
+ *
  * Create POT files using xgettext like this.
  *
  * cd <TXF app folder>
  * mkdir -p locale
- * find -name "*.php" | xgettext -f /dev/stdin -L PHP -k_L -k_L:1,2 -o locale/inpas.pot
- * 
+ * find -name "*.php" | xgettext -f /dev/stdin -L PHP -k_L -k_L:1,2 -o locale/<TXF app>.pot
+ *
+ * Any translated file must be put into created folder locale using further
+ * subfolders:
+ *
+ * # Create subfolder for translation's locale, e.g. "de_DE". Ensure to have a
+ *   translation for default locale configured in locale.language. Use shorter
+ *   locales for more common namings, such as "de" for any flavour of German.
+ * # Create another subfolder inside that locale's folder called "LC_MESSAGES".
+ * # Put translated file into that LC_MESSAGES folder. Rename it to <your app>.mo,
+ *   default.mo or <whatever is configured in locale.domain>.mo.
+ *
  */
 
 
@@ -102,6 +123,8 @@ class locale extends singleton
 			textdomain( $this->domain );
 		}
 
+		putenv( 'LC_ALL=' . $this->language );
+
 		if ( !setlocale( LC_ALL, $this->language ) )
 			log::error( 'could not select locale %s', $this->language );
 
@@ -110,7 +133,7 @@ class locale extends singleton
 		self::$collectionFile = config::get( 'locale.collect.file' );
 	}
 
-	public static function get( $singular, $plural, $count )
+	public static function get( $singular, $plural, $count = 1, $fallbackSingular = null, $fallbackPlural = null )
 	{
 		$count = abs( $count );
 
@@ -121,17 +144,16 @@ class locale extends singleton
 
 			switch ( self::$collectionMode )
 			{
+				case 'all' :
+					$collect = 1;
+					break;
 				case 'misses' :
+				default :
 					$collect = ( $translated === ( $count == 1 ? $singular : $plural ) );
 					break;
-				case 'all' :
-					$collect = true;
-					break;
-				default :
-					$collect = false;
 			}
 
-			if ( $collect && self::$collectionFile )
+			if ( $collect && self::$collectionFile && self::$collectionMode !== '' )
 			{
 				if ( !is_array( self::$collectionFileCache ) )
 				{
@@ -148,10 +170,19 @@ class locale extends singleton
 			}
 
 
-			return $translated;
+			if ( $collect !== true )
+				return $translated;
+
+			// requested optional collection due to missing proper translation
+			// -> process as if gettext isn't available at all
 		}
-		else
-			return ( $count == 1 ) ? $singular : $plural;
+
+		// missing i18n/l10n support
+		// -> provide matching fallback or lookup preferring the former over the latter
+		return ( $count == 1 ) ?
+					( $fallbackSingular !== null ? $fallbackSingular : $singular )
+				:
+					( $fallbackPlural !== null ? $fallbackPlural : $plural );
 	}
 
 	public static function writeMissesCollection()

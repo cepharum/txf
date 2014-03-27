@@ -365,13 +365,13 @@ EOT
 	 * manager first.
 	 *
 	 * @param string $viewportName name of page region to write into
-	 * @param string $viewportCode some code to append/prepend
+	 * @param string|null $viewportCode some code to append/prepend, omit for fetching viewport's current content
 	 * @param boolean $append if true, code is appended, otherwise it's prepended
 	 */
 
 	public static function viewport( $viewportName, $viewportCode = null, $append = true )
 	{
-		return static::current()->writeInViewport( $viewportName, $viewportCode, $append );
+		return static::current()->writeInViewport( $viewportName, $viewportCode !== null ? strval( $viewportCode ) : null, $append );
 	}
 
 	/**

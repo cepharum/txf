@@ -117,11 +117,7 @@ class html_form implements widget
 
 	public function __construct( $name, $class = null )
 	{
-		$name = trim( $name );
-		if ( !$name )
-			throw new \InvalidArgumentException( 'missing valid form name' );
-
-		$this->name = $name;
+		$this->rename( $name );
 
 		if ( $class !== null )
 			$this->class = trim( preg_replace( '/\s+/', ' ', $class ) );
@@ -153,10 +149,10 @@ class html_form implements widget
 			switch ( $type )
 			{
 				case 'selector' :
-					list( $name, $label, $options, $value ) = $arguments;
+					list( $name, $label, $options, $value ) = array_splice( $arguments, 0, 4 );
 					break;
 				default :
-					list( $name, $label, $value ) = $arguments;
+					list( $name, $label, $value ) = array_splice( $arguments, 0, 3 );
 			}
 
 			// auto-integrate available input
@@ -185,8 +181,14 @@ class html_form implements widget
 
 			// add row to form using markup-template for rendering content
 			$template = array( 'de\toxa\txf\markup', $type );
+			$code     = call_user_func_array( $template, $args );
 
-			$this->setRow( $name, $label, call_user_func_array( $template, $args ) );
+			// compile arguments to use on adding row (including extra information optionally given in call to this magic caller)
+			array_unshift( $arguments, $code );
+			array_unshift( $arguments, $label );
+			array_unshift( $arguments, $name );
+
+			call_user_func_array( array( &$this, 'setRow' ), $arguments );
 		}
 		else
 			throw new \BadMethodCallException( sprintf( 'invalid call for method html_form::%s(), choose set*Row() instead', $method ) );
@@ -215,6 +217,28 @@ class html_form implements widget
 	protected function idName()
 	{
 		return preg_replace( '/^[^a-z]+/i', '', md5( 'formid::' . application::current()->name . '::' . $this->name ) );
+	}
+
+	/**
+	 * Renames current form.
+	 *
+	 * @note Adjusting name of a form may have an impact on derived information
+	 *       such as internal IDs and thus may affect processing of form.
+	 *
+	 * @param string $newName new name of form to assign
+	 * @return \de\toxa\txf\html_form
+	 * @throws \InvalidArgumentException
+	 */
+
+	public function rename( $newName )
+	{
+		$name = trim( $newName );
+		if ( !$name )
+			throw new \InvalidArgumentException( 'missing valid form name' );
+
+		$this->name = $name;
+
+		return $this;
 	}
 
 	/**
@@ -609,7 +633,12 @@ EOT
 
 		$hidden = "<input type=\"hidden\" name=\"$idName\" value=\"$idValue\"/>";
 		foreach ( $this->hidden as $name => $value )
-			if ( $value !== null )
+			if ( is_array( $value ) )
+			{
+				foreach ( $value as $subName => $subValue )
+					$hidden .= '<input type="hidden" name="' . html::inAttribute( $name ) . '[' . html::inAttribute( $subName ) . ']" value="' . html::inAttribute( $subValue ) . '"/>';
+			}
+			else if ( $value !== null )
 				$hidden .= '<input type="hidden" name="' . html::inAttribute( $name ) . '" value="' . html::inAttribute( $value ) . '"/>';
 
 		$class = ( $this->class !== null ) ? ' class="' . html::inAttribute( $this->class ) . '"' : '';

@@ -436,8 +436,18 @@ class databrowser implements widget
 		return markup::paragraph( markup::emphasize( $text ) );
 	}
 
+	public function render()
+	{
+		return $this->getCode();
+	}
+
+/*
+ * disabled for __toString() mustn't throw exceptions frequently hardening bug hunting
+ * 
 	public function __toString()
 	{
 		return $this->getCode();
 	}
+ *
+ */
 }

@@ -232,7 +232,7 @@ class transaction
 
 		try
 		{
-			$result  = !!$processor( $this->connection );
+			$result  = !!call_user_func( $processor, $this->connection );
 			$result &= $this->end( $name, $result );
 
 			return $result;

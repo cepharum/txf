@@ -14,6 +14,13 @@ class model_editor_static implements model_editor_element
 		$this->name  = $name !== null ? trim( $name ) : uniqid( 'label' );
 	}
 
+	/**
+	 *
+	 * @param type $label
+	 * @param type $name
+	 * @return model_editor_static
+	 */
+
 	public static function create( $label, $name = null )
 	{
 		return new static( $label, $name );
@@ -34,6 +41,11 @@ class model_editor_static implements model_editor_element
 		$form->setRow( $this->name, $label, $this->label );
 
 		return $this;
+	}
+
+	public function renderStatic( html_form $form, $name, $input, $label, model_editor $editor )
+	{
+		return $this->render( $form, $name, $input, $label, $editor );
 	}
 
 	public function mandatory( $mandatory = true )

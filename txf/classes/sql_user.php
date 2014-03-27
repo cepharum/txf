@@ -78,6 +78,14 @@ class sql_user extends user
 
 	private $credentials = null;
 
+	/**
+	 * cached roles of current user
+	 *
+	 * @var array
+	 */
+
+	protected $roleCache = array();
+
 
 
 	public function __construct() {}
@@ -396,6 +404,26 @@ class sql_user extends user
 			$this->reauthenticate();
 
 		return !!$this->_authenticated;
+	}
+
+	/**
+	 * Checks if user is authorized to act in requested role.
+	 *
+	 * @param string|role $role role to check on current user
+	 * @param boolean $skipCache true to ignore cached results of previous tests
+	 * @return boolean true if user is authorized to act in requested role
+	 */
+
+	public function is( $role, $skipCache = false )
+	{
+		$roleName = trim( $role instanceof role ? $role->name : is_string( $role ) ? $role : '' );
+		if ( !$roleName )
+			throw new \InvalidArgumentException( 'invalid role' );
+
+//		if ( $skipCache || !array_key_exists( $roleName, $this->roleCache ) )
+			$this->roleCache[$roleName] = sql_role::select( $this->datasource(), $role )->isAdoptedByUser( $this );
+
+		return $this->roleCache[$roleName];
 	}
 
 	/**

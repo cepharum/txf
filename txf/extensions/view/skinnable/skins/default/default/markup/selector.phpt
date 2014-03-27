@@ -15,21 +15,25 @@ echo view::wrapNotEmpty( $label, "<label for=\"$name\">|:</label>" );
 ?>
 <span>
 	<select class="single" name="<?php echo $name ?>">
-<?php 
+<?php
 foreach ( $options as $option => $label )
 {
+/*
+ * disabled for breaking support for model_editor_selector() providing model instances per numeric ID
 	if ( is_integer( $option ) )
 	{
 		$attr   = ' value=""';
 		$option = $label;
 	}
 	else
+ *
+ */
 		$attr = ' value="' . html::inAttribute( $option ) . '"';
 
-	$checked = ( $option == $value ) ? ' selected="selected"' : '';
+	$checked = ( trim( $option ) === trim( $value ) ) ? ' selected="selected"' : '';
 
 ?>
 		<option<?php echo $attr . $checked ?>><?php echo htmlspecialchars( $label ) ?></option>
-<?php } ?>		
-	</select>	
+<?php } ?>
+	</select>
 </span>

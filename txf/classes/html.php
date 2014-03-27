@@ -69,6 +69,18 @@ class html
 	}
 
 	/**
+	 * Removes all scripting from provided code.
+	 *
+	 * @param string $code HTML code optionally containing scripting sections
+	 * @return string provided HTML code with any contained scripting sections removed
+	 */
+
+	public static function noscript( $code )
+	{
+		return preg_replace( '#<script\W.*</script>#i', '', $code );
+	}
+
+	/**
 	 * Reduces provided string to contain only characters valid for use as ID
 	 * of an HTML element.
 	 *

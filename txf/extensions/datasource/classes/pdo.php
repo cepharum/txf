@@ -98,9 +98,9 @@ class pdo extends singleton implements connection
 
 		$this->transaction = new transaction(
 									$this,
-									function( connection $c ) { return $c->link->beginTransaction(); },
-									function( connection $c ) { return $c->link->commit(); },
-									function( connection $c ) { return $c->link->rollback(); }
+									function( connection $c ) { txf\log::debug( "starting transaction" );  return $c->link->beginTransaction(); },
+									function( connection $c ) { txf\log::debug( "committing transaction" ); return $c->link->commit(); },
+									function( connection $c ) { txf\log::debug( "reverting transaction" ); return $c->link->rollBack(); }
 								);
 	}
 
@@ -215,7 +215,7 @@ class pdo extends singleton implements connection
 	 * @return boolean true on success, false on failure
 	 */
 
-	public function createDataset( $name, $definition )
+	public function createDataset( $name, $definition, $primaries = null )
 	{
 		$this->command = null;
 
@@ -225,11 +225,21 @@ class pdo extends singleton implements connection
 		if ( $this->exists( $name ) )
 			return true;
 
-		$query = $this->quoteName( 'id' ) . ' INTEGER PRIMARY KEY';
-		foreach ( $definition as $key => $type )
-			$query .= ",\n\t" . $this->quoteName( $key ) . ' ' . $type;
 
-		$query = 'CREATE TABLE ' . $this->quoteName( $name ) . "\n(\n\t$query\n)";
+		$rows = array(
+					'id' => $this->quoteName( 'id' ) . ' INTEGER PRIMARY KEY',
+					);
+
+		foreach ( $definition as $key => $type )
+			$rows[$key] = $type ? $this->quoteName( $key ) . ' ' . $type : null;
+
+		if ( is_array( $primaries ) && count( $primaries ) )
+			$rows[] = 'PRIMARY KEY (' . implode( ',', $primaries ) . ')';
+		else if ( !@$rows['id'] )
+			throw new \InvalidArgumentException( 'missing primary key declaration on dataset to create' );
+
+
+		$query = 'CREATE TABLE ' . $this->quoteName( $name ) . "\n(\n\t" . implode( ",\n\t", array_filter( $rows ) ) . "\n)";
 
 		return $this->test( $query );
 	}

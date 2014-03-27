@@ -144,10 +144,11 @@ interface connection
 	 *
 	 * @param string $name name of dataset (table) to create
 	 * @param array[string->string] $definition property names mapping into property type definitions
+	 * @param array $primaries names of properties used to build primary key, omit for "id"
 	 * @return boolean true on success, false on failure
 	 */
 
-	public function createDataset( $name, $definition );
+	public function createDataset( $name, $definition, $primaries = null );
 
 	/**
 	 * Retrieves new instance for programmatically compiling query for fetching
