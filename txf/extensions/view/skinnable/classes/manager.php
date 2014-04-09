@@ -28,12 +28,15 @@
 namespace de\toxa\txf\view\skinnable;
 
 
+use de\toxa\txf\application;
 use de\toxa\txf\variable_space;
-use de\toxa\txf\i18n\lang;
+use de\toxa\txf\exception;
+use de\toxa\txf\locale;
 use de\toxa\txf\data;
 use de\toxa\txf\config;
 use de\toxa\txf\txf;
 use de\toxa\txf\set;
+use de\toxa\txf\url;
 
 
 /**
@@ -198,7 +201,7 @@ class manager extends \de\toxa\txf\singleton
 				if ( $id === '' )
 					$id = md5( @$asset['url'] );
 
-				$this->assets[$id] = $asset;
+				$this->addAsset( $id, $asset['url'], $asset['type'], $asset['insertBefore'] );
 			}
 
 
@@ -214,6 +217,10 @@ class manager extends \de\toxa\txf\singleton
 		// initialize content of viewports
 		foreach ( set::asHash( config::get( 'view.static', array() ) ) as $name => $content )
 			$this->writeInViewport( $name, $content );
+
+
+		// process global widget to include custom output in every view
+		$this->processConfiguredWidgets();
 	}
 
 	/**
@@ -281,9 +288,9 @@ class manager extends \de\toxa\txf\singleton
 			{
 				$code = $this->engine->render( 'exception', variable_space::create( 'exception', $exception ) );
 			}
-			catch ( Exception $e )
+			catch ( \Exception $e )
 			{
-				$code = lang::get( 'failed to render exception' );
+				$code = locale::get( 'failed to render exception' );
 			}
 
 			$this->viewport( 'error', $code );
@@ -313,7 +320,7 @@ class manager extends \de\toxa\txf\singleton
 
 	protected static function simpleRenderException( \Exception $exception )
 	{
-		$trace = \de\toxa\txf\exception::renderTrace( \de\toxa\txf\exception::reduceExceptionTrace( $exception ) );
+		$trace = exception::reduceExceptionTrace( $exception, true );
 
 		return sprintf( <<<EOT
 <div class="exception-no-skin">
@@ -323,7 +330,7 @@ class manager extends \de\toxa\txf\singleton
 </div>
 EOT
 						, $exception->getMessage(), $exception->getCode(),
-						\de\toxa\txf\exception::reducePathname( $exception->getFile() ),
+						exception::reducePathname( $exception->getFile() ),
 						$exception->getLine(), $trace );
 	}
 
@@ -333,6 +340,7 @@ EOT
 	 * @param string $viewportName name of viewport to write into
 	 * @param string $viewportCode some code to append/prepend
 	 * @param boolean $append if true, code is appended, otherwise it's prepended
+	 * @return string|null
 	 * @throws \InvalidArgumentException
 	 */
 
@@ -367,11 +375,12 @@ EOT
 	 * @param string $viewportName name of page region to write into
 	 * @param string|null $viewportCode some code to append/prepend, omit for fetching viewport's current content
 	 * @param boolean $append if true, code is appended, otherwise it's prepended
+	 * @return string|null
 	 */
 
 	public static function viewport( $viewportName, $viewportCode = null, $append = true )
 	{
-		return static::current()->writeInViewport( $viewportName, $viewportCode !== null ? strval( $viewportCode ) : null, $append );
+		return static::current()->writeInViewport( $viewportName, $viewportCode !== null ? data::asString( $viewportCode ) : null, $append );
 	}
 
 	/**
@@ -441,17 +450,20 @@ EOT
 			if ( $blnIfNotExists && array_key_exists( $id, static::current()->assets ) )
 				return;
 
+			if ( url::isRelative( $source ) )
+				$source = application::current()->relativePrefix( $source );
+
 			$newAsset = array(
-							'url' => $source,
+							'url'  => $source,
 							'type' => $type,
 							);
 
 			if ( $insertBeforeId !== null )
 			{
-				if ( $insertBeforeIf === '*' || $insertBeforeId === true )
+				if ( $insertBeforeId === '*' || $insertBeforeId === true )
 					$offset = 0;
 				else
-					$offset = array_search( $insertBeforeId, array_keys( $static::current()->assets ) );
+					$offset = array_search( $insertBeforeId, array_keys( static::current()->assets ) );
 
 				if ( $offset !== false )
 				{
@@ -495,6 +507,31 @@ EOT
 			$output = ob_get_clean();
 
 		return $output;
+	}
+
+	/**
+	 * Embeds output of widgets in view as configured.
+	 *
+	 */
+
+	protected function processConfiguredWidgets()
+	{
+		foreach ( config::getList( 'view.widget' ) as $spec )
+		{
+			$target = $spec['target'];
+
+			$provider = array( $spec['provider']['class'], $spec['provider']['method'] );
+			if ( is_callable( $provider ) )
+			{
+				$args = $spec['provider']['selector'];
+				if ( !is_array( $args ) )
+					$args = array( $args );
+
+				$widget = call_user_func_array( $provider, $args );
+
+				$this->writeInViewport( $target, data::asString( $widget ), !$spec['prepend'] );
+			}
+		}
 	}
 
 	/**
@@ -609,7 +646,7 @@ EOT
 	 * This method is useful to suppress any output e.g. on trying to redirect.
 	 */
 
-	public static function disableOutput()
+	public function disableOutput()
 	{
 		$this->renderedBefore = true;
 	}
@@ -684,6 +721,16 @@ EOT
 	public static function selectSkin( $skinSelector )
 	{
 		return static::configure( 'skin', $skinSelector );
+	}
+
+	/**
+	 * Retrieves engine used by view manager.
+	 *
+	 * @return engine
+	 */
+
+	public static function engine() {
+		return static::current()->engine;
 	}
 }
 
