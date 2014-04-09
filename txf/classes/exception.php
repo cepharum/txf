@@ -58,7 +58,7 @@ class exception extends \Exception
 		return $asString ? self::renderTrace( $trace ) : $trace;
 	}
 
-	public static function reduceExceptionTrace( \Exception $exception )
+	public static function reduceExceptionTrace( \Exception $exception, $asString = false )
 	{
 		$trace = $exception->getTrace();
 
@@ -86,6 +86,11 @@ class exception extends \Exception
 
 	public static function renderTrace( $trace )
 	{
+		// don't include call invoking error/exception handler
+		// for its context causing some trouble (including $GLOBALS with recursive references)
+		if ( in_array( $trace[0]['function'], array( 'onException', 'onError' ) ) )
+			array_shift( $trace );
+
 		foreach ( $trace as $index => $frame )
 		{
 			if ( $frame['line'] )
