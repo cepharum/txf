@@ -115,30 +115,48 @@ class sql_user extends user
 			if ( !( $ds instanceof datasource\pdo ) )
 				throw new \UnexpectedValueException( _L('Unsupported kind of datasource for managing users.') );
 
+			// apply optionally configured mapping of a user's properties
+			$definition = array(
+				'uuid'      => 'CHAR(36) NOT NULL',
+				'loginname' => 'CHAR(64) NOT NULL',
+				'password'  => 'CHAR(128) NOT NULL',
+				'name'      => 'CHAR(128)',
+				'lock'      => 'CHAR(128)',
+				'email'     => 'CHAR(128)',
+			);
+
+			$mappedDefinition = name_mapping::map( $definition, 'txf.sql_user' );
+
 			// create dataset in datasource on demand
-			if ( !$ds->createDataset( $conf['set'], array(
-						$this->colname( 'uuid' )      => 'CHAR(36) NOT NULL',
-						$this->colname( 'loginname' ) => 'CHAR(64) NOT NULL',
-						$this->colname( 'password' )  => 'CHAR(128) NOT NULL',
-						$this->colname( 'name' )      => 'CHAR(128)',
-						) ) )
+			if ( !$ds->createDataset( $conf['set'], $mappedDefinition ) )
 				throw $ds->exception( _L('failed to created dataset for managing users') );
 
 			// ensure to have a single user at least by default
-			$count = $ds->cell( sprintf( 'SELECT COUNT(*) FROM %s', $ds->quoteName( $conf['set'] ) ) );
-			if ( trim( $count ) === '0' )
+			if ( !$ds->createQuery( $conf['set'] )->count() )
 			{
-				$ctx = $this;
+				$record = name_mapping::map( array(
+					'uuid'      => uuid::createRandom(),
+					'loginname' => 'admin',
+					'password'  => 'nimda',
+					'name'      => _L('Administrator'),
+					'lock'      => '',
+					'email'     => '',
+				), 'txf.sql_user' );
 
-				$ds->transaction()->wrap( function( $conn ) use ( $ctx, $conf )
+				$ds->transaction()->wrap( function( datasource\connection $conn ) use ( $record, $conf )
 				{
-					if ( !$conn->test( sprintf( 'INSERT INTO %s (id,%s,%s,%s,%s) VALUES (?,?,?,?,?)',
-							$conn->quoteName( $conf['set'] ), $ctx->colname( 'uuid' ),
-							$ctx->colname( 'loginname' ), $ctx->colname( 'password' ),
-							$ctx->colname( 'name' ) ),
-							$conn->nextID ( $conf['set'] ), uuid::createRandom(),
-							'admin', ssha::get( 'nimda' ),
-							_L('Admin User') ) )
+					$names   = array_map( function( $n ) use ( $conn ) { return $conn->quoteName( $n ); }, array_keys( $record ) );
+					$markers = array_map( function() { return '?'; }, $record );
+
+					$values = array_values( $record );
+					array_unshift( $values, $conn->nextID( $conf['set'] ) );
+
+					$sql = sprintf( 'INSERT INTO %s (id,%s) VALUES (?,%s)',
+									$conn->quoteName( $conf['set'] ),
+									implode( ',', $names ),
+									implode( ',', $markers ) );
+
+					if ( !$conn->test( $sql, $values ) )
 						throw $conn->exception( _L('failed to create default user') );
 
 					return true;
@@ -149,14 +167,6 @@ class sql_user extends user
 		}
 
 		return self::$datasources[$hash];
-	}
-
-	public function colname( $original )
-	{
-		if ( array_key_exists( 'properties', $this->configuration ) && array_key_exists( $original, $this->configuration['properties'] ) )
-			return $this->configuration['properties'][$original];
-
-		return $original;
 	}
 
 	/**
@@ -175,9 +185,12 @@ class sql_user extends user
 
 			$this->record = array();
 
+			$record = $ds->createQuery( $this->configuration['set'] )
+						->addCondition( 'id=?', true, $this->rowID )
+						->execute()->row();
+
 			// translate property names according to configuration
-			foreach ( $ds->row( sprintf( 'SELECT * FROM %s WHERE id=?', $ds->quoteName( $this->configuration['set'] ) ), $this->rowID ) as $name => $value )
-				$this->record[$this->colname( $name )] = $value;
+			$this->record = name_mapping::mapReversely( $record, 'txf.sql_user' );
 		}
 
 		return $this->record;
@@ -281,10 +294,20 @@ class sql_user extends user
 				if ( $propertyName == 'password' )
 					$propertyValue = ssha::get( $propertyValue );
 
-				$ds->query( sprintf( 'UPDATE %s SET %s=? WHERE id=?', $ds->quoteName( $this->configuration['set'] ), $ds->quoteName( $this->colname( $propertyName ) ) ), $propertyValue, $this->rowID );
-
-				// update value in cached copy of record as well
+				// update value in cached copy of record
 				$this->record[$propertyName] = $propertyValue;
+
+				// update value in data source
+				$propertyName = name_mapping::mapSingle( $propertyName, 'txf.sql_user' );
+				if ( !is_null( $propertyName ) )
+				{
+					$sql = sprintf( 'UPDATE %s SET %s=? WHERE id=?',
+								$ds->quoteName( $this->configuration['set'] ),
+								$ds->quoteName( $propertyName ) );
+
+					if ( !$ds->test( $sql, $propertyValue, $this->rowID ) )
+						throw new \RuntimeException( 'failed to store updated property' );
+				}
 			}
 
 		return $this;
@@ -336,7 +359,7 @@ class sql_user extends user
 		$token  = @$record['password'];
 
 		if ( $token && $this->credentials && ssha::get( $this->getCredentials(), ssha::extractSalt( $token ) ) !== $token )
-			throw new unauthorized_exception( 'invalid/missing credentials' );
+			throw new unauthorized_exception( 'invalid/missing credentials', unauthorized_exception::REAUTHENTICATE, $this );
 
 		exception::leaveSensitive();
 
@@ -373,6 +396,9 @@ class sql_user extends user
 		{
 			if ( ssha::get( $credentials, ssha::extractSalt( $token ) ) === $token )
 			{
+				if ( trim( $record['lock'] ) !== '' )
+					throw new unauthorized_exception( _L('account is locked'), unauthorized_exception::ACCOUNT_LOCKED, $this );
+
 				$this->_authenticated = true;
 
 				// store credentials in session
@@ -389,7 +415,7 @@ class sql_user extends user
 		if ( $this->_authenticated )
 			return $this;
 
-		throw new unauthorized_exception( _L('invalid/missing password.') );
+		throw new unauthorized_exception( _L('invalid/missing password.'), unauthorized_exception::TOKEN_MISMATCH, $this );
 	}
 
 	/**
@@ -400,10 +426,45 @@ class sql_user extends user
 
 	public function isAuthenticated()
 	{
-		if ( is_null( $this->_authenticated ) && $this->credentials )
-			$this->reauthenticate();
+		try
+		{
+			if ( is_null( $this->_authenticated ) && $this->credentials )
+				$this->reauthenticate();
 
-		return !!$this->_authenticated;
+			return !!$this->_authenticated;
+		}
+		catch ( \Exception $e )
+		{
+			return ( $this->_authenticated = false );
+		}
+	}
+
+	public function changePassword( $newToken )
+	{
+		exception::enterSensitive();
+
+		if ( preg_match( '/\s/', $newToken ) || strlen( $newToken ) < 8 || strlen( $newToken ) > 16 )
+			throw new \InvalidArgumentException( 'invalid password' );
+
+		$db   = $this->datasource();
+		$conf = $this->configuration;
+
+		$sql  = sprintf( 'UPDATE %s SET %s=? WHERE %s=?',
+					$db->quoteName( $conf['set'] ),
+					$db->quoteName( name_mapping::mapSingle( 'password', 'txf.sql_user' ) ),
+					$db->quoteName( name_mapping::mapSingle( 'id', 'txf.sql_user' ) )
+					);
+
+		if ( $db->test( $sql, ssha::get( $newToken ), $this->getID() ) )
+		{
+			$this->saveCredentials( $newToken );
+
+			$this->record = null;
+		}
+
+		exception::leaveSensitive();
+
+		return true;
 	}
 
 	/**
@@ -420,7 +481,7 @@ class sql_user extends user
 		if ( !$roleName )
 			throw new \InvalidArgumentException( 'invalid role' );
 
-//		if ( $skipCache || !array_key_exists( $roleName, $this->roleCache ) )
+		if ( $skipCache || !array_key_exists( $roleName, $this->roleCache ) )
 			$this->roleCache[$roleName] = sql_role::select( $this->datasource(), $role )->isAdoptedByUser( $this );
 
 		return $this->roleCache[$roleName];
@@ -440,8 +501,8 @@ class sql_user extends user
 			if ( !array_key_exists( 'set', $configuration ) )
 				$configuration['set'] = 'users';
 
-//			if ( !array_key_exists( 'datasource', $configuration ) )
-//				$configuration['datasource'] = 'users';
+			if ( !array_key_exists( 'datasource', $configuration ) )
+				$configuration['datasource'] = 'users';
 
 			$this->configuration = $configuration;
 		}
@@ -455,26 +516,31 @@ class sql_user extends user
 	 * This method is considered to return if unique user has been found and
 	 * loaded from source, only.
 	 *
-	 * @throws \OutOfBoundException when user isn't found
-	 * @param string $u{serIdOrLoginName ID or name of user to load
+	 * @param string $userIdOrLoginName ID or name of user to load
+	 * @return \de\toxa\txf\user
+	 * @throws \OutOfBoundsException when uniquely selecting user failed
 	 */
 
 	protected function search( $userIdOrLoginName )
 	{
-		$property = ctype_digit( trim( $userIdOrLoginName ) ) ? 'id' : $this->colname( 'loginname' );
+		$property = ctype_digit( trim( $userIdOrLoginName ) ) ? 'id' : name_mapping::mapSingle( 'loginname', 'txf.sql_user' );
 
-		$ds = $this->datasource();
+		$matches = $this->datasource()
+						->createQuery( $this->configuration['set'] )
+						->addCondition( $property . '=?', true, $userIdOrLoginName )
+						->addProperty( 'id' )
+						->limit( 2 )
+						->execute();
 
-		$query = sprintf( 'SELECT id FROM %s WHERE %s=?', $ds->quoteName( $this->configuration['set'] ), $ds->quoteName( $property ) );
-
-		$matches = $ds->allNumeric( $query, $userIdOrLoginName );
-		if ( $matches && count( $matches ) === 1 && ctype_digit( trim( $matches[0][0] ) ) )
+		switch ( $matches->count() )
 		{
-			$this->rowID = intval( $matches[0][0] );
-
-			return $this;
+			case 0 :
+				throw new \OutOfBoundsException( 'ambigious user selection' );
+			case 1 :
+				$this->rowID = intval( $matches->cell() );
+				return $this;
+			default :
+				throw new \OutOfBoundsException( 'no such user' );
 		}
-
-		throw new \OutOfBoundsException( 'no such user' );
 	}
 }
