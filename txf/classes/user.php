@@ -146,6 +146,18 @@ abstract class user
 	abstract public function isAuthenticated();
 
 	/**
+	 * Changes current user's password.
+	 *
+	 * @param string $newToken new password of user
+	 * @throws \RuntimeException
+	 */
+
+	public function changePassword( $newToken )
+	{
+		throw new \RuntimeException( _L('Missing support for changing password of current user.') );
+	}
+
+	/**
 	 * Checks if user is authorized to act in requested role.
 	 *
 	 * @note keep this method loosely bound to class role for supporting user
@@ -191,7 +203,6 @@ abstract class user
 	abstract protected function search( $userIdOrLoginName );
 
 
-
 	private static function &session()
 	{
 		return txf::session( config::get( 'user.auth.global' ) ? session::SCOPE_GLOBAL : session::SCOPE_APPLICATION );
@@ -212,9 +223,15 @@ abstract class user
 		$session =& self::session();
 		if ( array_key_exists( 'user', $session ) && $session['user'] instanceof self )
 		{
-			self::$__current = $session['user'];
+			try {
+				self::$__current = $session['user']->reauthenticate();
 
-			return self::$__current->reauthenticate();
+				return self::$__current;
+			} catch ( \Exception $e ) {
+				view::flash( _L('Failed to re-validate current user\'s authentication. Please login again!'), 'error' );
+			}
+
+			unset( $session['user'] );
 		}
 
 		// provide instance describing guest user on fallback
@@ -259,7 +276,7 @@ abstract class user
 			self::$__current->unauthenticate();
 
 			// drop reference on current user
-			unset( self::$__current );
+			self::$__current = null;
 		}
 
 		// gain access on persistent session data for dropping current user's
@@ -300,7 +317,7 @@ abstract class user
 				if ( is_array( $definition ) )
 				{
 					// read name of class for managing user source from configuration
-					$class = data::isKeyword( $definition['class'] );
+					$class = array_key_exists( 'class', $definition ) ? data::isKeyword( $definition['class'] ) : null;
 					if ( !$class )
 						$class = data::isKeyword( $definition['type'] . '_user' );
 
