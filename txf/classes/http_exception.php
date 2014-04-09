@@ -76,6 +76,15 @@ class http_exception extends \Exception
 		return $map[intval( $code )];
 	}
 
+	public function getStatus()
+	{
+		$status = static::getStateOnCode( $this->getCode() );
+		if ( $status == null )
+			$status = 'Error';
+
+		return $status;
+	}
+
 	public function getResponse()
 	{
 		return sprintf( 'HTTP/1.0 %d %s', $this->getCode(), $this->state );
