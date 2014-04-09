@@ -571,7 +571,7 @@ class model_relation
 			if ( $model->idSize() > 1 )
 				throw new \InvalidArgumentException( 'relations can not handle multi-dimensional IDs' );
 
-			$propertyName = $model->idName();
+			$propertyName = $model->getReflection()->getMethod( 'idName' )->invoke( null );
 		}
 
 		// ensure property name is a keyword
@@ -702,7 +702,7 @@ class model_relation
 
 
 		// start new datasource query on dataset of relating source model
-		$query = $this->source->query( $this->source->set() . ' source' );
+		$query = $this->source->query( 'source' );
 
 		// extract ordered list of sets included in relation
 		$sets = array_keys( $this->waypoints );
