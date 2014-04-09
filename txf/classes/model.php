@@ -4,13 +4,14 @@
 namespace de\toxa\txf;
 
 use \de\toxa\txf\datasource\connection as db;
+use \de\toxa\txf\datasource\datasource_exception;
 
 
 class model
 {
 	/**
 	 *
-	 * @var datasource\connection
+	 * @var db
 	 */
 
 	protected $_source;
@@ -95,7 +96,7 @@ class model
 	protected function __construct( db $source = null, $itemId )
 	{
 		if ( $source === null )
-			$source = datasource::getDefault();
+			$source = datasource::selectConfigured( 'default' );
 
 		$this->_source = $source;
 
@@ -105,14 +106,63 @@ class model
 	/**
 	 * Provides model instances prepared for accessing item by ID.
 	 *
-	 * @param datasource\connection $source link to datasource to use instead of current one
+	 * @param db $source link to datasource to use instead of current one
 	 * @param array|integer $itemId ID of item to be managed by instance
 	 * @return model instance of model prepared to manage selected item
+	 * @throws \InvalidArgumentException on providing invalid item ID
+	 * @throws datasource_exception on missing selected item in datasource
 	 */
 
 	public static function select( db $source = null, $itemId )
 	{
+		if ( !is_array( $itemId ) && !$itemId )
+			throw new \InvalidArgumentException( 'invalid item ID' );
+
 		return new static( $source, $itemId );
+	}
+
+	/**
+	 * Finds item of model matching provided properties' values.
+	 *
+	 * If multiple items are matching the first of them is retrieved, only.
+	 *
+	 * @param db $source data source to look for matching item in
+	 * @param array $properties set of model's properties mapping into values to match
+	 * @return model|null matching model item, null on mismatch
+	 * @throws \InvalidArgumentException
+	 */
+
+	public static function find( db $source = null, $properties )
+	{
+		if ( !is_array( $properties ) || !count( $properties ) )
+			throw new \InvalidArgumentException( 'invalid set of properties to find' );
+
+		if ( $source == null )
+			$source = datasource::selectConfigured( 'default' );
+
+		static::updateSchema( $source );
+
+
+		$query = $source->createQuery( static::$set_prefix . static::$set );
+
+		foreach ( static::$id as $idName )
+			$query->addProperty( $idName );
+
+
+		$definition = static::define();
+
+		foreach ( $properties as $name => $value )
+			if ( array_key_exists( $name, $definition ) || in_array( $name, static::$id ) )
+				$query->addCondition( "$name=?", true, $value );
+			else
+				throw new \InvalidArgumentException( 'undefined property' );
+
+
+		$id = $query->limit( 1 )->execute()->row();
+		if ( !$id )
+			return null;
+
+		return static::select( $source, $id );
 	}
 
 	/**
@@ -121,13 +171,24 @@ class model
 	 * This is useful for accessing particular meta-information on current model
 	 * without requiring to choose any of its existing items.
 	 *
-	 * @param datasource\connection $source link to datasource to use instead of default
+	 * @param db $source link to datasource to use instead of default
 	 * @return model
 	 */
 
 	public static function proxy( db $source = null )
 	{
 		return new static( $source, 0 );
+	}
+
+	/**
+	 * Retrieves reflection on model's class.
+	 *
+	 * @return \ReflectionClass
+	 */
+
+	public static function getReflection()
+	{
+		return new \ReflectionClass( get_called_class() );
 	}
 
 	/**
@@ -140,7 +201,7 @@ class model
 	 * @throws \OutOfRangeException if requested dimension is exceeding size of model's ID
 	 */
 
-	public function idName( $dimension = 0, $maxDimension = 1 )
+	public static function idName( $dimension = 0, $maxDimension = 1 )
 	{
 		if ( $maxDimension > count( static::$id ) )
 			throw new \LogicException( _L('Model isn\'t supporting IDs with requested dimensionality.') );
@@ -232,6 +293,7 @@ class model
 	 * @see model::proxy()
 	 * @return array current item's unfiltered set of properties
 	 * @throws \RuntimeException on missing preparation for accessing single item of model
+	 * @throws datasource_exception on failing to uniquely select single record in datasource
 	 */
 
 	public function load()
@@ -241,12 +303,19 @@ class model
 
 		if ( !is_array( $this->_record ) )
 		{
-			$filter = implode( ' AND ', array_map( function( $col ) { return "$col=?"; }, array_keys( $this->_id ) ) );
-			$vals   = array_values( $this->_id );
+			static::updateSchema( $this->_source );
 
-			$this->_record = $this->_source->row( "SELECT * FROM " . $this->set() . " WHERE $filter", $vals );
-			if ( !is_array( $this->_record ) )
-				throw new datasource\datasource_exception( $this->_source, 'item missing in datasource' );
+			$query = $this->_source->createQuery( $this->set() );
+
+			foreach ( $this->_id as $name => $value )
+				$query->addCondition( $name . '=?', true, $value );
+
+			$matches = $query->limit( 2 )->execute();
+
+			if ( $matches->count() !== 1 )
+				throw new datasource_exception( $this->_source, 'item missing in datasource' );
+
+			$this->_record = $matches->row();
 		}
 
 		return $this->_record;
@@ -375,7 +444,7 @@ class model
 		if ( array_key_exists( 'name', $record ) )
 			return $record['name'];
 
-		$idName = $this->idName();
+		$idName = static::idName();
 		if ( array_key_exists( $idName, $record ) )
 			return sprintf( _L('#%d of model %s'), $record[$idName], get_class( $this ) );
 
@@ -412,15 +481,22 @@ class model
 			throw new \InvalidArgumentException( "unknown property: " . $this->set() . ".$name" );
 
 
-		$filter = implode( ' AND ', array_map( function( $col ) { return "$col=?"; }, array_keys( $this->_id ) ) );
-		$vals   = array_values( $this->_id );
+		$link = $this->_source;
 
-		array_unshift( $vals, $value );
+		$filter = array_keys( $this->_id );
+		$values = array_values( $this->_id );
 
-		if ( !$this->_source->test( "UPDATE " . $this->set() . " SET $name=? WHERE $filter", $vals ) )
-			throw new \de\toxa\txf\datasource\datasource_exception( $this->_source, 'failed to update property in datasource: ' . $this->set() . ".$name" );
+		array_unshift( $values, $value );
 
-		return ( $record[$name] = $value );
+		$qSet   = $link->quoteName( $this->set() );
+		$qName  = $link->quoteName( $name );
+		$filter = array_map( function( $col ) use ( $link ) { return $link->quoteName( $col ) . "=?"; }, $filter );
+
+		if ( !$link->test( "UPDATE $qSet SET $qName=? WHERE " . implode( ' AND ', $filter ), $values ) )
+			throw new datasource_exception( $link, 'failed to update property in datasource: ' . $this->set() . ".$name" );
+
+
+		return ( $this->_record[$name] = $value );
 	}
 
 	/**
@@ -431,7 +507,7 @@ class model
 
 	public function set()
 	{
-		return static::$set_prefix.static::$set;
+		return static::$set_prefix . static::$set;
 	}
 
 	/**
@@ -445,20 +521,32 @@ class model
 	 * @return array[string->string] map of property names into their type
 	 */
 
-	public static function define()
+	protected static function define()
 	{
 		throw new \RuntimeException( _L('Generic model does not have defined structure for being abstract.') );
+	}
+
+	/**
+	 * Detects if model contains property with provided name.
+	 *
+	 * @param string $name name of property to look up
+	 * @return bool true on model including named property, false otherwise
+	 */
+
+	public static function isPropertyName( $name )
+	{
+		return in_array( $name, static::$id, true ) || array_key_exists( $name, static::define() );
 	}
 
 	/**
 	 * Creates new instance of current model described by provided properties
 	 * to be managed in selected (or default) datasource.
 	 *
-	 * @param \de\toxa\txf\datasource\connection $source datasource for managing model instance
+	 * @param db $source datasource for managing model instance
 	 * @param array $properties set of model-specific properties
 	 * @return model
 	 * @throws \InvalidArgumentException
-	 * @throws datasource\datasource_exception
+	 * @throws datasource_exception
 	 */
 
 	public static function create( db $source, $properties = array() )
@@ -466,17 +554,46 @@ class model
 		static::validateIdsOnCreate( $properties );
 
 		$set      = static::$set_prefix . static::$set;
-		$callback = new \ReflectionMethod( get_called_class() . "::_onCreate" );
+		$callback = new \ReflectionMethod( get_called_class(), '_onCreate' );
+		$item     = null;
 
-		if ( !$source->transaction()->wrap( function( $link ) use ( $callback, $properties )
+		static::updateSchema( $source );
+
+		if ( !$source->transaction()->wrap( function( $link ) use ( $callback, $properties, &$item )
 		{
 			$item = $callback->invoke( null, $link, $properties );
 
 			return true;
-		}, "createModel." . $set ) )
-			throw new datasource\datasource_exception( $source, 'failed to commit creation of item in datasource, model ' . $set );
+		}, 'createModel.' . $set ) )
+			throw new datasource_exception( $source, 'failed to commit creation of item in datasource, model ' . $set );
 
 		return new static( $source, $item );
+	}
+
+	/**
+	 * Updates schema of selected data source to contain definition for current
+	 * model's set.
+	 *
+	 * @param db $source data source to use
+	 * @throws datasource_exception on updating schema failed
+	 * @throws model_exception on incomplete/invalid schema definition
+	 */
+
+	protected static function updateSchema( db $source )
+	{
+		$dataset = static::$set_prefix . static::$set;
+
+		if ( !$source->exists( $dataset ) )
+		{
+			$definition = static::define();
+
+			foreach ( static::$id as $property )
+				if ( !array_key_exists( $property, $definition ) && $property !== 'id' )
+					throw new model_exception( 'missing ID property in schema definition' );
+
+			if ( !$source->createDataset( $dataset, $definition, static::$id ) )
+				throw new datasource_exception( $source, 'updating schema failed' );
+		}
 	}
 
 	/**
@@ -517,48 +634,58 @@ class model
 	 * linked datasource. Thus this method may throw exceptions for rolling back
 	 * partial modifications in datasource.
 	 *
-	 * The method is considered to return array consisiting of all properties
+	 * The method is considered to return array consisting of all properties
 	 * and related values used to identify created instances of current model.
 	 *
 	 * The method must be defined public for internal use in a closure. By design
 	 * it should be considered protected.
 	 *
-	 * @param \de\toxa\txf\datasource\connection $link link to datasource
+	 * @param db $link link to datasource
 	 * @param array $arrProperties properties of new instance to write into datasource
 	 * @return array ID-components of created instance (to be used on loading this instance by model::select())
-	 * @throws datasource\datasource_exception
+	 * @throws datasource_exception
+	 * @throws model_exception on missing parts of multidimensional ID
 	 */
 
 	public static function _onCreate( db $link, $arrProperties )
 	{
-		$columns = implode( ',', array_keys( $arrProperties ) );
-		$marks   = implode( ',', array_pad( array(), count( $arrProperties ), '?' ) );
-
-		$values  = array_values( $arrProperties );
-
 		$set = static::$set_prefix . static::$set;
 
-		if ( count( static::$id ) == 1 )
+
+		// auto-assign ID to item unless properties include explicit ID
+		if ( count( static::$id ) === 1 )
 		{
-			$idName = array_values( static::$id );
-			$idName = $idName[0];
-
-			array_unshift( $values, $link->nextID( $set ) );
-
-			if ( $link->test( "INSERT INTO $set ($idName,$columns) VALUES (?,$marks)", $values ) === false )
-				throw new datasource\datasource_exception( $link, 'failed to create item in datasource, model ' . $set );
-
-			$item = array( $idName => $values[0] );
+			$idName = static::idName( 0 );
+			if ( !array_key_exists( $idName, $arrProperties ) )
+				$arrProperties[$idName] = $link->nextID( $set );
 		}
-		else
-		{
-			if ( $link->test( "INSERT INTO $set ($columns) VALUES ($marks)", $values ) === false )
-				throw new datasource\datasource_exception( $link, 'failed to create item in datasource, model ' . $set );
 
-			$item = array();
-			foreach ( static::$id as $name )
+
+		// validate and extract ID of item to create
+		$item = array();
+		foreach ( static::$id as $name )
+			if ( array_key_exists( $name, $arrProperties ) )
 				$item[$name] = $arrProperties[$name];
-		}
+			else
+				throw new model_exception( 'missing properties of created item\'s identifier' );
+
+
+		// prepare SQL statement for inserting record on new item
+		$columns = array_keys( $arrProperties );
+		$values  = array_values( $arrProperties );
+		$marks   = array_pad( array(), count( $arrProperties ), '?' );
+
+		$columns = array_map( function( $n ) use ( $link ) { return $link->quoteName( $n ); }, $columns );
+		$qSet    = $link->quoteName( $set );
+
+		$columns = implode( ',', $columns );
+		$marks   = implode( ',', $marks );
+
+
+		// query datasource for inserting record of new item
+		if ( $link->test( "INSERT INTO $qSet ($columns) VALUES ($marks)", $values ) === false )
+			throw new datasource_exception( $link, 'failed to create item in datasource, model ' . $set );
+
 
 		return $item;
 	}
@@ -584,7 +711,7 @@ class model
 	 *       used for managing model instance, anymore.
 	 *
 	 * @throws \RuntimeException
-	 * @throws datasource\datasource_exception
+	 * @throws datasource_exception
 	 */
 
 	public function delete()
@@ -600,12 +727,12 @@ class model
 		$item      = $this;
 		$relations = static::$relations;
 
-		if ( !$this->_source->transaction()->wrap( function( datasource\connection $connection ) use ( $item, $relations )
+		if ( !$this->_source->transaction()->wrap( function( db $connection ) use ( $item, $relations )
 		{
 			$id = array_values( $item->id() );
 
 			if ( $connection->test( sprintf( 'DELETE FROM %s WHERE %s', $item->set(), $item->filter() ), $id ) === false )
-				throw new datasource\datasource_exception( $connection, 'failed to delete requested model instance' );
+				throw new datasource_exception( $connection, 'failed to delete requested model instance' );
 
 			// drop all items in immediate and tight relation to deleted one
 			foreach ( $relations as $relation )
@@ -621,14 +748,14 @@ class model
 						$relation = model_relation::createFrom( model::normalizeProvidedModel( @$neighbour['model'] ), @$neighbour['referencing'] );
 
 						if ( $connection->test( sprintf( 'DELETE FROM %s WHERE %s', $relation->relatingEnd( true )->set(), $relation->referencingFilter( null, false ) ), $id ) === false )
-							throw new datasource\datasource_exception( $connection, 'failed to delete requested model instance' );
+							throw new datasource_exception( $connection, 'failed to delete requested model instance' );
 					}
 				}
 			}
 
 			return true;
 		} ) )
-			throw new datasource\datasource_exception( $this->_source, 'failed to completely delete item and its tightly bound relations' );
+			throw new datasource_exception( $this->_source, 'failed to completely delete item and its tightly bound relations' );
 
 
 		// drop that item now ...
@@ -645,21 +772,15 @@ class model
 		return sprintf( "%s:", static::nameToLabel( $name ) );
 	}
 
-	protected static function nameToLabel( $name )
+	public static function nameToLabel( $name )
 	{
 		return $name;
 	}
 
-	public function formatter( $requestCellFormatter = true )
-	{
-		$class = get_class( $this );
-
-		return array( $class, $requestCellFormatter ? 'formatCell' : 'formatHeader' );
-	}
-
 	/**
+	 * Retrieves connection to data source used by model currently.
 	 *
-	 * @return datasource\connection
+	 * @return db
 	 */
 
 	public function source()
@@ -668,17 +789,37 @@ class model
 	}
 
 	/**
+	 * Retrieves query on datasource prepared to basically operate on current
+	 * model's data set.
 	 *
+	 * @param string $alias optional alias of model's data set in query
 	 * @return datasource\query customizable query on current model
 	 */
 
-	public function query( $customBaseDataset = null )
+	public function query( $alias = null )
 	{
-		return $this->_source->createQuery( $customBaseDataset ? $customBaseDataset : $this->set() );
+		$alias = trim( $alias );
+
+		return $this->_source->createQuery( $this->set() . ( $alias != '' ? " $alias" : '' ) );
 	}
 
 	/**
+	 * Creates relation instance between current model and further ones.
 	 *
+	 * The resulting relation is prepared to have foreign items selecting
+	 * current model's items by giving reference value matching values of
+	 * this model's property selected in $referencedProperty. Omit that for
+	 * using current model's ID property by default.
+	 *
+	 * @example
+	 *
+	 *   $relation = $this->relating( 'id' );
+	 *
+	 * $relation is then prepared for
+	 *
+	 *   foreign.someProp == this.id
+	 *
+	 * @param string $referencedProperty name of current model's property referenced externally
 	 * @return model_relation
 	 */
 
@@ -807,7 +948,7 @@ class model
 
 	/**
 	 *
-	 * @param datasource\connection $source
+	 * @param db $source
 	 * @return datasource\query browseable query on current model
 	 */
 
@@ -816,10 +957,12 @@ class model
 		if ( $source === null )
 			$source = datasource::getDefault();
 
-		if ( !( $source instanceof datasource\connection ) )
+		if ( !( $source instanceof db ) )
 			throw new \InvalidArgumentException( _L('missing link to datasource') );
 
-		return $source->createQuery( static::$set_prefix.static::$set );
+		static::updateSchema( $source );
+
+		return $source->createQuery( static::$set_prefix . static::$set );
 	}
 
 	/**
@@ -827,10 +970,12 @@ class model
 	 * of current model.
 	 *
 	 * @param datasource\query $query
+	 * @param db $source datasource to use on implicitly calling model::browse() if $query is omitted
+	 * @param \ReflectionClass $elementClass class of model_editor_element to return
 	 * @return model_editor_selector
 	 */
 
-	public static function selector( datasource\query $query = null, datasource\connection $source = null )
+	public static function selector( datasource\query $query = null, db $source = null, \ReflectionClass $elementClass = null )
 	{
 		if ( $query === null )
 			$query = static::browse( $source !== null ? $source : datasource::getDefault() );
@@ -842,13 +987,13 @@ class model
 		foreach ( static::$id as $index => $name )
 		{
 			$ids[] = '_id' . $index;
-			$query->addProperty( static::$set_prefix.static::$set . '.' . $name, '_id' . $index );
+			$query->addProperty( static::$set_prefix . static::$set . '.' . $name, '_id' . $index );
 		}
 
 		foreach ( static::$label as $index => $name )
 		{
 			$labels[] = '_label' . $index;
-			$query->addProperty( static::$set_prefix.static::$set . '.' . $name, '_label' . $index );
+			$query->addProperty( static::$set_prefix . static::$set . '.' . $name, '_label' . $index );
 		}
 
 
@@ -878,6 +1023,15 @@ class model
 		}
 
 
-		return new model_editor_selector( $options );
+		/*
+		 * create control for use in model_editor
+		 */
+
+		// prefer using optionally provided class
+		if ( $elementClass && $elementClass->isSubclassOf( 'de\toxa\txf\model_editor_selector' ) )
+			return $elementClass->getMethod( 'create' )->invoke( null, $options );
+
+		// but use model_editor_selector by default
+		return model_editor_selector::create( $options );
 	}
 }
