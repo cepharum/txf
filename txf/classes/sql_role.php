@@ -137,9 +137,9 @@ class sql_role implements role
 
 		$record = null;
 
-		if ( !$this->_source->transaction()->wrap( function( $db ) use ( $property, $role, &$record )
+		if ( !$this->_source->transaction()->wrap( function( datasource\connection $db ) use ( $property, $role, &$record )
 		{
-			$existing = $db->row( sprintf( 'SELECT * FROM role WHERE %s=?', $property ), $role );
+			$existing = $db->createQuery( 'role' )->addCondition( $property . '=?', true, $role )->execute()->row();
 			if ( $existing )
 			{
 				$record = $existing;
