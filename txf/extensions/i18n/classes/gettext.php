@@ -27,6 +27,11 @@
 
 namespace de\toxa\txf;
 
+use \de\toxa\txf\singleton;
+use \de\toxa\txf\config;
+use \de\toxa\txf\path;
+use \de\toxa\txf\log;
+
 
 /**
  * Implementation of gettext-based translations support
@@ -60,6 +65,16 @@ namespace de\toxa\txf;
  * # Create another subfolder inside that locale's folder called "LC_MESSAGES".
  * # Put translated file into that LC_MESSAGES folder. Rename it to <your app>.mo,
  *   default.mo or <whatever is configured in locale.domain>.mo.
+ *
+ * Notes on Ubuntu:
+ *
+ * # Install locale in system first
+ *     sudo apt-get install language-pack-de-base
+ * # get list of locales
+ *     locale -a
+ * # ensure to use locale listed there, e.g. de_DE.utf8, for naming folders and
+ *   choosing locale in configuration as well declaring translation locale in PO
+ *   file!
  *
  */
 
@@ -115,18 +130,21 @@ class locale extends singleton
 		$this->language = config::get( 'locale.language', 'en_US.utf8' );
 		$this->domain   = config::get( 'locale.domain', TXF_APPLICATION );
 
+		putenv( 'LANGUAGE=' . $this->language );
+		putenv( 'LANG=' . $this->language );
+		putenv( 'LC_ALL=' . $this->language );
+
+		if ( !setlocale( LC_ALL, $this->language ) )
+			log::error( 'could not select locale %s', $this->language );
+
 		if ( \extension_loaded( 'gettext' ) )
 		{
 			$path = config::get( 'locale.path', path::glue( TXF_APPLICATION_PATH, 'locale' ) );
 
 			bindtextdomain( $this->domain, $path );
 			textdomain( $this->domain );
+			bind_textdomain_codeset( $this->domain, 'UTF-8' );
 		}
-
-		putenv( 'LC_ALL=' . $this->language );
-
-		if ( !setlocale( LC_ALL, $this->language ) )
-			log::error( 'could not select locale %s', $this->language );
 
 
 		self::$collectionMode = config::get( 'locale.collect.mode', '' );
