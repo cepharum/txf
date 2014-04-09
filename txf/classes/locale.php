@@ -36,11 +36,11 @@ namespace de\toxa\txf;
 
 class locale
 {
-	public static function get( $singular, $plural, $count, $fallbackSingular = null, $fallbackPlural = null )
+	public static function get( $singular, $plural = null, $count = 1, $fallbackSingular = null, $fallbackPlural = null )
 	{
 		$count = abs( $count );
 
-		return ( $count == 1 ) ?
+		return ( $count == 1 || $plural == null ) ?
 					( $fallbackSingular !== null ? $fallbackSingular : $singular )
 				:
 					( $fallbackPlural !== null ? $fallbackPlural : $plural );
