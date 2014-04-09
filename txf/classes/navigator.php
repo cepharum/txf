@@ -62,7 +62,7 @@ class navigator implements widget
 	protected $items = array();
 
 	/**
-	 * mark on whether detecting currently selected items or not
+	 * optional callback invoked to detect currently selected items
 	 *
 	 * @var function
 	 */
@@ -390,6 +390,9 @@ class navigator implements widget
 					// and tell any containing navigator about having found selected item
 					$selected = true;
 				}
+
+				if ( url::isRelative( $item['action'] ) )
+					$item['action'] = application::current()->relativePrefix( $item['action'] );
 
 
 				$out['items'][$name] = $item;
