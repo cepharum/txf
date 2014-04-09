@@ -17,17 +17,17 @@ namespace de\toxa\txf;
 
 class dictionary
 {
-	private $keys = array();
+	private $_keys = array();
 
-	private $values = array();
+	private $_values = array();
 
 
 	public function __construct( $set = null )
 	{
 		if ( is_array( $set ) )
 		{
-			$this->keys   = array_keys( $set );
-			$this->values = array_values( $set );
+			$this->_keys   = array_keys( $set );
+			$this->_values = array_values( $set );
 		}
 		else if ( $set !== null )
 			throw new \InvalidArgumentException( 'invalid array for initializing dictionary' );
@@ -40,7 +40,7 @@ class dictionary
 
 	protected function _keyToIndex( $key )
 	{
-		return array_search( $key, $this->keys, false );
+		return array_search( $key, $this->_keys, false );
 	}
 
 	protected function _keyMustExist( $key )
@@ -63,15 +63,15 @@ class dictionary
 		if ( !is_string( $key ) && !is_integer( $key ) )
 			throw new \InvalidArgumentException( 'invalid key type' );
 
-		if ( $index === null || $index == count( $this->keys ) )
+		if ( $index === null || $index == count( $this->_keys ) )
 		{
-			$this->keys[]   = $key;
-			$this->values[] = $value;
+			$this->_keys[]   = $key;
+			$this->_values[] = $value;
 		}
 		else
 		{
-			array_splice( $this->keys,   $index, 0, array( $key ) );
-			array_splice( $this->values, $index, 0, array( $value ) );
+			array_splice( $this->_keys,   $index, 0, array( $key ) );
+			array_splice( $this->_values, $index, 0, array( $value ) );
 		}
 
 		return $this;
@@ -81,8 +81,8 @@ class dictionary
 	{
 		if ( ctype_digit( trim( $index ) ) )
 		{
-			array_splice( $this->keys, $index, 1 );
-			array_splice( $this->values, $index, 1 );
+			array_splice( $this->_keys, $index, 1 );
+			array_splice( $this->_values, $index, 1 );
 		}
 
 		return $this;
@@ -95,11 +95,17 @@ class dictionary
 			case 'length' :
 			case 'count' :
 			case 'size' :
-				return count( $this->keys );
+				return count( $this->_keys );
 
 			case 'items' :
 			case 'elements' :
-				return array_combine( $this->keys, $this->values );
+				return array_combine( $this->_keys, $this->_values );
+
+			case 'keys' :
+				return $this->_keys;
+
+			case 'values' :
+				return $this->_values;
 
 			default :
 				return $this->value( $name );
@@ -108,18 +114,18 @@ class dictionary
 
 	public function keyAtIndex( $index )
 	{
-		if ( $index === false || $index < 0 || $index >= count( $this->keys ) )
+		if ( $index === false || $index < 0 || $index >= count( $this->_keys ) )
 			throw new \OutOfBoundsException();
 
-		return $this->keys[intval( $index )];
+		return $this->_keys[intval( $index )];
 	}
 
 	public function valueAtIndex( $index )
 	{
-		if ( $index === false || $index < 0 || $index >= count( $this->keys ) )
+		if ( $index === false || $index < 0 || $index >= count( $this->_keys ) )
 			throw new \OutOfBoundsException();
 
-		return $this->values[intval( $index )];
+		return $this->_values[intval( $index )];
 	}
 
 	public function value( $key )
@@ -128,14 +134,14 @@ class dictionary
 		if ( $index === false )
 			throw new \OutOfBoundsException( 'no such key: ' . $key );
 
-		return $this->values[$index];
+		return $this->_values[$index];
 	}
 
 	public function setValue( $key, $value, $addIfMissing = true )
 	{
 		$index = $this->_keyToIndex( $key );
 		if ( $index !== false )
-			$this->values[$index] = $value;
+			$this->_values[$index] = $value;
 		else if ( $addIfMissing )
 			$this->_insertAt( null, $key, $value );
 		else
@@ -156,7 +162,7 @@ class dictionary
 			if ( $oldIndex !== $newIndex )
 				throw new \RuntimeException( 'requested key exists already' );
 
-			$this->keys[$oldIndex] = $newKey;
+			$this->_keys[$oldIndex] = $newKey;
 		}
 
 		return $this;
@@ -176,7 +182,7 @@ class dictionary
 	{
 		$this->_keyMustntExist( $newKey );
 
-		if ( $referenceIndex === false || $referenceIndex < 0 || $referenceIndex > count( $this->keys ) )
+		if ( $referenceIndex === false || $referenceIndex < 0 || $referenceIndex > count( $this->_keys ) )
 			throw new \OutOfBoundsException( 'reference not found' );
 
 		return $this->_insertAt( $referenceIndex, $newKey, $newValue );
@@ -189,7 +195,7 @@ class dictionary
 
 	public function removeAtIndex( $index )
 	{
-		if ( $index === false || $index < 0 || $index >= count( $this->keys ) )
+		if ( $index === false || $index < 0 || $index >= count( $this->_keys ) )
 			throw new \OutOfBoundsException( 'invalid index to remove' );
 
 		return $this->_removeAt( $index );
@@ -211,8 +217,8 @@ class dictionary
 			$sortKeys ? uksort( $data, $negator ) : uasort( $data, $negator );
 		}
 
-		$this->keys   = array_keys( $data );
-		$this->values = array_values( $data );
+		$this->_keys   = array_keys( $data );
+		$this->_values = array_values( $data );
 
 		return $this;
 	}
