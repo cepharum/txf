@@ -138,22 +138,32 @@ class pdo extends singleton implements connection
 		return $this->transaction;
 	}
 
+	protected $_existsCache = array();
+
 	/**
 	 * Detects if a selected dataset ("table") exists or not.
 	 *
 	 * @param string $dataset name of dataset to test
+	 * @param boolean $noCache true to force actually checking datasource
 	 * @return boolean|null true if dataset exists, false if not, null if unknown
 	 */
 
-	public function exists( $dataset )
+	public function exists( $dataset, $noCache = false )
 	{
 		$this->command = null;
 
+		if ( !$noCache && $this->_existsCache[$dataset] )
+			return true;
+
 		$method = array( $this, 'exists_' . $this->driver );
 		if ( is_callable( $method ) )
-			return call_user_func( $method, $dataset );
+			$result = call_user_func( $method, $dataset );
+		else
+			$result = null;
 
-		return null;
+		$this->_existsCache[$dataset] = $result;
+
+		return $result;
 	}
 	protected function exists_sqlite( $dataset )
 	{
@@ -226,14 +236,16 @@ class pdo extends singleton implements connection
 			return true;
 
 
+		$havePrimaries = is_array( $primaries ) && count( $primaries );
+
 		$rows = array(
-					'id' => $this->quoteName( 'id' ) . ' INTEGER PRIMARY KEY',
+					'id' => $this->quoteName( 'id' ) . ' INTEGER NOT NULL' . ( $havePrimaries ? '' : ' PRIMARY KEY' ),
 					);
 
 		foreach ( $definition as $key => $type )
 			$rows[$key] = $type ? $this->quoteName( $key ) . ' ' . $type : null;
 
-		if ( is_array( $primaries ) && count( $primaries ) )
+		if ( $havePrimaries )
 			$rows[] = 'PRIMARY KEY (' . implode( ',', $primaries ) . ')';
 		else if ( !@$rows['id'] )
 			throw new \InvalidArgumentException( 'missing primary key declaration on dataset to create' );
