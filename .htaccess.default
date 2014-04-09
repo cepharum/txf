@@ -31,11 +31,24 @@ Options -MultiViews
 #
 # For running TXF with nginx you need to update your configuration like this:
 #
-#  1) in your site's location stanza: add/replace try_files rule for rewriting requests:
+#  1) insert this location stanza before all other location stanzas for denying
+#     web access on resource files and all sensitive data:
+#
+#     location ~ ^/txf|/config/|/classes/|^/skins/ {
+#         deny all;
+#     }
+#
+#  2) optional: disable use of PHP on accessing any asset file
+#
+#     location ~ /assets/ {
+#         try_files $uri =404;
+#     }
+#
+#  2) in your site's location stanza: add/replace try_files rule for rewriting requests:
 #
 #     try_files $uri /run.php?$args;
 #
-#  2) add location stanza for managing site's default:
+#  3) add location stanza for managing site's default:
 #
 #     location = / {
 #         rewrite / /application/action permanent;
