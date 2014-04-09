@@ -20,7 +20,7 @@
  *
  * @copyright 2012, Thomas Urban, toxA IT-Dienstleistungen, www.toxa.de
  * @license GNU GPLv3+
- * @version: $Id$
+ * @version: $Id:$
  *
  */
 
@@ -113,6 +113,23 @@ class html_form implements widget
 
 	protected $hidden = array();
 
+	/**
+	 * Describes desired sorting order of named rows to apply on rendering form.
+	 *
+	 * @var array
+	 */
+
+	protected $sortingOrder = null;
+
+	/**
+	 * Marks whether including special request ID in rendering form for
+	 * protecting against XSRF attacks.
+	 *
+	 * @var bool
+	 */
+
+	protected $enableXsrfMode = true;
+
 
 
 	public function __construct( $name, $class = null )
@@ -151,6 +168,9 @@ class html_form implements widget
 				case 'selector' :
 					list( $name, $label, $options, $value ) = array_splice( $arguments, 0, 4 );
 					break;
+				case 'textarea' :
+					list( $name, $label, $value, $rows, $columns ) = array_splice( $arguments, 0, 5 );
+					break;
 				default :
 					list( $name, $label, $value ) = array_splice( $arguments, 0, 3 );
 			}
@@ -174,6 +194,9 @@ class html_form implements widget
 					break;
 				case 'password' :
 					$args = array( $name );
+					break;
+				case 'textarea' :
+					$args = array( $name, $value, '', $rows, $columns );
 					break;
 				default :
 					$args = array( $name, $value );
@@ -200,6 +223,8 @@ class html_form implements widget
 	/**
 	 * Conveniently creates instance of html_form or any derived class.
 	 *
+	 * @param string $name name of form
+	 * @param string $class optional class attribute to use in form
 	 * @return html_form created instance
 	 */
 
@@ -289,6 +314,8 @@ class html_form implements widget
 			$this->processorUrl = trim( $processorUrl );
 		else
 			$this->processorUrl = null;
+
+		return $this;
 	}
 
 	/**
@@ -325,6 +352,7 @@ class html_form implements widget
 	 *
 	 * @param integer $maxSize number of bytes to be uploadable at maximum
 	 * @return html_form
+	 * @throws \InvalidArgumentException on providing invalid maximum file size
 	 */
 
 	public function enableFileUpload( $maxSize = null )
@@ -409,6 +437,7 @@ class html_form implements widget
 	 * @param string|null $error another error message to associate with row/field
 	 * @param string|null $class HTML class of row
 	 * @return html_form current instance for chaining calls
+	 * @throws \InvalidArgumentException
 	 */
 
 	public function setRow( $name, $label = null, $htmlCode = null, $mandatory = null, $hint = null, $error = null, $class = null )
@@ -501,7 +530,7 @@ class html_form implements widget
 	 * @return html_form current instance for chaining calls
 	 */
 
-	public function setRowIsMandatory( $name, $blnIsMandatory )
+	public function setRowIsMandatory( $name, $blnIsMandatory = true )
 	{
 		return $this->setRow( $name, null, null, !!$blnIsMandatory );
 	}
@@ -589,6 +618,37 @@ EOT
 	public function processInput() {}
 
 	/**
+	 * Provides set of row names requesting special sorting order to apply on
+	 * rows when rendering form.
+	 *
+	 * @param array $sortingOrder
+	 * @throws \InvalidArgumentException
+	 */
+
+	public function setSortingOrder( $sortingOrder )
+	{
+		if ( !is_array( $sortingOrder ) )
+			throw new \InvalidArgumentException( 'invalid sorting order definition' );
+
+		$this->sortingOrder = $sortingOrder;
+	}
+
+	/**
+	 * Selects whether form is going to include special request ID for protecting
+	 * against XSRF attacks.
+	 *
+	 * @param bool $enable
+	 * @return $this
+	 */
+
+	public function enableXsrfMode( $enable = true )
+	{
+		$this->enableXsrfMode = !!$enable;
+
+		return $this;
+	}
+
+	/**
 	 * Renders HTML code of form.
 	 *
 	 * @return string generated HTML code
@@ -612,6 +672,10 @@ EOT
 		$template = self::getRowTemplate();
 
 		$rows = array_filter( $this->rows, function( $row ) { return !!count( $row ); } );
+
+		if ( $this->sortingOrder )
+			data::rearrangeArray( $rows, $this->sortingOrder, true );
+
 		$rows = array_map( function( $row ) use ( $template )
 		{
 			$label = view::wrapNotEmpty( @$row['label'], '', '' );
@@ -631,15 +695,16 @@ EOT
 		$code = str_replace( '%%%%ROWS_STACK%%%%', implode( '', $rows ), $this->code );
 
 
-		$hidden = "<input type=\"hidden\" name=\"$idName\" value=\"$idValue\"/>";
-		foreach ( $this->hidden as $name => $value )
+		$hidden = $this->enableXsrfMode ? "<input type=\"hidden\" name=\"$idName\" value=\"$idValue\"/>" : '';
+
+		foreach ( $this->hidden as $key => $value )
 			if ( is_array( $value ) )
 			{
 				foreach ( $value as $subName => $subValue )
-					$hidden .= '<input type="hidden" name="' . html::inAttribute( $name ) . '[' . html::inAttribute( $subName ) . ']" value="' . html::inAttribute( $subValue ) . '"/>';
+					$hidden .= '<input type="hidden" name="' . html::inAttribute( $key ) . '[' . html::inAttribute( $subName ) . ']" value="' . html::inAttribute( $subValue ) . '"/>';
 			}
 			else if ( $value !== null )
-				$hidden .= '<input type="hidden" name="' . html::inAttribute( $name ) . '" value="' . html::inAttribute( $value ) . '"/>';
+				$hidden .= '<input type="hidden" name="' . html::inAttribute( $key ) . '" value="' . html::inAttribute( $value ) . '"/>';
 
 		$class = ( $this->class !== null ) ? ' class="' . html::inAttribute( $this->class ) . '"' : '';
 
