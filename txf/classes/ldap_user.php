@@ -158,7 +158,7 @@ class ldap_user extends user
 
 		// rebind using credentials stored in session
 		if ( !$this->bindAs( $this->userDN, $this->getCredentials() ) )
-			throw new unauthorized_exception( 'invalid/missing credentials' );
+			throw new unauthorized_exception( 'invalid/missing credentials', unauthorized_exception::REAUTHENTICATE, $this );
 
 		exception::leaveSensitive();
 
@@ -171,7 +171,7 @@ class ldap_user extends user
 	public function authenticate( $credentials )
 	{
 		if ( !$this->bindAs( $this->userDN, $credentials ) )
-			throw new unauthorized_exception( 'invalid/missing credentials' );
+			throw new unauthorized_exception( 'invalid/missing credentials', unauthorized_exception::TOKEN_MISMATCH, $this );
 
 		// store credentials in session
 		$this->saveCredentials( $credentials );

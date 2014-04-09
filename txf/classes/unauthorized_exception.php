@@ -38,8 +38,55 @@ namespace de\toxa\txf;
 
 class unauthorized_exception extends \Exception
 {
-	public function __construct( $message = null, $code = null )
+	const USER_NOT_FOUND = 1;
+	const TOKEN_MISMATCH = 2;
+	const ACCOUNT_LOCKED = 3;
+	const REAUTHENTICATE = 4;
+
+	/**
+	 * associated user account
+	 *
+	 * @var user
+	 */
+
+	protected $_user = null;
+
+
+	public function __construct( $message = null, $code = null, user $user = null )
 	{
-		parent::__construct( $message, $stateCode );
+		parent::__construct( $message, $code );
+
+		$this->_user = $user;
+	}
+
+	public function isAccountLocked()
+	{
+		return $this->getCode() == self::ACCOUNT_LOCKED;
+	}
+
+	public function isTokenMismatch()
+	{
+		return $this->getCode() == self::TOKEN_MISMATCH;
+	}
+
+	public function isUserNotFound()
+	{
+		return $this->getCode() == self::USER_NOT_FOUND;
+	}
+
+	public function isOnReauthenticate()
+	{
+		return $this->getCode() == self::REAUTHENTICATE;
+	}
+
+	/**
+	 * Fetches user account optionally associated with exception.
+	 *
+	 * @return user
+	 */
+
+	public function getUser()
+	{
+		return $this->_user;
 	}
 }
