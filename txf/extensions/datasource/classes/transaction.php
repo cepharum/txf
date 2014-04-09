@@ -213,7 +213,7 @@ class transaction
 	 * processor function.
 	 *
 	 * @throws \InvalidArgumentException on invalid processor
-	 * @param function $processor code to process in transaction
+	 * @param callable $processor code to process in transaction
 	 * @param string $name explicit name of transaction
 	 * @return boolean true on success, false on error
 	 */

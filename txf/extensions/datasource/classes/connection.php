@@ -57,7 +57,7 @@ interface connection
 	 * This is provided for querying a datasource e.g. for modification not
 	 * returning any resultset.
 	 *
-	 * return @boolean
+	 * @return bool
 	 */
 
 	public function test( $query );
@@ -131,10 +131,11 @@ interface connection
 	 * Tests whether provided dataset exists in connected datasource or not.
 	 *
 	 * @param string $dataset name of dataset (table) to check
+	 * @param boolean $noCache true to force actually checking datasource
 	 * @return boolean true on dataset (table) exists
 	 */
 
-	public function exists( $dataset );
+	public function exists( $dataset, $noCache = false );
 
 	/**
 	 * Creates named dataset (table) using provided definition of properties
