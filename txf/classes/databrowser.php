@@ -252,7 +252,7 @@ class databrowser implements widget
 	 * @param string $name name of property in connected datasource to be linked with column
 	 * @param string $label label in column header
 	 * @param boolean $sortable true to mark column as sortable
-	 * @param function|array $formatter callback for individually formatting values of column/property
+	 * @param callable|array $formatter callback for individually formatting values of column/property
 	 * @return \de\toxa\txf\databrowser current instance
 	 */
 
@@ -272,7 +272,7 @@ class databrowser implements widget
 	 * Selects callback invoked on every rendered item in datalist rendering
 	 * its related command controls.
 	 *
-	 * @param function|array $callback callback to invoke on every item
+	 * @param callable|array $callback callback to invoke on every item
 	 * @throws \InvalidArgumentException
 	 * @return \de\toxa\txf\databrowser current instance
 	 */

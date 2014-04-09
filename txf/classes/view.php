@@ -150,7 +150,7 @@ class view extends view\skinnable\manager
 				$data = variable_space::fromArray( $data );
 
 			// @todo consider selecting engine depending on current configuration instead of using current view's one
-			return static::current()->getEngine()->render( $template, $data );
+			return static::engine()->render( $template, $data );
 		}
 		catch ( \Exception $e )
 		{
@@ -158,6 +158,8 @@ class view extends view\skinnable\manager
 				ob_end_clean();
 
 			static::error( log::exception( '[%s:%s in %s@%d]', get_class( $e ), $e->getMessage(), $e->getFile(), $e->getLine() ) );
+
+			return '';
 		}
 	}
 }

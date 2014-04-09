@@ -97,7 +97,7 @@ class crypt
 	 * Conveniently wraps constructor of class to instantly chain calls of
 	 * methods.
 	 *
-	 * @param function $ivGenerator callback method providing constant IV to use
+	 * @param callable $ivGenerator callback method providing constant IV to use
 	 * @param resource $module result of calling mcrypt_module_open()
 	 * @return crypt
 	 */
