@@ -3,10 +3,9 @@
 
 namespace de\toxa\txf;
 
-class model_editor_currency implements model_editor_element
+class model_editor_currency extends model_editor_abstract
 {
 	protected static $currencies = null;
-	protected $isMandatory = false;
 
 	/**
 	 * set of pcre patterns matching supported notations of decimals providing
@@ -25,11 +24,6 @@ class model_editor_currency implements model_editor_element
 	{
 		if ( !is_array( static::$currencies ) )
 			static::$currencies = config::get( 'data.currencies', array( 'EUR' => _L('€') ) );
-	}
-
-	public static function create()
-	{
-		return new static();
 	}
 
 	public function normalize( $input, $property, model_editor $editor )
@@ -83,35 +77,28 @@ class model_editor_currency implements model_editor_element
 		$code  = markup::textedit( "{$name}_amount", $parts[0] );
 		$code .= markup::selector( "{$name}_currency", static::$currencies, $parts[1] );
 
-		$form
-			->setRow( $name, $label, $code, $isMandatory )
-			->setRowClass( $name, 'currency' );
+		$classes = implode( ' ', array_filter( array( $this->class, 'currency' ) ) );
+
+		$form->setRow( $name, $label, $code, $this->isMandatory, $this->hint, null, $classes );
 
 		return $this;
 	}
 
 	public function renderStatic( html_form $form, $name, $input, $label, model_editor $editor )
 	{
-		$parts = explode( ' ', $input );
+		$value = $this->formatValue( $name, $input, $editor );
 
-		$code  = implode( ' ', array( $parts[0], array_key_exists( $parts[1], static::$currencies ) ? static::$currencies[$parts[1]] : $parts[1] ) );
+		$classes = implode( ' ', array_filter( array( $this->class, 'currency' ) ) );
 
-		$form
-			->setRow( $name, $label, $code, $isMandatory )
-			->setRowClass( $name, 'currency' );
+		$form->setRow( $name, $label, markup::inline( $value, 'static' ), $this->isMandatory, null, null, $classes );
 
 		return $this;
 	}
 
-	public function mandatory( $mandatory = true )
+	public function formatValue( $name, $value, model_editor $editor )
 	{
-		$this->isMandatory = !!$mandatory;
+		$parts = explode( ' ', $value );
 
-		return $this;
-	}
-
-	public function isMandatory()
-	{
-		return $this->isMandatory;
+		return implode( ' ', array( $parts[0], array_key_exists( $parts[1], static::$currencies ) ? static::$currencies[$parts[1]] : $parts[1] ) );
 	}
 }

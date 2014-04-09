@@ -13,11 +13,11 @@ class model_editor_selector extends model_editor_text
 
 	protected $options;
 
+
+
 	public function __construct( $options = null )
 	{
-		parent::__construct();
-
-		$this->options = dictionary::createOnArray( $options );
+			$this->options = dictionary::createOnArray( $options );
 	}
 
 	public static function create( $options = null )
@@ -60,16 +60,15 @@ class model_editor_selector extends model_editor_text
 		else if ( !$this->options->exists( '' ) )
 			$this->options->insertAtIndex( '', _L('-'), 0 );
 
-		$form->setSelectorRow( $name, $label, $this->options->items, $input );
+		$classes = implode( ' ', array_filter( array( $this->class, 'selector' ) ) );
+
+		$form->setSelectorRow( $name, $label, $this->options->items, $input, $this->isMandatory(), $this->hint, null, $classes );
 
 		return $this;
 	}
 
-	public function renderStatic( html_form $form, $name, $input, $label, model_editor $editor )
+	public function formatValue( $name, $value, model_editor $editor )
 	{
-		if ( $this->options->exists( $input ) )
-			return parent::renderStatic( $form, $name, $this->options->value( $input ), $label, $editor );
-
-		return parent::renderStatic( $form, $name, _L('-'), $label, $editor );
+		return $this->options->exists( $value ) ? $this->options->value( $value ) : _L('-');
 	}
 }

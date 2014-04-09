@@ -3,29 +3,30 @@
 
 namespace de\toxa\txf;
 
-class model_editor_date implements model_editor_element
+class model_editor_date extends model_editor_abstract
 {
-	protected $isMandatory = false;
 	protected $notBefore = null;
 	protected $notAfter = null;
 
 	protected $storageFormat = 'Y-m-d';
-	protected $renderFormat = 'Y-m-d';
+	protected $staticFormat = 'Y-m-d';
+	protected $editorFormat = 'Y-m-d';
 
 	protected static $fallbackParserFormats = array(
 		'Y-m-d H:i:s',
 		'Y-m-d',
 	);
 
-	public function __construct( $renderFormat = 'Y-m-d',  $storageFormat = null )
+	public function __construct( $staticFormat = 'Y-m-d',  $editorFormat = null, $storageFormat = null )
 	{
-		$this->renderFormat  = $renderFormat;
-		$this->storageFormat = $storageFormat !== null ? $storageFormat : $renderFormat;
+		$this->staticFormat  = $staticFormat;
+		$this->editorFormat  = $editorFormat !== null ? $editorFormat : $staticFormat;
+		$this->storageFormat = $storageFormat !== null ? $storageFormat : $editorFormat;
 	}
 
-	public static function create( $renderFormat = 'Y-m-d',  $storageFormat = null )
+	public static function create( $staticFormat = 'Y-m-d',  $editorFormat = null, $storageFormat = null )
 	{
-		return new static( $renderFormat, $storageFormat );
+		return new static( $staticFormat, $editorFormat, $storageFormat );
 	}
 
 	protected function parseInputToDatetime( $input )
@@ -34,7 +35,7 @@ class model_editor_date implements model_editor_element
 			// input consists of zeroes, only -> consider some unset date
 			return null;
 
-		$parsed = \DateTime::createFromFormat( $this->renderFormat, trim( $input ) );
+		$parsed = \DateTime::createFromFormat( $this->editorFormat, trim( $input ) );
 		if ( !$parsed )
 			foreach ( static::$fallbackParserFormats as $format )
 			{
@@ -73,12 +74,9 @@ class model_editor_date implements model_editor_element
 
 	public function validate( $value, $property, model_editor $editor )
 	{
-		if ( $value === null )
-		{
-			if ( $this->isMandatory )
-				throw new \InvalidArgumentException( _L('This information is required.') );
-		}
-		else
+		parent::validate( $value, $property, $editor );
+
+		if ( $value !== null )
 		{
 			$ts = $this->parseStorageToDatetime( $value );
 
@@ -92,38 +90,35 @@ class model_editor_date implements model_editor_element
 		return true;
 	}
 
-	public function render( html_form $form, $name, $value, $label, model_editor $editor )
+	public function render( html_form $form, $name, $input, $label, model_editor $editor )
+	{
+		$ts = $this->parseStorageToDatetime( $input );
+
+		$classes = array( $this->class, 'date', preg_replace( '/\W/', '', $this->editorFormat ) );
+		$classes = implode( ' ', array_filter( $classes ) );
+
+		$form->setTexteditRow( $name, $label, $ts ? $ts->format( $this->editorFormat ) : '', $this->isMandatory, $this->hint, null, $classes );
+
+		return $this;
+	}
+
+	public function renderStatic( html_form $form, $name, $input, $label, model_editor $editor )
+	{
+		$value = $this->formatValue( $name, $input, $editor );
+
+		$classes = array( $this->class, 'date', preg_replace( '/\W/', '', $this->staticFormat ) );
+		$classes = implode( ' ', array_filter( $classes ) );
+
+		$form->setRow( $name, $label, markup::inline( $value, 'static' ), $this->isMandatory, null, null, $classes );
+
+		return $this;
+	}
+
+	public function formatValue( $name, $value, model_editor $editor )
 	{
 		$ts = $this->parseStorageToDatetime( $value );
 
-		$form
-			->setTexteditRow( $name, $label, $ts ? $ts->format( $this->renderFormat ) : '' )
-			->setRowClass( $name, 'date ' . preg_replace( '/\W/', '', $this->renderFormat ) );
-
-		return $this;
-	}
-
-	public function renderStatic( html_form $form, $name, $value, $label, model_editor $editor )
-	{
-		$ts = $this->parseStorageToDatetime( $value );
-
-		$form
-			->setRow( $name, $label, markup::inline( $ts ? $ts->format( $this->renderFormat ) : null, 'static' ) )
-			->setRowClass( $name, 'date ' . preg_replace( '/\W/', '', $this->renderFormat ) );
-
-		return $this;
-	}
-
-	public function mandatory( $mandatory = true )
-	{
-		$this->isMandatory = !!$mandatory;
-
-		return $this;
-	}
-
-	public function isMandatory()
-	{
-		return $this->isMandatory;
+		return $ts ? $ts->format( $this->staticFormat ) : null;
 	}
 
 	public function notBefore( \DateTime $timestamp )

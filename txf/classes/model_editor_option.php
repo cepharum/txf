@@ -5,15 +5,6 @@ namespace de\toxa\txf;
 
 class model_editor_option extends model_editor_text
 {
-	public function __construct()
-	{
-	}
-
-	public static function create()
-	{
-		return new static();
-	}
-
 	public function normalize( $input, $property, model_editor $editor )
 	{
 		return preg_match( '/^y(es)?|j(a)?|on|t(rue)?|set|1$/i', trim( $input ) ) ? 1 : 0;
@@ -29,14 +20,18 @@ class model_editor_option extends model_editor_text
 
 	public function render( html_form $form, $name, $input, $label, model_editor $editor )
 	{
-		$form->setCheckboxRow( $name, $label, $input );
+		$classes = implode( ' ', array_filter( array( $this->class, 'option' ) ) );
+
+		$form->setCheckboxRow( $name, $label, $input, $this->isMandatory, $this->hint, null, $classes );
 
 		return $this;
 	}
 
 	public function renderStatic( html_form $form, $name, $input, $label, model_editor $editor )
 	{
-		$form->setRow( $name, $label, markup::inline( $input ? _L('yes') : _L('no'), 'static' ) );
+		$classes = implode( ' ', array_filter( array( $this->class, 'option' ) ) );
+
+		$form->setRow( $name, $label, markup::inline( $input ? _L('yes') : _L('no'), 'static' ), null, null, $classes );
 
 		return $this;
 	}

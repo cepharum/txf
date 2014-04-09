@@ -38,14 +38,21 @@ class model_editor_static implements model_editor_element
 
 	public function render( html_form $form, $name, $input, $label, model_editor $editor )
 	{
-		$form->setRow( $this->name, $label, $this->label );
+		$classes = implode( ' ', array_filter( array( $this->class, 'static' ) ) );
+
+		$form->setRow( $this->name, $label, $this->label, $this->isMandatory(), $this->hint, null, $classes );
 
 		return $this;
 	}
 
 	public function renderStatic( html_form $form, $name, $input, $label, model_editor $editor )
 	{
-		return $this->render( $form, $name, $input, $label, $editor );
+		return $this->render( $form, $name, markup::inline( $input, 'static' ), $label, $editor );
+	}
+
+	public function formatValue( $name, $value, model_editor $editor )
+	{
+		return $value;
 	}
 
 	public function mandatory( $mandatory = true )
