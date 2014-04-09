@@ -155,7 +155,7 @@ class application
 			}
 
 			// derive list of application and script selectors
-			$frames = path::stripCommonPrefix( explode( '/', trim( $query, '/' ) ), $context->prefixPathname );
+			$frames = path::stripCommonPrefix( explode( '/', $query ), $context->prefixPathname );
 		}
 		else // txf::CTXMODE_NORMAL
 			// expect application and script selectors being part of requested
@@ -212,9 +212,8 @@ class application
 		if ( txf::getContextMode() == txf::CTXMODE_REWRITTEN )
 			$application->selectors = $frames;
 		else
-			$application->selectors = explode( '/', trim( $_SERVER['PATH_INFO'], '/' ) );
+			$application->selectors = explode( '/', $_SERVER['PATH_INFO'] );
 
-		$application->selectors = array_filter( $application->selectors, function( $a ) { return trim( $a ); } );
 		$application->selectors = array_map( function ( $a ) { return data::autoType( trim( $a ) ); }, $application->selectors );
 
 
@@ -236,6 +235,22 @@ class application
 	{
 		if ( property_exists( $this, $name ) )
 			return $this->$name;
+	}
+
+	/**
+	 * Retrieves prefix for relative URLs pointing from current script to public
+	 * root folder of current application.
+	 *
+	 * This prefix is required to use selectors affecting browsers in resolving
+	 * relative URLs differently.
+	 *
+	 * @param string $rootRelativePathname pathname of resource to be prefixed
+	 * @return string
+	 */
+
+	public function relativePrefix( $rootRelativePathname = null )
+	{
+		return implode( '', array_pad( array(), count( $this->selectors ), '../' ) ) . trim( $rootRelativePathname );
 	}
 
 	/**
@@ -295,7 +310,7 @@ class application
 		$selectors = func_get_args();
 		$selectors = array_slice( $selectors, 1 );
 
-		if ( empty( $selectors ) )
+		if ( !count( $selectors ) )
 			$selectors = application::current()->selectors;
 
 

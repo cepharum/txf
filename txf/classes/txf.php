@@ -155,8 +155,15 @@ class txf extends singleton
 		define( 'TXF_SCRIPT_PATH', $this->context->application->script );
 		define( 'TXF_SCRIPT_NAME', pathinfo( TXF_SCRIPT_PATH, PATHINFO_FILENAME ) );
 
+		// prepare URL prefix to use on compiling relative URLs pointing to
+		// current application's public root
+		define( 'TXF_RELATIVE_PREFIX', $this->context->application->relativePrefix() );
+
 		// start runtime configuration support
 		config::init();
+
+		// support configuration option to enable/disable errors displayed in output
+		ini_set( 'display_errors', config::get( 'display_errors', false ) );
 
 		// enable internal class redirection support
 		$this->initializeClassRedirections();
@@ -460,6 +467,9 @@ class txf extends singleton
 	{
 		if ( func_num_args() > 1 )
 			$url = call_user_func_array( array( __NAMESPACE__ . '\context', 'scriptURL' ), func_get_args() );
+
+		if ( url::isRelative( $url ) )
+			$url = application::current()->relativePrefix( $url );
 
 		header( 'Location: ' . $url );
 
