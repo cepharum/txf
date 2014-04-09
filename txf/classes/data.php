@@ -117,6 +117,27 @@ class data
 	}
 
 	/**
+	 * Converts provided input to string value.
+	 *
+	 * This method is explicitly calling a given object's __toString() method
+	 * for implicitly calling it on strval() disables support for exceptions
+	 * thrown in scope of __toString().
+	 *
+	 * @param mixed $input
+	 * @return string
+	 */
+
+	public static function asString( $input )
+	{
+		if ( is_object( $input ) && is_callable( array( $input, '__toString') ) )
+		{
+			return $input->__toString();
+		}
+
+		return strval( $input );
+	}
+
+	/**
 	 * Shortens string on exceeding selected count of characters.
 	 *
 	 * @param string $in string to be shortened on demand
@@ -136,6 +157,68 @@ class data
 	}
 
 	/**
+	 * Re-arranges given array instance by sorting its elements according to
+	 * sequence of array keys given in second array $manualOrder.
+	 *
+	 * @example
+	 *
+	 *     $data  = array( 'a' => 1, 'b' => 2, 'c' => 3 );
+	 *     $order = array( 'b', 'c', 'a' );
+	 *     data::rearrangeArray( $data, $order )
+	 *
+	 * result: $data is array( 'b' => 2, 'c' => 3, 'a' => 1 )
+	 *
+	 * @example
+	 *
+	 *     $data  = array( 'a' => 1, 'b' => 2, 'c' => 3 );
+	 *     $order = array( 'b', 'a' );
+	 *     data::rearrangeArray( $data, $order )
+	 *
+	 * result: $data is array( 'b' => 2, 'a' => 1 )
+	 *
+	 * @example
+	 *
+	 *     $data  = array( 'a' => 1, 'b' => 2, 'c' => 3 );
+	 *     $order = array( 'b' );
+	 *     data::rearrangeArray( $data, $order, true )
+	 *
+	 * result is: $data is array( 'b' => 2, 'a' => 1, 'c' => 3 )
+	 *        or: $data is array( 'b' => 2, 'c' => 3, 'a' => 1 )
+	 *
+	 * @param array $array hash of elements to rearrange/sort, !!pass-by-reference!!
+	 * @param array $manualOrder properly sorted list of names of elements in $array
+	 * @param bool $keepOnMissing set true to append elements not mentioned in
+	 *                            $manualOrder in undefined sorting order,
+	 *                            otherwise those elements are removed from $array
+	 * @return array sorted array
+	 */
+
+	public static function rearrangeArray( &$array, $manualOrder, $keepOnMissing = false )
+	{
+		$manualOrder = array_flip( array_values( $manualOrder ) );
+
+		if ( !$keepOnMissing )
+			foreach ( $array as $key => $dummy )
+				if ( !array_key_exists( $key, $manualOrder ) )
+					unset( $array[$key] );
+
+		uksort( $array, function( $left, $right ) use ( $manualOrder ) {
+			$left  = @$manualOrder[$left];
+			$right = @$manualOrder[$right];
+
+			if ( is_null( $right ) )
+				return is_null( $left ) ? 0 : -1;
+
+			if ( is_null( $left ) )
+				return 1;
+
+			return $left - $right;
+		} );
+
+		return $array;
+	}
+
+	/**
 	 * Describes provided value.
 	 *
 	 * This method is returning string containing provided value extended by its
@@ -145,10 +228,11 @@ class data
 	 * @param mixed $value value to describe
 	 * @param boolean $includeType true to have type included in description
 	 * @param boolean $fullSize true to disable shortening of longer values
+	 * @param void $_internal
 	 * @return string description of provided value
 	 */
 
-	public static function describe( $value, $includeType = true, $fullSize = false )
+	public static function describe( $value, $includeType = true, $fullSize = false, $_internal = null )
 	{
 		$type = gettype( $value );
 
@@ -167,8 +251,17 @@ class data
 				$value = '?';
 				break;
 			case 'array' :
-				$type  = 'array[' . count( $value ) . ']';
-				$value = '[' . implode( ', ', array_map( array( self, 'describe' ), $value ) ) . ']';
+				$type = 'array[' . count( $value ) . ']';
+				if ( $_internal > 10 ) {
+					$value = '*MAX-DEPTH*';
+				} else {
+					$out  = '';
+					foreach ( $value as $item ) {
+						$out .= ( $out !== '' ? ', ' : '[' );
+						$out .= static::describe( $item, $includeType, $fullSize, $_internal + 1 );
+					}
+					$value = $out . ']';
+				}
 				break;
 			case 'object' :
 				$type = get_class( $value );
