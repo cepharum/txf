@@ -4,7 +4,6 @@
 	<head>
 		<title><?php echo html::inAttribute( $variables->title ) ?></title>
 <?php echo view::wrapNotEmpty( view::getAssetsOfType( view::ASSET_TYPE_STYLE ), '<link rel="stylesheet" type="text/css" href="|"/>' ) ?>
-<?php echo view::wrapNotEmpty( view::getAssetsOfType( view::ASSET_TYPE_SCRIPT ), '<script type="text/javascript" src="|"></script>' ) ?>
 	</head>
 	<body>
 		<div id="page">
@@ -23,5 +22,6 @@
 				<?php echo $regions->foot ?>
 			</div>
 		</div>
+<?php echo view::wrapNotEmpty( view::getAssetsOfType( view::ASSET_TYPE_SCRIPT ), '<script type="text/javascript" src="|"></script>' ) ?>
 	</body>
 </html>

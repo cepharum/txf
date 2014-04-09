@@ -66,17 +66,14 @@ catch ( http_exception $e )
 {
 	header( $e->getResponse() );
 
-	$html = $e->asHtml();
+	$data = variable_space::create( 'reason', $e );
 
-	echo <<<EOT
-<!DOCTYPE html!>
-<html>
-<head></head>
-<body>
-$html
-<hr />
-TXF
-</body>
-</html>
-EOT;
+	try {
+		view::main( view::engine()->render( 'error/' . $e->getCode(), $data ) );
+	} catch ( \UnexpectedValueException $dummy ) {
+		view::main( view::engine()->render( 'error/generic', $data ) );
+	}
+
+	view::variable( 'title', $e->getStatus() );
+	view::current()->onShutdown();
 }

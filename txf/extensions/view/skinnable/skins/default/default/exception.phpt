@@ -7,5 +7,5 @@
  <p>
   in <strong><?php echo \de\toxa\txf\exception::reducePathname( $exception->getFile() ) ?></strong> at line <?php echo intval( $exception->getLine() ) ?>
  </p>
- <pre><?php echo \de\toxa\txf\exception::renderTrace( \de\toxa\txf\exception::reduceExceptionTrace( $exception ) ) ?></pre>
+ <pre><?php echo \de\toxa\txf\exception::reduceExceptionTrace( $exception, true ) ?></pre>
 </div>
