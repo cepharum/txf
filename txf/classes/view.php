@@ -162,5 +162,53 @@ class view extends view\skinnable\manager
 			return '';
 		}
 	}
+
+
+	/**
+	 * @var array[capture]
+	 */
+
+	protected static $_capturedStack = array();
+
+	protected static function configureCapturing()
+	{
+		if ( !count( static::$_capturedStack ) )
+			static::$_capturedStack[] = new capture();
+	}
+
+	public static function getCaptured()
+	{
+		static::configureCapturing();
+
+		return static::$_capturedStack[0]->get();
+	}
+
+	public static function startCapture( $blnAppend = true )
+	{
+		static::configureCapturing();
+
+        if ( !$blnAppend )
+            static::$_capturedStack[0]->reset();
+
+		array_unshift( static::$_capturedStack, new capture() );
+
+		ob_start();
+	}
+
+	public static function stopCapture()
+	{
+		static::configureCapturing();
+
+		if ( count( static::$_capturedStack ) < 2 )
+			throw new \RuntimeException( 'no capturing has been started previously' );
+
+		static::$_capturedStack[1]->put( static::$_capturedStack[0]->get() );
+		static::$_capturedStack[1]->put( ob_get_clean() );
+
+		array_shift( static::$_capturedStack );
+	}
 }
 
+function _Con( $append = true ) { return view::startCapture( $append ); }
+function _Coff() { return view::stopCapture(); }
+function _C() { return view::getCaptured(); }
