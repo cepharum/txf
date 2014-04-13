@@ -535,12 +535,12 @@ class sql_user extends user
 		switch ( $matches->count() )
 		{
 			case 0 :
-				throw new \OutOfBoundsException( 'ambigious user selection' );
+				throw new unauthorized_exception( 'ambigious user selection', unauthorized_exception::USER_NOT_FOUND );
 			case 1 :
 				$this->rowID = intval( $matches->cell() );
 				return $this;
 			default :
-				throw new \OutOfBoundsException( 'no such user' );
+				throw new unauthorized_exception( 'no such user', unauthorized_exception::USER_NOT_FOUND );
 		}
 	}
 }

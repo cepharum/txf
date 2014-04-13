@@ -195,7 +195,7 @@ abstract class user
 	 * This method is considered to return if unique user has been found and
 	 * loaded from source, only.
 	 *
-	 * @throws \OutOfBoundException when user isn't found
+	 * @throws unauthorized_exception when user isn't found
 	 * @param string $userIdOrLoginName ID or name of user to load
 	 * @return user instance of uniquely found user
 	 */
@@ -286,20 +286,30 @@ abstract class user
 	}
 
 	/**
-	 * Loads selected user either from sources selected in configuration or
-	 * from source(s) provided in call explicitly.
+	 * Iterates over given or configured list of user database providers invoking
+	 * provided callback on every provider until first callback is returning
+	 * properly without throwing exception.
 	 *
-	 * @throws \OutOfBoundsException when user wasn't found
-	 * @param string $userIdOrLoginName ID or login name of user to load
-	 * @param string $explicitSource first source to look for selected user
-	 * @return user found user
+	 * @param callable $callback callback to invoke per iterated user database provider
+	 * @param array|string $explicitSource set of provider names to iterate or name of first provider in a sequence to test
+	 * @return mixed|null result return from callback, null if all callbacks threw exception
+	 * @throws \RuntimeException on missing valid set of providers to iterate
+	 * @throws unauthorized_exception if callback is throwing in other case than "user isn't found"
+	 * @throws \InvalidArgumentException on missing callback
 	 */
 
-	final public static function load( $userIdOrLoginName, $explicitSource = null )
+	final public static function findProvider( $callback, $explicitSource = null )
 	{
+		if ( !is_callable( $callback ) )
+			throw new \InvalidArgumentException( 'invalid callback on finding user provider' );
+
 		// get list of sources to look up for requested user
-		$sources = func_get_args();
-		array_shift( $sources );
+		if ( is_array( $explicitSource ) )
+			$sources = $explicitSource;
+		else {
+			$sources = func_get_args();
+			array_shift( $sources );
+		}
 
 		if ( !count( $sources ) )
 			$sources = config::getList( 'user.sources.enabled' );
@@ -329,25 +339,84 @@ abstract class user
 							$user = $factory->newInstance();
 
 							if ( $user instanceof self )
-								// provide setup data for configuring manager
-								if ( $user->configure( $definition ) )
-								{
-									// search user
-									$user->search( $userIdOrLoginName );
+							{
+								$user->configure( $definition );
 
-									// no exception? ... so it's loaded
-									return $user;
-								}
+								return call_user_func( $callback, $user );
+							}
 						}
-						catch ( \OutOfBoundsException $e ) {}
-						catch ( \ErrorException $e )
+						catch ( unauthorized_exception $e )
 						{
-							log::warning( "failed to search user source: ". $e );
+							if ( !$e->isUserNotFound() )
+								throw $e;
+						}
+						catch ( \Exception $e )
+						{
+							log::warning( 'failed to search user source: ' . $e );
 						}
 				}
 			}
 
-		throw new \OutOfBoundsException( 'no such user: ' . $userIdOrLoginName );
+		return null;
+	}
+
+	/**
+	 * Retrieves first configuration user database provider.
+	 *
+	 * @return user
+	 * @throws \RuntimeException
+	 */
+
+	final public static function getProvider()
+	{
+		$provider = static::findProvider( function( user $provider )
+		{
+			return $provider;
+		} );
+
+		if ( $provider instanceof self )
+			return $provider;
+
+		throw new \RuntimeException( 'missing user management configuration' );
+	}
+
+	/**
+	 * Loads selected user either from sources selected in configuration or
+	 * from source(s) provided in call explicitly.
+	 *
+	 * @throws \OutOfBoundsException when user wasn't found
+	 * @param string $userIdOrLoginName ID or login name of user to load
+	 * @param string $explicitSource first source to look for selected user
+	 * @return user found user
+	 */
+
+	final public static function load( $userIdOrLoginName, $explicitSource = null )
+	{
+		// get array of arguments provided additionally
+		$sources = func_get_args();
+		array_shift( $sources );
+
+		// declare callback here to support late static binding
+		$cb = array( get_called_class(), '__loadOnFindingProvider' );
+
+		$foundUser = static::findProvider( function( user $provider ) use ( $userIdOrLoginName, $cb ) {
+			// call separate public function of class user for having required
+			// access on protected methods of that class again
+			return call_user_func( $cb, $provider, $userIdOrLoginName );
+		}, $sources );
+
+		if ( $foundUser === null )
+			throw new unauthorized_exception( 'no such user: ' . $userIdOrLoginName, unauthorized_exception::USER_NOT_FOUND );
+
+		return $foundUser;
+	}
+
+	final public static function __loadOnFindingProvider( user $provider, $userIdOrLoginName )
+	{
+		$provider->search( $userIdOrLoginName );
+
+		// no exception? ... so it's loaded
+		return $provider;
 	}
 }
 
@@ -384,7 +453,7 @@ class guest_user extends user
 		if ( !$userIdOrLoginName || ( $userIdOrLoginName === 'guest' ) )
 			return self::$single;
 
-		throw new \OutOfBoundsException( 'no such user' );
+		throw new unauthorized_exception( 'no such user', unauthorized_exception::USER_NOT_FOUND );
 	}
 
 	public static function getInstance() { return self::$single; }
