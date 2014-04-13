@@ -110,7 +110,19 @@ class ldap_user extends user
 
 	public function getName()
 	{
-		return $this->readNode()->attributeByName( $this->setup->read( 'nameAttr', 'cn' ) )->read( 0 );
+		try {
+			$name = $this->readNode()->attributeByName( $this->setup->read( 'nameAttr', 'cn' ) )->read( 0 );
+		} catch ( \Exception $e ) {
+			$name = '';
+		}
+
+		if ( trim( $name ) !== '' )
+			return $name;
+
+
+		// if missing attribute CN use value of first RDN in user's DN instead
+		$rdns = ldap_explode_dn( $this->userDN, 0 );
+		return $rdns[0];
 	}
 
 	public function getProperty( $propertyName, $defaultIfMissing = null )
@@ -187,7 +199,7 @@ class ldap_user extends user
 		return ( $this->server->getBoundAs() === $this->userDN );
 	}
 
-	public function is( $role )
+	public function is( $role, $skipCache = false )
 	{
 		// @todo implement some role checking
 		return false;
@@ -229,14 +241,18 @@ class ldap_user extends user
 
 		if ( $this->setup->binddn )
 			if ( !$this->bindAs( $this->setup->binddn, $this->setup->bindpw ) )
-				throw new LDAP\protocol_exception( 'failed to bind' );
+				throw new LDAP\protocol_exception( 'failed to bind', $this->server );
 
 		return true;
 	}
 
 	protected function search( $userIdOrLoginName )
 	{
-		if ( strpos( $userIdOrLoginName, '=' ) !== false )
+		if ( mail::isValidAddress( $userIdOrLoginName ) )
+		{
+			$match = $this->server->searchSub( sprintf( $this->setup->read( 'searchByMail', '(mailPublic=%s)' ), $userIdOrLoginName ), $this->setup->basedn );
+		}
+		else if ( strpos( $userIdOrLoginName, '=' ) !== false )
 		{
 			$match = $this->server->searchBase( $userIdOrLoginName );
 		}
@@ -260,6 +276,69 @@ class ldap_user extends user
 			return $this;
 		}
 
-		throw new \OutOfBoundsException( 'no such user' );
+		throw new unauthorized_exception( 'no such user', unauthorized_exception::USER_NOT_FOUND );
+	}
+
+	/**
+	 * Retrieves datasource containing current user's entry.
+	 *
+	 * @return LDAP\server link to datasource (LDAP server) containing current user's entry
+	 * @throws \RuntimeException
+	 */
+
+	public function getDatasource() {
+		if ( $this->server instanceof LDAP\server ) {
+			return $this->server;
+		}
+
+		throw new \RuntimeException( 'request for unconfigured link to datasource' );
+	}
+
+	/**
+	 * Retrieves LDAP DN of current user.
+	 *
+	 * @return string
+	 * @throws \RuntimeException
+	 */
+
+	public function getDN()
+	{
+		if ( $this->server instanceof LDAP\server ) {
+			return $this->userDN;
+		}
+
+		throw new \RuntimeException( 'request for DN on unconfigured link to datasource' );
+	}
+
+	/**
+	 * Retrieves base DN of current datasource.
+	 *
+	 * @return ldap_user current instance
+	 * @throws \RuntimeException
+	 */
+
+	public function elevateForPasswordChange()
+	{
+        if ( $this->server instanceof LDAP\server )
+        {
+            exception::enterSensitive();
+
+            $dn = $this->setup->read( 'pwchanger.dn' );
+            $pw = $this->setup->read( 'pwchanger.token' );
+
+            if ( $dn && $pw )
+            {
+                if ( $this->server->simpleBindAs( $dn, $pw )->getBoundAs() !== $dn )
+                    throw new \RuntimeException( 'failed to elevate user for changing password' );
+
+                exception::leaveSensitive();
+
+                return $this;
+            }
+
+            throw new \RuntimeException( 'missing configuration for elevating user on link to datasource' );
+        }
+
+		throw new \RuntimeException( 'request for elevating user on unconfigured link to datasource' );
 	}
 }
