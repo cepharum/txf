@@ -45,9 +45,10 @@ class http_exception extends \Exception
 	 * @param integer $stateCode HTTP state code, e.g. 200 on success, 403 on missing authentication
 	 * @param string $message human-readable description of exception's cause in detail
 	 * @param string $state short description of state as defined in HTTP standard, e.g. "Not found" on 404
+	 * @param \Exception $previous previous exception to link with current one
 	 */
 
-	public function __construct( $stateCode = 500, $message = null, $state = null )
+	public function __construct( $stateCode = 500, $message = null, $state = null, \Exception $previous = null )
 	{
 		assert( '( $stateCode >= 100 ) && ( $stateCode <= 999 )' );
 
@@ -59,7 +60,7 @@ class http_exception extends \Exception
 
 		$this->state = $state;
 
-		parent::__construct( $message, $stateCode );
+		parent::__construct( $message, $stateCode, $previous );
 	}
 
 	protected static function getStateOnCode( $code )
