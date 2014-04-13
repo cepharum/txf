@@ -4,6 +4,7 @@
 	<head>
 		<title><?php echo html::inAttribute( $variables->title ) ?></title>
 <?php echo view::wrapNotEmpty( view::getAssetsOfType( view::ASSET_TYPE_STYLE ), '<link rel="stylesheet" type="text/css" href="|"/>' ) ?>
+		<?php echo config::get( 'view.html.header', '' ) ?>
 	</head>
 	<body>
 		<div id="page">
