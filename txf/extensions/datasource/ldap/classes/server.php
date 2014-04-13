@@ -97,11 +97,11 @@ class server
 	{
 		if ( !is_resource( $this->link ) )
 		{
-			$this->link = @ldap_connect( $this->host );
+			$this->link = ldap_connect( $this->host );
 
 			// ensure to use LDAPv3 protocol (required for proper binding and TLS support)
-			@ldap_set_option( $this->link, LDAP_OPT_PROTOCOL_VERSION, 3 );
-			@ldap_set_option( $this->link, LDAP_OPT_REFERRALS, 0 );
+			ldap_set_option( $this->link, LDAP_OPT_PROTOCOL_VERSION, 3 );
+			ldap_set_option( $this->link, LDAP_OPT_REFERRALS, 0 );
 		}
 	}
 
@@ -114,7 +114,7 @@ class server
 	public function startTls()
 	{
 		// start TLS on connection
-		@ldap_start_tls( $this->link );
+		ldap_start_tls( $this->link );
 
 		return $this;
 	}
