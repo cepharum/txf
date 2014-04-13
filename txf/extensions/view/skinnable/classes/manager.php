@@ -37,6 +37,7 @@ use de\toxa\txf\config;
 use de\toxa\txf\txf;
 use de\toxa\txf\set;
 use de\toxa\txf\url;
+use de\toxa\txf\capture;
 
 
 /**
@@ -66,7 +67,7 @@ class manager extends \de\toxa\txf\singleton
 	/**
 	 * set of named viewports
 	 *
-	 * @var array
+	 * @var array[capture]
 	 */
 
 	protected $viewports = array();
@@ -353,19 +354,16 @@ EOT
 		{
 			// retrieve current content of selected viewport
 			if ( array_key_exists( $viewportName, $this->viewports ) )
-				return str_replace( self::codeMiddleMarker, '', $this->viewports[$viewportName] );
+				return $this->viewports[$viewportName]->get();
 
 			return '';
 		}
 
 		// extend selected viewport's content
 		if ( !array_key_exists( $viewportName, $this->viewports ) )
-			$this->viewports[$viewportName] = self::codeMiddleMarker;
+			$this->viewports[$viewportName] = new capture();
 
-		if ( $append )
-			$this->viewports[$viewportName] .= $viewportCode;
-		else
-			$this->viewports[$viewportName]  = $viewportCode . $this->viewports[$viewportName];
+		$this->viewports[$viewportName]->put( $viewportCode, !$append );
 	}
 
 	/**
@@ -518,7 +516,13 @@ EOT
 	{
 		foreach ( config::getList( 'view.widget' ) as $spec )
 		{
-			$target = $spec['target'];
+			if ( array_key_exists( 'viewport', $spec ) )
+				$viewport = $spec['viewport'];
+			else
+				$viewport = $spec['target'];
+
+			if ( trim( $viewport ) === '' )
+				$viewport = 'main';
 
 			$provider = array( $spec['provider']['class'], $spec['provider']['method'] );
 			if ( is_callable( $provider ) )
@@ -529,7 +533,7 @@ EOT
 
 				$widget = call_user_func_array( $provider, $args );
 
-				$this->writeInViewport( $target, data::asString( $widget ), !$spec['prepend'] );
+				$this->writeInViewport( $viewport, data::asString( $widget ), !$spec['prepend'] );
 			}
 		}
 	}
@@ -659,6 +663,7 @@ EOT
 
 	public function renderPage()
 	{
+		// ensure to provide output document once, only
 		if ( $this->renderedBefore )
 			return '';
 
@@ -667,21 +672,26 @@ EOT
 
 		try
 		{
+			// ensure to compile all currently declared flash messages
 			static::renderFlashes();
 
 
-			$rawOutput = $this->getRawOutput();
-
+			// prepare content of all used viewports
 			$viewports = array();
-			foreach ( $this->viewports as $key => $code )
-				$viewports[$key] = str_replace( self::codeMiddleMarker, ( $key == 'main' ) ? $rawOutput : '', $code );
+			foreach ( $this->viewports as $key => $vp )
+				$viewports[$key] = $vp->wrap( $key == 'main' ? $this->getRawOutput() : '' );
 
+			// ensure to have any raw output of scripts (bypassing view manager)
+			// to be embedded in viewport main
 			if ( !\array_key_exists( 'main', $viewports ) )
-				$viewports['main'] = $rawOutput;
+				$viewports['main'] = $this->getRawOutput();
 
 
+			// compile set of viewports into set of regions
 			$regions = $this->collectRegions( $viewports );
 
+
+			// use page template to compile set of regions into single output document
 			$data = variable_space::create(
 										'variables', $this->variables,
 										'regions', variable_space::fromArray( $regions ),
@@ -689,9 +699,8 @@ EOT
 									);
 
 			$code = $this->engine->render( 'page', $data );
-
 		}
-		catch ( Exception $e )
+		catch ( \Exception $e )
 		{
 			$code = self::simpleRenderException( $e );
 		}
