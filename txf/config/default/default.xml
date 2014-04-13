@@ -3,6 +3,11 @@
 	<!-- declare some defaults here -->
 	<default>
 	</default>
+    <php>
+<!--
+        <display_errors>true</display_errors>
+-->
+    </php>
 	<view>
 		<!-- integrate CSS style definitions -->
 <!--
@@ -36,20 +41,20 @@
 			<!-- declare title to show by default on every page -->
 <!--
 			<title><![CDATA[
-				<h1>INPAS</h1>
+				<h1>My Brand</h1>
 			]]></title>
 -->
 			<!-- declare page footer to show by default on every page -->
 <!--
 			<footer><![CDATA[
-				&copy; <a href="http://www.openprintserver.org">openprintserver.org</a>
+				&copy; <a href="http://www.example.com">example.com</a>
 			]]></footer>
 -->
 		</static>
 		<!-- declare page title to use in meta data of every page -->
 <!--
 		<variable>
-			<title>INPAS</title>
+			<title>My Brand</title>
 		</variable>
 -->
 		<viewport>
@@ -70,6 +75,19 @@
 			<viewport>error</viewport>
 			<viewport>main</viewport>
 		</region>
+-->
+        <!-- use widgets for producing output in every rendered page -->
+        <!-- example 1: render primary menu in viewport header by invoking
+             navigator::select( 'primary' ) and converting its result to string -->
+<!--
+        <widget>
+            <viewport>header</viewport>
+            <provider>
+                <class>\de\toxa\txf\navigator</class>
+                <method>select</method>
+                <selector>primary</selector>
+            </provider>
+        </widget>
 -->
 	</view>
 <!--
@@ -105,8 +123,21 @@
 						<password>different_name_of_password_column</password>
 					</properties>
 				</mycustomsetup>
+                <someldapusers>
+                    <type>ldap</type>
+                    <!-- optional properties -->
+                    <server>ldaps://ldap.example.com</server>
+                </someldapusers>
 			</setup>
 			<enabled>mycustomsetup</enabled>
 		</sources>
 	</user>
+    <!-- configure support for sending mails -->
+    <mail>
+        <sender>provide valid sender address here</sender>
+        <!-- providing reply-to address is optional -->
+<!--
+        <reply-to>reply-to@example.com</reply-to>
+-->
+    </mail>
 </config>
