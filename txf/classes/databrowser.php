@@ -443,7 +443,7 @@ class databrowser implements widget
 
 /*
  * disabled for __toString() mustn't throw exceptions frequently hardening bug hunting
- * 
+ *
 	public function __toString()
 	{
 		return $this->getCode();
