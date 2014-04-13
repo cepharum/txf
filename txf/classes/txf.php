@@ -163,7 +163,7 @@ class txf extends singleton
 		config::init();
 
 		// support configuration option to enable/disable errors displayed in output
-		ini_set( 'display_errors', config::get( 'display_errors', false ) );
+		ini_set( 'display_errors', config::get( 'php.display_errors', false ) );
 
 		// enable internal class redirection support
 		$this->initializeClassRedirections();

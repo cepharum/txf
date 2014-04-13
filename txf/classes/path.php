@@ -39,8 +39,8 @@ class path
 	 * it's returning false thus rendering useful in detecting this relationship
 	 * of two pathnames.
 	 *
-	 * @param string $outer pathname to containing folder
-	 * @param string $inner pathname to contained file or folder
+	 * @param string $outer pathname of containing folder
+	 * @param string $inner pathname of contained file or folder
 	 * @return string inner pathname relative to outer one on $outer containing
 	 *                 $inner, false if $outer isn't containing $inner
 	 */

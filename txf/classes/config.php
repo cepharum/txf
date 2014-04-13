@@ -145,7 +145,11 @@ class config extends singleton
 
 	public static function get( $path, $default = null )
 	{
-		return static::current()->cached->read( $path, $default );
+		try {
+			return static::current()->cached->read( $path, $default );
+		} catch ( \UnexpectedValueException $e ) {
+			return $default;
+		}
 	}
 
 	/**

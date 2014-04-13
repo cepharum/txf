@@ -64,7 +64,7 @@ class navigator implements widget
 	/**
 	 * optional callback invoked to detect currently selected items
 	 *
-	 * @var function
+	 * @var callable
 	 */
 
 	protected $autoselector;
