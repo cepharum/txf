@@ -107,6 +107,8 @@ class application
 	 * If context is omitted one is created internally.
 	 *
 	 * @param context $context context to utilize while detecting application
+	 * @return application current application instance
+	 * @throws http_exception
 	 */
 
 	public static function current( context $context = null )
@@ -121,55 +123,12 @@ class application
 
 
 		/*
-		 * choose source of application/script selector
-		 */
-
-		if ( txf::getContextMode() == txf::CTXMODE_REWRITTEN )
-		{
-			assert( '$_SERVER[REDIRECT_URL] || $_SERVER[PATH_INFO] || $_SERVER[REQUEST_URI]' );
-
-			// get originally requested script (e.g. prior to rewrite)
-			if ( trim( $_SERVER['REDIRECT_URL'] ) !== '' )
-			{
-				// use of mod_rewrite detected
-				$query = $_SERVER['REDIRECT_URL'];
-
-				// mark rewrite mode by not selecting any valid used proxy
-				$application->usedProxy = true;
-			}
-			else if ( trim( $_SERVER['REQUEST_URI'] ) !== '' )
-			{
-				// use of lighttpd's rewriting detected
-				$query = strtok( $_SERVER['REQUEST_URI'], '?' );
-
-				// mark rewrite mode by not selecting any valid used proxy
-				$application->usedProxy = true;
-			}
-			else
-			{
-				// request for proxy script (run.php) detected
-				$query = $_SERVER['PATH_INFO'];
-
-				// remember proxy script used this time, if any
-				$application->usedProxy = $context->scriptPathname;
-			}
-
-			// derive list of application and script selectors
-			$frames = path::stripCommonPrefix( explode( '/', $query ), $context->prefixPathname );
-		}
-		else // txf::CTXMODE_NORMAL
-			// expect application and script selectors being part of requested
-			// script pathname
-			$frames = explode( '/', $context->applicationScriptPathname );
-
-
-
-		/*
 		 * extract selected application and source
 		 */
 
+		// choose source of application/script selector
+		$frames = $context->getRequestedScriptUri( $application->usedProxy );
 		if ( empty( $frames ) )
-			// require both application and script selector
 			throw new http_exception( 400, 'Request missing application. Check your setup!' );
 
 		// extract information on application folder and name

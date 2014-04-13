@@ -99,6 +99,14 @@ class context
 	private $url;
 
 	/**
+	 * hostname used in current request
+	 *
+	 * @var string
+	 */
+
+	private $hostname;
+
+	/**
 	 * detected name of current application
 	 *
 	 * @var string
@@ -126,8 +134,20 @@ class context
 		$this->frameworkPathname    = dirname( dirname( __FILE__ ) );
 		$this->installationPathname = dirname( $this->frameworkPathname );
 
-		$this->isHTTPS = ( $_SERVER['HTTPS'] != false );
+		$this->isHTTPS = ( $_SERVER['HTTPS'] != false || $_SERVER['HTTP_X_HTTPS'] != false );
 
+		// analyse special case of working behind reverse proxy
+		if ( array_key_exists( 'HTTP_X_ORIGINAL_URL', $_SERVER ) ) {
+			$url = parse_url( $_SERVER['HTTP_X_ORIGINAL_URL'] );
+
+			$this->hostname = $url['host'];
+			$proxyPrefix    = $url['path'];
+		} else {
+			$proxyPrefix = false;
+		}
+
+		if ( trim( $this->hostname ) === '' )
+			$this->hostname = $_SERVER['HTTP_HOST'];
 
 
 
@@ -156,17 +176,92 @@ class context
 		}
 
 
+		// running behind reverse proxy?
+		if ( $proxyPrefix ) {
+			// detect prefix used to control that reverse proxy
+			$request = implode( '/', $this->getRequestedScriptUri( $dummy ) );
+			$split   = strpos( $proxyPrefix, $request );
+
+			if ( $split >= 0 ) {
+				// extract prefix required by reverse proxy
+				$proxyPrefix = substr( $proxyPrefix, 0, $split );
+
+				// prepend extracted prefix of reverse proxy to previously
+				// detected prefix used to address installation of TXF locally
+				$this->prefixPathname = path::glue( $proxyPrefix, $this->prefixPathname );
+			}
+		}
+
+
 		// cache some derivable names
 		list( $this->applicationPathname, $this->applicationScriptPathname ) = path::stripCommonPrefix( $this->scriptPathname, $this->prefixPathname, null );
 
 		// compile base URL of current installation
 		$this->url = path::glue(
-							( $this->isHTTPS ? 'https://' : 'http://' ) . $_SERVER['HTTP_HOST'],
+							( $this->isHTTPS ? 'https://' : 'http://' ) . $this->hostname,
 							$this->prefixPathname
 							);
 
 		// detect current application
 		$this->application = application::current( $this );
+	}
+
+	/**
+	 * Retrieves part of request URI selecting current application and script.
+	 *
+	 * The fetched request URI is provided as array of pathname elements, that is
+	 * pathname might be derived by joining returned elements with '/'.
+	 *
+	 * @note Fetched request URI might include further selectors to be processed
+	 *       by requested script, e.g.
+	 *
+	 *       myapp/myscript/par1-of-script/par2-of-script
+	 *
+	 * @param $detectedProxy name of detected proxy script
+	 * @return array sequence of filenames contained in requested URI for selecting script
+	 */
+
+	public function getRequestedScriptUri( &$detectedProxy )
+	{
+		switch ( txf::getContextMode() ) {
+			case txf::CTXMODE_REWRITTEN :
+				assert( '$_SERVER[REDIRECT_URL] || $_SERVER[PATH_INFO] || $_SERVER[REQUEST_URI]' );
+
+				// get originally requested script (e.g. prior to rewrite)
+				if ( trim( $_SERVER['REDIRECT_URL'] ) !== '' )
+				{
+					// use of mod_rewrite detected
+					$query = $_SERVER['REDIRECT_URL'];
+
+					// mark rewrite mode by not selecting any valid used proxy
+					$detectedProxy = true;
+				}
+				else if ( trim( $_SERVER['REQUEST_URI'] ) !== '' )
+				{
+					// use of lighttpd's rewriting detected
+					$query = strtok( $_SERVER['REQUEST_URI'], '?' );
+
+					// mark rewrite mode by not selecting any valid used proxy
+					$detectedProxy = true;
+				}
+				else
+				{
+					// request for proxy script (run.php) detected
+					$query = $_SERVER['PATH_INFO'];
+
+					// remember proxy script used this time, if any
+					$detectedProxy = $this->scriptPathname;
+				}
+
+				// derive list of application and script selectors
+				return path::stripCommonPrefix( explode( '/', $query ), $this->prefixPathname );
+
+			// txf::CTXMODE_NORMAL
+			default :
+				// expect application and script selectors being part of requested
+				// script pathname
+				return preg_split( '#/+#', $this->applicationScriptPathname );
+		}
 	}
 
 	public static function getDocumentRoot()
