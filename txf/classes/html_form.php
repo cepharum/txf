@@ -84,7 +84,7 @@ class html_form implements widget
 	/**
 	 * heap of field rows
 	 *
-	 * @var hash
+	 * @var array[array]
 	 */
 
 	protected $rows = array();
@@ -306,6 +306,7 @@ class html_form implements widget
 	 * Selects script to process form data.
 	 *
 	 * @param string $processorUrl url of script processing form's data
+	 * @return html_form current form instance
 	 */
 
 	public function sendToUrl( $processorUrl )
@@ -449,7 +450,7 @@ class html_form implements widget
 
 		// select existing row or append new row if selected one isn't found
 		if ( !array_key_exists( $name, $this->rows ) )
-			$this->rows[$name] = array();
+			$this->rows[$name] = array( 'name' => $name );
 
 		$row =& $this->rows[$name];
 
@@ -575,6 +576,19 @@ class html_form implements widget
 	}
 
 	/**
+	 *
+	 * @param $name
+	 * @return $this
+	 */
+	public function deleteRow( $name )
+	{
+		if ( array_key_exists( $name, $this->rows ) )
+			unset( $this->rows[$name] );
+
+		return $this;
+	}
+
+	/**
 	 * Detects whether there is any row with error set or not.
 	 *
 	 * @return boolean true if at least row has an error message, false otherwise
@@ -582,7 +596,7 @@ class html_form implements widget
 
 	public function hasAnyRowError()
 	{
-		foreach ( $this->rows as $row => $properties )
+		foreach ( $this->rows as $properties )
 			if ( @$properties['error'] )
 				return true;
 
@@ -688,7 +702,7 @@ EOT
 			if ( trim( $label ) !== '' )
 				$label = sprintf( config::get( 'html.form.label', '%s%s:' ), $label, $mandatory );
 
-			return sprintf( $template, @$row['class'], $label, $code, $error, $hint );
+			return sprintf( $template, trim( 'form-row-name-' . @$row['name'] . ' ' . @$row['class'] ), $label, $code, $error, $hint );
 		}, $rows );
 
 		// embed compiled rows in form's custom content
