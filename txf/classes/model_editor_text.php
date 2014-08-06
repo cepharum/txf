@@ -3,6 +3,13 @@
 
 namespace de\toxa\txf;
 
+/**
+ * Implements model editor element providing single line text input.
+ *
+ * @author Thomas Urban <thomas.urban@cepharum.de>
+ * @package de\toxa\txf
+ */
+
 class model_editor_text extends model_editor_abstract
 {
 	protected $minLength = 0;

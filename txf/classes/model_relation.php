@@ -6,828 +6,797 @@ namespace de\toxa\txf;
 /**
  * Model relation processor.
  *
- * This class is designed to manage relations between elements of models managed
- * using class model. Relations are describes programmatically, e.g.
+ * This class is designed to manage arbitrary relations between models.
  *
- * model_relation::createFrom( modelA::proxy(), 'modelB_id' )
- *     ->via( modelB::proxy(), 'id', 'modelC_id' )
- *     ->to( modelC::proxy() );
- *
- * A relation is implicitly assigning special aliases to all datasets involved
- * in processing relation like this:
- *
- * source    aliasing dataset of model provided on constructing relation
- * via1      aliasing dataset of model provided on first invocation of model_relation::via()
- * via2      aliasing dataset of model provided on second invocation of model_relation::via()
- * viaN      aliasing dataset of model provided on Nth invocation of model_relation::via()
- * target    aliasing dataset of model provided in call for method model_relation::to()
- *
- * In addition on adding custom conditions using model_relation::on() relative
- * aliases are processed by case-sensitively replacing aliases in provided
- * condition strings. Since every condition is related to a previously added or
- * explicitly selected waypoint of relation, the following aliases are processed
- * in relation to that waypoint:
- *
- * THIS      aliasing dataset of waypoint itself
- * PREV      aliasing dataset of way- or endpoint directly referencing current waypoint
- * NEXT      aliasing dataset of way- or endpoint direclty referenced by current waypoint
- *
- * Thus, for example, if a condition is applied on relation's waypoint "via1",
- * THIS is aliasing via1, PREV is aliasing source and NEXT is aliasing either
- * target on missing second intermediate waypoint or via2 otherwise.
+ * @author Thomas Urban <thomas.urban@cepharum.de>
  */
 
 class model_relation
 {
 	/**
-	 * model instance describing element relations are referring to
+	 * nodes of relation
 	 *
-	 * @var model
+	 * @var array[model_relation_node]
 	 */
 
-	protected $target = null;
+	protected $nodes = array();
 
 	/**
-	 * name of property in target model used to identify elements in relation
+	 * references of (completely declared relation)
+	 *
+	 * @var array[model_relation_reference]
+	 */
+
+	protected $references = null;
+
+	/**
+	 * link to datasource
+	 * @var datasource\connection
+	 */
+
+	protected $datasource = null;
+
+	/**
+	 * optional name of relation
 	 *
 	 * @var string
 	 */
 
-	protected $targetProperty = null;
-
-	/**
-	 * model of relation's source
-	 *
-	 * @var model
-	 */
-
-	protected $source = null;
-
-	/**
-	 * name of property in relation's source used to identify related elements
-	 * of target model
-	 *
-	 * @var string
-	 */
-
-	protected $sourceProperty = null;
-
-	/**
-	 * optional conditions to be met by referencing model's entries
-	 *
-	 * This is used e.g. on retrieving candidates for becoming related to
-	 * particular element of target/referenced model on using selector().
-	 *
-	 * @var array
-	 */
-
-	protected $sourceConditions = array();
-
-	/**
-	 * optional conditions to be met by referenced model's entries
-	 *
-	 * @var array
-	 */
-
-	protected $targetConditions = array();
-
-	/**
-	 * information on source item relation is bound to
-	 *
-	 * This is either an array according to source model's dimensionality on
-	 * selecting single instance. In addition it may be null to use source model
-	 * instance as provided on establishing relation. Finally it might be false
-	 * to have source unbound.
-	 *
-	 * @var array|null|false
-	 */
-
-	protected $sourceBound = null;
-
-	/**
-	 * information on target item relation is bound to
-	 *
-	 * This is either an array according to target model's dimensionality on
-	 * selecting single instance. In addition it may be null to use target model
-	 * instance as provided on establishing relation. Finally it might be false
-	 * to have target unbound.
-	 *
-	 * @var array|null|false
-	 */
-
-	protected $targetBound = null;
-
-	/**
-	 * collection of waypoint sets included in relation containing per-waypoint
-	 * conditions used to join it
-	 *
-	 * @var array
-	 */
-
-	protected $waypoints = array();
-
-	/**
-	 * set of relation's properties to show
-	 *
-	 * @var array
-	 */
-
-	protected $visibleProperties = array();
-
-	/**
-	 * set of properties to sirt by ascendingly or descendingly
-	 *
-	 * @var array[string=>boolean]
-	 */
-
-	protected $sorting = array();
+	protected $relationName = null;
 
 
 
 	protected function __construct() {}
 
 	/**
-	 * Starts description of elements relating to instance(s) of provided
-	 * element.
+	 * Creates relation starting with given node.
 	 *
-	 * @param model $relatingElement element other elements are referring to as part of a relation
-	 * @param string $referencingProperty given model's property related elements are referencing
+	 * @param model_relation_node $start first node of relation
 	 * @return model_relation
-	 * @throws \InvalidArgumentException
 	 */
 
-	public static function createFrom( model $relatingElement, $referencingProperty = null )
+	public static function create( model_relation_node $start )
 	{
-		$relation = new static();
+		if ( !$start->isValid() )
+			throw new \InvalidArgumentException( 'invalid relational node' );
 
-		$relation->source         = $relatingElement;
-		$relation->sourceProperty = $relation->getProperty( $relatingElement, $referencingProperty );
+		if ( $start->wantsPredecessor() || !$start->wantsSuccessor() )
+			throw new \InvalidArgumentException( 'node is not suitable for starting relation' );
+
+
+		$relation = new static();
+		$relation->nodes[]    = $start;
 
 		return $relation;
 	}
 
 	/**
-	 * Inserts (another) model involved in relation.
+	 * Adds node to current relation.
 	 *
-	 * @param model $waypoint model instance involved in
-	 * @param string $referencedProxyProperty property of waypoint model to be referenced by previous waypoint instead of target endpoint
-	 * @param string $referencingProperty property of waypoint model referencing target endpoint (or any upcoming waypoint)
-	 * @param string $waypointAlias optional alias to be used on including same model multiple times
-	 * @param boolean $isMN if true this via is referencing from and to its neighbours (m:n relation), $referencedProxy is "referencing previous" and $referencingProperty is "referencing next"
-	 * @return model_relation
-	 * @throws \LogicException
-	 * @throws \InvalidArgumentException
+	 * Relation's definition is extended by adding nodes. Added nodes must be
+	 * declaring reference on preceding node. Relation is completed by adding
+	 * non-partial node not declaring reference on another succeeding node .
+	 * Adding further nodes is rejected then.
+	 *
+	 * @param model_relation_node $node
+	 * @param bool $isPartialNode true if node is considered partially defined, yet
+	 * @return $this
 	 */
 
-	public function via( model $waypoint, $referencedProxyProperty, $referencingProperty, $waypointAlias = null, $isMN = false )
+	public function add( model_relation_node $node, $isPartialNode = false )
 	{
-		// get unique internal name of waypoint
-		$waypointName = $this->qualifiedWaypointName( $waypoint, $waypointAlias, true, true );
+		if ( $this->isComplete() )
+			throw new \LogicException( 'adding to completed relation rejected' );
 
-		// detect double definition of a waypoint
-		if ( array_key_exists( $waypointName, $this->waypoints ) )
-			throw new \LogicException( 'circular relation due to repeated waypoint definition (use waypoint alias!)' );
+		if ( !$node->isValid() )
+			throw new \InvalidArgumentException( 'invalid relational node' );
 
-		// validate provided property names involved in passing waypoint on referencing
-		$referenced = data::isKeyword( $referencedProxyProperty );
-		if ( !$referenced )
-			throw new \InvalidArgumentException( sprintf( 'invalid name of referenced proxy property %s in set %s', $referencedProxyProperty, $waypoint->set() ) );
+		if ( !$node->wantsPredecessor() )
+			throw new \InvalidArgumentException( 'node is not suitable for linking with preceding node' );
 
-		$referencing = data::isKeyword( $referencingProperty );
-		if ( !$referencing )
-			throw new \InvalidArgumentException( sprintf( 'invalid name of referencing property %s in set %s', $referencingProperty, $waypoint->set() ) );
+		$predecessor = $this->nodeAtIndex( -1 );
+		if ( $predecessor->getSuccessorReferenceWidth() != $node->getPredecessorReferenceWidth() )
+			throw new \InvalidArgumentException( 'mismatching width of reference' );
+
+		$bindThere = $predecessor->canBindOnSuccessor();
+		$bindHere  = $node->canBindOnPredecessor();
+		if ( !( ( $bindThere && !$bindHere ) ^ ( !$bindThere && $bindHere ) ) )
+			throw new \InvalidArgumentException( 'node is not compatible with predecessor in binding reference' );
 
 
-		// add waypoint definition to relation
-		$this->waypoints[$waypointName] = array(
-											// required for retrieving managing model in a relation
-											'model'       => $waypoint,
-											// required for compiling query
-											'set'         => $waypoint->set(),
-											// required for re-identifying existing waypoints
-											'alias'       => $waypointAlias,
-											// required for re-identifying existing waypoints
-											'isMN'        => !!$isMN,
-											// required for describing waypoint properties contained in relationship
-											'referenced'  => $referenced,
-											'referencing' => $referencing,
-											// optional conditions to be met by waypoint's elements on actually relating
-											'conditions'  => array(),
-											);
+		$this->nodes[] = $node;
 
-		return $this;
-	}
 
-	/**
-	 * Adds another condition to obey on relation's previously inserted or
-	 * selected waypoint.
-	 *
-	 * Condition is provided as string of terms putting properties of addressed
-	 * (previously added or explicitly selected) waypoint and its immediately
-	 * neighbouring waypoints into relation. Use the following (case-sensitive)
-	 * aliases for addressing current or neighbouring waypoints's sets in term:
-	 *
-	 * THIS.x  for any property x of previously added/explicitly selected waypoint
-	 * NEXT.x  for any property x of waypoint neighbouring towards endpoint given on constructing relation
-	 * PREV.x  for any property x of waypoint neighbouring towards endpoint given by method from()
-	 *
-	 * Terms missing aliases may cause failures on actually querying datasource
-	 * later.
-	 *
-	 * @param string $condition some condition term (use aliases "source", "target" and "via0", "via1" etc. for explicitly addressing sets of models included in relation)
-	 * @param array $parameters parameters to bind on condition
-	 * @param model $waypoint model of waypoint in relation
-	 * @param string $waypointAlias optional alias of waypoint model (to use on including same model multiple times)
-	 * @return model_relation current relation
-	 * @throws \LogicException
-	 */
-
-	public function on( $condition, $parameters = array(), model $waypoint = null, $waypointAlias = null )
-	{
-		if ( !is_array( $parameters ) )
-			throw new \InvalidArgumentException( 'parameters must be given as array' );
-
-		$waypointName = $this->qualifiedWaypointName( $waypoint, $waypointAlias, true );
-		if ( $waypointName == 'source' )
-			$this->sourceConditions[$condition] = $parameters;
-		else if ( $waypointName == 'target' )
-			$this->targetConditions[$condition] = $parameters;
-		else
+		if ( !$isPartialNode && !$node->wantsSuccessor() )
 		{
-			if ( !array_key_exists( $waypointName, $this->waypoints ) )
-				throw new \LogicException( 'missing preceding declaration of conditional waypoint' );
+			// transfer set of nodes into set of references
+			$this->references = array();
 
-			$this->waypoints[$waypointName]['conditions'][$condition] = $parameters;
+			for ( $i = 1; $i < count( $this->nodes ); $i++ )
+				$this->references[] = new model_relation_reference( $this->nodes[$i-1], $this->nodes[$i], $this, count( $this->references ) );
 		}
 
-		return $this;
-	}
-
-	/**
-	 * Adds finally referenced endpoint ("target") of relation.
-	 *
-	 * @param model $relatedModel opposite endpoint's model
-	 * @param string $referencedProperty alias of opposite endpoint's model to use on including same model multiple times
-	 * @return model_relation current instance
-	 */
-
-	public function to( model $relatedModel, $referencedProperty = null )
-	{
-		$this->target         = $relatedModel;
-		$this->targetProperty = $this->getProperty( $relatedModel, $referencedProperty );
 
 		return $this;
 	}
 
 	/**
-	 * Adds property of previously added or explicitly selected waypoint of
-	 * relation to be listed in final query retrieved by method model::render().
+	 * Detects if relation is declared completely.
 	 *
-	 * @param string $propertyName name of property to list
-	 * @param string $propertyAlias alias to assign on property
-	 * @param model $waypoint waypoint model to select explicitly
-	 * @param string $waypointAlias alias of waypoint to use on including same waypoint model multiple times
-	 * @return model_relation current instance
+	 * @return bool true if relation is declared completely
 	 */
 
-	public function showing( $propertyName, $propertyAlias = null, model $waypoint = null, $waypointAlias = null )
+	public function isComplete()
 	{
-		$name = $this->qualifiedPropertyName( $propertyName, $waypoint, $waypointAlias );
+		// relation is declared completely if set of references has been derived
+		// from set of nodes on recently adding node not wanting another successor
+		return !is_null( $this->references );
+	}
 
-		if ( $propertyAlias === null )
-			$propertyAlias = $propertyName;
+	/**
+	 * Retrieves number of nodes in relation.
+	 *
+	 * @return int
+	 */
 
-		$this->visibleProperties[$name] = $propertyAlias;
+	public function size() {
+		return count( $this->nodes );
+	}
+
+	/**
+	 * Declares name of relation.
+	 *
+	 * @param string $name name of relation
+	 * @return $this
+	 */
+
+	public function setName( $name )
+	{
+		if ( !is_string( $name ) )
+			throw new \InvalidArgumentException( 'invalid relation name' );
+
+		$name = trim( $name );
+		if ( $name === '' )
+			throw new \InvalidArgumentException( 'invalid relation name' );
+
+		$this->relationName = $name;
 
 		return $this;
 	}
 
 	/**
-	 * Requests to sort listed relations by selected property in requested
-	 * direction.
+	 * Retrieves name of relation declared used model_relation::setName().
 	 *
-	 * @param string $qualifiedProperty qualified name of property to sort by
-	 * @param string|boolean $ascending SQL-like "ASC" or "DESC" or true for sorting ascendingly
-	 * @return \de\toxa\txf\model_relation current instance
-	 * @throws \InvalidArgumentException
+	 * @return string|null name of relation, null on unnamed relation
 	 */
 
-	public function sortedBy( $qualifiedProperty, $ascending = true )
+	public function getName()
 	{
-		if ( !is_string( $qualifiedProperty ) )
-			throw new \InvalidArgumentException( 'missing property to sort by' );
+		return $this->relationName;
+	}
 
-		if ( !preg_match( '/^(source|target|via\d+)\.[^.]+$/i', trim( $qualifiedProperty ) ) )
-			throw new \InvalidArgumentException( 'property is not qualified' );
+	/**
+	 * Assigns data source to use on processing relation.
+	 *
+	 * @param datasource\connection $datasource
+	 * @return $this
+	 */
 
-		if ( is_string( $ascending ) )
-			$ascending = !!preg_match( '/^ASC(ENDING)?$/i', trim( $ascending ) );
-
-
-		$this->sorting[$qualifiedProperty] = !!$ascending;
-
+	public function setDatasource( datasource\connection $datasource )
+	{
+		$this->datasource = $datasource;
 
 		return $this;
 	}
 
 	/**
-	 * Retrieves relating model (source endpoint) in current relation.
+	 * Retrieves datasource relation is operating on.
 	 *
-	 * @param boolean $retrieveProxy true to get proxy instead of actual instance
-	 * @return model
+	 * @return datasource\connection datasource associated with relation
 	 */
 
-	public function relatingEnd( $retrieveProxy = false )
+	public function getDatasource()
 	{
-		return static::getProxy( $this->source, !$retrieveProxy );
+		return $this->datasource;
 	}
 
 	/**
-	 * Retrieves related model (target endpoint) in current relation.
+	 * Retrieves relational node of current relation selected by its index.
 	 *
-	 * @param boolean $retrieveProxy true to get proxy instead of actual instance
-	 * @return model
+	 * Index might be negative to start selecting node from end of current set
+	 * of nodes.
+	 *
+	 * @throws \OutOfBoundsException if index is too big
+	 * @throws \InvalidArgumentException on providing non-integer index
+	 * @param int $intIndex index of node to retrieve
+	 * @return model_relation_node
 	 */
 
-	public function relatedEnd( $retrieveProxy = false )
-	{
-		if ( !( $this->target instanceof model ) )
-			throw new \LogicException( 'missing target endpoint of relation' );
+	public function nodeAtIndex( $intIndex ) {
+		$intIndex = intval( $intIndex );
 
-		return static::getProxy( $this->target, !$retrieveProxy );
-	}
+		if ( $intIndex >= 0 ) {
+			if ( $intIndex >= count( $this->nodes ) )
+				throw new \OutOfBoundsException( 'node index out of bounds' );
 
-	/**
-	 * Retrieves model of relation's bound endpoint.
-	 *
-	 * This method is returning source endpoint unless target is bound.
-	 *
-	 * @param boolean $retrieveProxy true to get proxy instead of actual instance
-	 * @return model model of relation's bound endpoint
-	 * @throws \LogicException
-	 */
+			return $this->nodes[intval( $intIndex )];
+		} else {
+			if ( abs( $intIndex ) > count( $this->nodes ) )
+				throw new \OutOfBoundsException( 'node index out of bounds' );
 
-	public function boundEnd( $retrieveProxy = false )
-	{
-		if ( !( $this->target instanceof model ) )
-			throw new \LogicException( 'missing target endpoint of relation' );
-
-		if ( $this->isTargetBound() )
-			return static::getProxy( $this->target, !$retrieveProxy );
-
-		return static::getProxy( $this->source, !$retrieveProxy );
-	}
-
-	/**
-	 * Retrieves model of relation's unbound endpoint.
-	 *
-	 * This method is returning target endpoint unless it's the bound one. It
-	 * fails in case of both ends are bound.
-	 *
-	 * @param boolean $retrieveProxy true to get proxy instead of actual instance
-	 * @return model model of relation's unbound endpoint
-	 * @throws \LogicException
-	 */
-
-	public function unboundEnd( $retrieveProxy = false )
-	{
-		if ( !( $this->target instanceof model ) )
-			throw new \LogicException( 'missing target endpoint of relation' );
-
-		if ( $this->isTargetBound() )
-		{
-			if ( $this->isSourceBound() )
-				throw new \LogicException( 'relation is bound on either side' );
-
-			return static::getProxy( $this->source, !$retrieveProxy );
+			return $this->nodes[count( $this->nodes ) + $intIndex];
 		}
-
-		return static::getProxy( $this->target, !$retrieveProxy );
 	}
 
 	/**
-	 * Retrieves model in relation used to actually manage relating elements.
+	 * Retrieves reference of relation at selected index.
 	 *
-	 * In a direct relation (source->target) source is containing reference
-	 * on target and thus is considered managing model.
-	 *
-	 * In an indirect relation (source->[via->]+target) "via" closest to target
-	 * is containing reference on target and thus is considered managing model
-	 * in current relation.
-	 *
-	 * @param boolean $retrieveProxy true to get proxy instead of actual instance
-	 * @return model managing model
+	 * @param int $intIndex index of reference to fetch
+	 * @return model_relation_reference
 	 */
 
-	public function managing( $retrieveProxy = false )
+	public function referenceAtIndex( $intIndex )
 	{
-		if ( count( $this->waypoints ) > 0 )
-		{
-			$waypointNames = array_keys( $this->waypoints );
-			$firstWaypoint = array_pop( $waypointNames );
+		if ( !$this->isComplete() )
+			throw new \LogicException( 'relation is not complete, yet' );
 
-			return static::getProxy( $this->waypoints[$firstWaypoint]['model'], !$retrieveProxy );
+		$intIndex = intval( $intIndex );
+
+		if ( $intIndex >= 0 ) {
+			if ( $intIndex >= count( $this->references ) )
+				throw new \OutOfRangeException( 'reference index out of bounds' );
+
+			return $this->references[$intIndex];
+		} else {
+			if ( abs( $intIndex ) > count( $this->references ) )
+				throw new \OutOfBoundsException( 'reference index out of bounds' );
+
+			return $this->references[count( $this->references ) + $intIndex];
 		}
-
-		return static::getProxy( $this->source, !$retrieveProxy );
 	}
 
 	/**
-	 * Optionally replaces provided model instance by proxy instance of same model.
+	 * Retrieves all unbound references from current relation.
 	 *
-	 * @param \de\toxa\txf\model $model
-	 * @param boolean $bypass true to keep provided model instance
-	 * @return provided model instance or proxy of same model
+	 * @return array
 	 */
 
-	protected static function getProxy( model $model, $bypass = false )
+	public function getUnboundReferences()
 	{
-		return $bypass ? $model : $model->proxy( $model->source() );
+		if ( !$this->isComplete() )
+			throw new \InvalidArgumentException( 'relation is not complete, yet' );
+
+		return array_filter( array_map( function( $reference ) {
+			/** @var model_relation_reference $reference */
+			return $reference->isBound() ? null : $reference;
+		}, $this->references ) );
 	}
 
 	/**
-	 * Binds or unbinds relation either at its source or its target endpoint.
+	 * Searches relation for node matching model and/or name/alias.
 	 *
-	 * @param model|array|scalar|null $itemOrId item or ID to bind, null for unbinding
-	 * @param boolean|null $bindTargetInsteadOfSource true for binding target, false for binding source, null for guessing endpoint matching best provided bound
-	 * @return model_relation current relation manager
+	 * Optionally provided callback might be used to apply additional checks per
+	 * node.
+	 *
+	 * @param model|\ReflectionClass|null $model model of node to look for
+	 * @param string|null $alias name of model or alias of node to look for
+	 * @param callback $callback method to invoke on every tested node with node
+	 *                 and index as arguments, return true to match eventually
+	 * @param bool $endPointsOnly false to search whole relation instead
+	 * @return model_relation_node|null
 	 */
 
-	public function bind( $itemOrId = null, $bindTargetInsteadOfSource = null )
-	{
-		if ( $itemOrId === null )
-			return $this->unbind( $bindTargetInsteadOfSource );
+	public function findNode( $model = null, $alias = null, $callback = null, $endPointsOnly = false ) {
+		if ( !$this->isComplete() )
+			throw new \LogicException( 'relation is not complete' );
 
-		if ( $itemOrId instanceof model )
-			return $this->bindOnModel( $itemOrId, $bindTargetInsteadOfSource );
+		$node = $this->_isNodeMatching( 0, $model, $alias );
+		if ( $node && ( !$callback || call_user_func( $callback, $node, 0 ) ) )
+			return $node;
 
-		return $this->bindOnID( $itemOrId, $bindTargetInsteadOfSource );
-	}
+		$node = $this->_isNodeMatching( -1, $model, $alias );
+		if ( $node && ( !$callback || call_user_func( $callback, $node, -1 ) ) )
+			return $node;
 
-	/**
-	 * Unbinds relation either at its source or its target endpoint.
-	 *
-	 * @param boolean $bindTargetInsteadOfSource true for binding target, false for binding source
-	 * @return model_relation current relation manager
-	 */
-
-	public function unbind( $unbindTargetInsteadOfSource = false )
-	{
-		if ( $unbindTargetInsteadOfSource )
-			$this->targetBound = false;
-		else
-			$this->sourceBound = false;
-
-		return $this;
-	}
-
-	/**
-	 * Binds relation either at its source or its target endpoint to provided
-	 * item.
-	 *
-	 * @param model $item item to bind
-	 * @param boolean|null $bindTargetInsteadOfSource true for binding target, false for binding source, null for guessing endpoint matching best provided model
-	 * @return model_relation current relation manager
-	 */
-
-	public function bindOnModel( model $item, $bindTargetInsteadOfSource = null )
-	{
-		// validate provided model is compatible with either source or target model of relation
-		$sourceClass = new \ReflectionClass( $this->source );
-		$targetClass = new \ReflectionClass( $this->target );
-		$itemClass   = new \ReflectionClass( $item );
-
-		$isLikeSource = $itemClass->isSubclassOf( $sourceClass );
-		$isLikeTarget = $itemClass->isSubclassOf( $targetClass );
-
-		if ( !$isLikeSource && !$isLikeTarget )
-			throw new \InvalidArgumentException( 'Cannot bind relation to incompatible item.' );
-
-		if ( $bindTargetInsteadOfSource === null )
-			// try to autodetect endpoint to bind
-			$bindTargetInsteadOfSource = $isLikeTarget && !$isLikeSource;
-		else if ( $bindTargetInsteadOfSource && !$isLikeTarget )
-			throw new \InvalidArgumentException( 'Cannot bind relation to incompatible item.' );
-
-		if ( $bindTargetInsteadOfSource )
-			$this->targetBound = $item->isBound() ? $item->id() : false;
-		else
-			$this->sourceBound = $item->isBound() ? $item->id() : false;
-
-		return $this;
-	}
-
-	/**
-	 * Binds relation either at its source or its target endpoint to item
-	 * selected by its ID.
-	 *
-	 * @param array|scalar $id ID of item to bind
-	 * @param boolean|null $bindTargetInsteadOfSource true for binding target, false for binding source, null for guessing endpoint matching best provided item ID
-	 * @return model_relation current relation manager
-	 */
-
-	public function bindOnID( $itemID, $bindTargetInsteadOfSource = null )
-	{
-		// validate provided ID is compatible with either source or target model of relation
-		$isLikeSource = $this->source->isValidId( $itemId );
-		$isLikeTarget = $this->target->isValidId( $itemId );
-
-		if ( !$isLikeSource && !$isLikeTarget )
-			throw new \InvalidArgumentException( 'Cannot bind relation to incompatible item.' );
-
-		if ( $bindTargetInsteadOfSource === null )
-			// try to autodetect endpoint to bind
-			$bindTargetInsteadOfSource = $isLikeTarget && !$isLikeSource;
-		else if ( $bindTargetInsteadOfSource && !$isLikeTarget )
-			throw new \InvalidArgumentException( 'Cannot bind relation to incompatible item.' );
-
-		if ( $bindTargetInsteadOfSource )
-			$this->targetBound = $itemID;
-		else
-			$this->sourceBound = $itemID;
-
-		return $this;
-	}
-
-	/**
-	 * Retrieves normalized name of provided property optionally falling back
-	 * to use provided model's single-dimension ID property on omitting explicitly
-	 * provided name.
-	 *
-	 * @param model $model model including optionally selected property
-	 * @param string $propertyName name of property to normalize
-	 * @param boolean $requireExplicitProperty true to require explicit property name in $propertyName
-	 * @return string name of property to use
-	 * @throws \InvalidArgumentException
-	 */
-
-	protected function getProperty( model $model, $propertyName = null, $requireExplicitProperty = false )
-	{
-		if ( !$propertyName )
-		{
-			if ( $requireExplicitProperty )
-				throw new \InvalidArgumentException( 'missing property' );
-
-			if ( $model->idSize() > 1 )
-				throw new \InvalidArgumentException( 'relations can not handle multi-dimensional IDs' );
-
-			$propertyName = $model->getReflection()->getMethod( 'idName' )->invoke( null );
-		}
-
-		// ensure property name is a keyword
-		$resolvedName = data::isKeyword( $propertyName );
-		if ( !$resolvedName )
-			throw new \InvalidArgumentException( sprintf( 'invalid property %s in %s', $propertyName, $model->set() ) );
-
-		return $resolvedName;
-	}
-
-	/**
-	 * Retrieves internal alias of most recently added or now explicitly
-	 * selected waypoint of relation.
-	 *
-	 * If waypoint is selected explicitly using $waypointModel and optionally
-	 * $waypointAlias the list of actual waypoints is traversed for a matching
-	 * combination of model and alias.
-	 *
-	 * On omitting explicit selection of a waypoint the alias of most recently
-	 * added way- or endpoint is retrieved instead. Thus, if targeting endpoint
-	 * has been added using model_relation::to() before, alias "target" is
-	 * returned. Otherwise alias of waypoint added most recently using
-	 * model_relation::via() is returned. If no such waypoint has been declared
-	 * yet, alias "source" is returned unless $rejectSource is set true (for
-	 * throwing exception then).
-	 *
-	 * @param \de\toxa\txf\model $waypointModel model of waypoint to look up
-	 * @param string $waypointAlias optional alias of waypoint to look up
-	 * @param boolean $rejectSource true on throwing exception instead of returning "source"
-	 * @return string alias of way-/endpoint
-	 * @throws \LogicException
-	 */
-
-	protected function qualifiedWaypointName( model $waypointModel = null, $waypointAlias = null, $rejectSource = false, $mayBeMissing = false )
-	{
-		if ( $waypointModel )
-		{
-			$set   = $waypointModel->set();
-			$alias = $waypointAlias;
-
-			$index = 1;
-			foreach ( $this->waypoints as $waypoint )
-				if ( $waypoint['set'] === $set && $waypoint['alias'] === $alias )
-					break;
-				else
-					$index++;
-
-			if ( !$mayBeMissing && $index > count( $this->waypoints ) && $this->source )
-				// haven't found addressed waypoint and both ends of relation have been declared before
-				throw new \LogicException( 'no such waypoint: ' . trim( $set . ' ' . $alias ) );
-
-			return 'via' . $index;
-		}
-
-		if ( $this->target )
-			return 'target';
-
-		if ( count( $this->waypoints ) > 0 )
-			return 'via' . count( $this->waypoints );
-
-		if ( $rejectSource )
-			throw new \LogicException( 'missing waypoint or source of relation' );
-
-		return 'source';
-	}
-
-	protected function qualifiedPropertyName( $propertyName, model $waypoint = null, $waypointAlias = null )
-	{
-		$propertyName = trim( $propertyName );
-		if ( !preg_match( '/^([a-z_][a-z_0-9]*\.)(\*|[a-z_][a-z_0-9]*)$/i', $propertyName, $match ) )
-			throw new \InvalidArgumentException( 'invalid property name: ' . $propertyName );
-
-		if ( trim( $match[1] ) === '' )
-			$propertyName = $this->qualifiedWaypointName( $waypoint, $waypointAlias ) . '.' . $propertyName;
-
-		return $propertyName;
-	}
-
-	/**
-	 * Retrieves filter term addressing union of referencing properties of
-	 * relation's source or optionally selected waypoint.
-	 *
-	 * @param string|integer $waypointIndex index of waypoint to use, omit to choose source
-	 * @param boolean $waypointIndex false to omit embedding set aliases per property
-	 * @return string SQL-compatible filter term
-	 * @throws \OutOfRangeException
-	 * @throws \InvalidArgumentException
-	 */
-
-	public function referencingFilter( $waypointIndex = null, $aliased = true )
-	{
-		if ( preg_match( '/^(?:via)?([1-9]\d*)$/', trim( $waypointIndex ), $matches ) )
-		{
-			$index = intval( $matches[1] );
-			if ( $index > count( $this->waypoints ) )
-				throw new \OutOfRangeException( 'waypoint index out of bounds' );
-
-			$temp        = array_keys( $this->waypoints );
-			$set         = $this->waypoints[$temp[$index-1]]['set'];
-			$referencing = $this->waypoints[$temp[$index-1]]['referencing'];
-		}
-		else if ( $waypointIndex )
-			throw new \InvalidArgumentException( 'invalid waypoint index' );
-		else
-		{
-			$set         = $this->source->set();
-			$referencing = $this->sourceProperty;
-		}
-
-		$alias = $aliased ? "$set." : '';
-
-		return implode( ' AND ', array_map( function( $col ) use ( $alias ) { return "$alias$col=?"; }, is_array( $referencing ) ? $referencing : array( $referencing ) ) );
-	}
-
-	/**
-	 * Compiles query on described relation not binding it to any actual related
-	 * element or selecting properties to list.
-	 *
-	 * @return datasource\query
-	 */
-
-	public function prepareQuery()
-	{
-		assert( $this->source instanceof model );
-		assert( trim( $this->sourceProperty ) !== "" );
-		assert( $this->target instanceof model );
-		assert( trim( $this->targetProperty ) !== "" );
-
-
-		// start new datasource query on dataset of relating source model
-		$query = $this->source->query( 'source' );
-
-		// extract ordered list of sets included in relation
-		$sets = array_keys( $this->waypoints );
-		array_unshift( $sets, 'source' );
-		array_push( $sets, 'target' );
-
-		// extract ordered list of referencing properties per model included in relation
-		$props = array_values( array_map( function( $wp ) { return $wp['referencing']; }, $this->waypoints ) );
-		array_unshift( $props, $this->sourceProperty );
-		array_push( $props, $this->targetProperty );
-
-		// add datasets of included waypoints
-		$wps = array_values( $this->waypoints );
-		for ( $i = 1; $i < count( $sets ) - 1; $i++ )
-		{
-			$wp      = $wps[$i-1];
-			$prevSet = $sets[$i-1];
-			$thisSet = $sets[$i];
-
-			$condition  = array( "$prevSet.{$props[$i-1]}=$thisSet.{$wp[referenced]}" );
-			$parameters = array();
-
-			foreach ( $wp['conditions'] as $c => $p )
-			{
-				$condition[] = strtr( $c, array(
-					'THIS' => $thisSet,
-					'PREV' => $prevSet,
-					'NEXT' => $sets[$i+1],
-				) );
-
-				$parameters = array_merge( $parameters, $p );
+		if ( !$endPointsOnly )
+			for ( $index = 1; $index < count( $this->nodes ) - 1; $index++ ) {
+				$node = $this->_isNodeMatching( $index, $model, $alias );
+				if ( $node && ( !$callback || call_user_func( $callback, $node, $index ) ) )
+					return $node;
 			}
 
-			$query->addDataset( $wp['set'] . ' ' . $thisSet, implode( ' AND ', $condition ), $parameters );
+		return null;
+	}
+
+	/**
+	 * Unbinds all nodes of relation.
+	 *
+	 * @return $this
+	 */
+
+	public function unbind() {
+		if ( $this->isComplete() )
+			foreach ( $this->nodes as $node ) {
+				/** @var model_relation_node $node */
+				$node->bindOnPredecessor( null );
+				$node->bindOnSuccessor( null );
+			}
+
+		return $this;
+	}
+
+	/**
+	 * Detects if any node or all nodes of relation is/are bound.
+	 *
+	 * @param bool $requireAll true to check if all nodes of relation are bound
+	 * @return bool true if relation is bound in one or all nodes
+	 */
+
+	public function isBound( $requireAll = false ) {
+		if ( !$this->isComplete() )
+			return false;
+
+		foreach ( $this->nodes as $node )
+			/** @var model_relation_node $node */
+			if ( $node->isBound() ) {
+				if ( !$requireAll )
+					return true;
+			} else if ( $requireAll )
+				return false;
+
+		return $requireAll ? true : false;
+	}
+
+	/**
+	 * Binds relation on its end node matching selected model using provided
+	 * value(s).
+	 *
+	 * @example The following invocations work equivalently:
+	 *     $relation->bindOnEndOfModel( myModel::getReflection(), 123, 'generic' );
+	 *     $relation->bindOnEndOfModel( myModel::getReflection(), array( 123, 'generic' ) );
+	 *
+	 * @param model|\ReflectionClass $model model to search
+	 * @param mixed|array $value first value of several, or whole set of values
+	 * @return $this
+	 */
+
+	public function bindOnEndOfModel( $model, $value ) {
+		return $this->_bindOnModel( $model, null, true, data::normalizeVariadicArguments( func_get_args(), 1 ) );
+	}
+
+	/**
+	 * Binds relation on its end node either matching selected name of model or
+	 * any explicitly assigned alias.
+	 *
+	 * @example The following invocations work equivalently:
+	 *     $relation->bindEndOnModel( myModel::getReflection(), 123, 'generic' );
+	 *     $relation->bindEndOnModel( myModel::getReflection(), array( 123, 'generic' ) );
+	 *
+	 * @param string $nameOrAlias name of model or explicitly assigned alias to match
+	 * @param mixed|array $value first value of several, or whole set of values
+	 * @return $this
+	 */
+
+	public function bindOnEndOfName( $nameOrAlias, $value ) {
+		return $this->_bindOnModel( null, $nameOrAlias, true, data::normalizeVariadicArguments( func_get_args(), 1 ) );
+	}
+
+	/**
+	 * Searches node in relation matching model and/or alias/name of model
+	 * either at ends of relation or on all of them.
+	 *
+	 * @param model|\ReflectionClass|null $model model of node to look for
+	 * @param string|null $nameOrAlias name of model or alias of node to look for
+	 * @param bool $endpointsOnly false to search whole relation instead
+	 * @param array|mixed $value first value to bind, or all values as array
+	 * @return $this
+	 */
+
+	public function bindOnMatching( $model = null, $nameOrAlias = null, $endpointsOnly = true, $value ) {
+		if ( !$model && !$nameOrAlias )
+			throw new \InvalidArgumentException( 'select either associated model or its name/alias to search for matching node in relation' );
+
+		return $this->_bindOnModel( $model, $nameOrAlias, !!$endpointsOnly, data::normalizeVariadicArguments( func_get_args(), 3 ) );
+	}
+
+	/**
+	 * Searches node in relation matching model and/or alias/name of model
+	 * either at ends of relation or on all of them.
+	 *
+	 * @param model|\ReflectionClass|null $model model of node to look for
+	 * @param string|null $alias name of model or alias of node to look for
+	 * @param bool $endpointsOnly false to search whole relation instead
+	 * @param array $values values to bind on node
+	 * @return $this
+	 */
+
+	protected function _bindOnModel( $model = null, $alias = null, $endpointsOnly = true, $values ) {
+		if ( !$this->isComplete() )
+			throw new \RuntimeException( 'binding incomplete relation rejected' );
+
+		// try matching first node in relation
+		if ( $this->_tryBindMatchingNode( 0, $model, $alias, true, $values ) )
+			return $this;
+
+		// try matching last node in relation
+		if ( $this->_tryBindMatchingNode( -1, $model, $alias, false, $values ) )
+			return $this;
+
+		// try nodes in between?
+		if ( !$endpointsOnly )
+			for ( $index = 1; $index < count( $this->nodes ) - 1; $index++ ) {
+				$node = $this->_isNodeMatching( $index, $model, $alias );
+				if ( $node ) {
+					switch ( $node->getBindMode() ) {
+						case model_relation_node::BINDING_BOTH :
+							throw new \LogicException( 'ambigious binding' );
+
+						case model_relation_node::BINDING_PREDECESSOR :
+							$node->bindOnPredecessor( $values );
+							return $this;
+
+						case model_relation_node::BINDING_SUCCESSOR :
+							$node->bindOnSuccessor( $values );
+							return $this;
+
+						case model_relation_node::BINDING_NEITHER :
+							throw new \LogicException( 'ambigious binding, matching node is ' );
+					}
+				}
+			}
+
+		throw new \RuntimeException( 'model is not associated with any selected node of relation' );
+	}
+
+	/**
+	 * Retrieves node at given index if matching model and/or alias.
+	 *
+	 * @param int $index index of node, used on calling nodeAtIndex()
+	 * @param model|\ReflectionClass|null $model model of node required to match
+	 * @param string|null $alias name of model or alias of node required to match
+	 * @return model_relation_node|null selected node if matching, null otherwise
+	 */
+
+	protected function _isNodeMatching( $index, $model = null, $alias = null ) {
+		$node = $this->nodeAtIndex( $index );
+
+		$matching  = ( $model === null || $node->isAssociatedWithModel( $model ) );
+		$matching |= ( $alias === null || $node->getName() == $alias );
+
+		return $matching ? $node : null;
+	}
+
+	/**
+	 * Tries binding values on node at given index if matching model and/or
+	 * alias.
+	 *
+	 * @param int $index index of node, used on calling nodeAtIndex()
+	 * @param model|\ReflectionClass|null $model model of node required to match
+	 * @param string|null $alias name of model or alias of node required to match
+	 * @param bool $tryOnSucceeding try binding values on node's reference to succeeding node
+	 * @param array $values values to bind
+	 * @return $this
+	 */
+
+	protected function _tryBindMatchingNode( $index, $model = null, $alias = null, $tryOnSucceeding = true, $values ) {
+		$node = $this->_isNodeMatching( $index, $model, $alias );
+		if ( !$node )
+			// node isn't matching, so don't try to bind actually
+			return null;
+
+		// check if node is capable of binding in desired direction itself
+		if ( $tryOnSucceeding )
+			$okay = $node->canBindOnSuccessor();
+		else
+			$okay = $node->canBindOnPredecessor();
+
+		if ( $okay )
+			// node can bind itself ... so bind
+			$tryOnSucceeding
+				? $node->bindOnSuccessor( $values )
+				: $node->bindOnPredecessor( $values );
+		else
+			// node can't bind itself ... bind on neighbour of either reference
+			$tryOnSucceeding
+				? $this->nodeAtIndex( $index + 1 )->bindOnPredecessor( $values )
+				: $this->nodeAtIndex( $index - 1 )->bindOnSuccessor( $values );
+
+		return $this;
+	}
+
+	/**
+	 * Binds any reference of selected node to provided item.
+	 *
+	 * @param int $intNodeIndex index of node to bind
+	 * @param model $item item providing values to use on binding node
+	 * @return $this
+	 */
+
+	public function bindNodeOnItem( $intNodeIndex, model $item )
+	{
+		$node = $this->nodeAtIndex( $intNodeIndex );
+		if ( !$node->getModel()->isSameModel( $item ) )
+			throw new \InvalidArgumentException( 'item is not matching model of selected node' );
+
+		if ( !$this->datasource )
+			$this->setDatasource( $item->source() );
+
+		if ( $node->wantsPredecessor() ) {
+			$values = array();
+			foreach ( $node->getPredecessorNames() as $name )
+				$values[$name] = $item->__get( $name );
+
+			if ( $node->canBindOnPredecessor() )
+				$node->bindOnPredecessor( $values );
+			else
+				$this->nodeAtIndex( $intNodeIndex - 1 )->bindOnSuccessor( $values );
 		}
 
-		// add dataset of related target model
-		$query->addDataset( $this->target->set() . ' target', "{$sets[$i-1]}.{$props[$i-1]}=target.{$this->targetProperty}" );
+		if ( $node->wantsSuccessor() ) {
+			$values = array();
+			foreach ( $node->getSuccessorNames() as $name )
+				$values[$name] = $item->__get( $name );
 
-		return $query;
+			if ( $node->canBindOnSuccessor() )
+				$node->bindOnSuccessor( $values );
+			else
+				$this->nodeAtIndex( $intNodeIndex + 1 )->bindOnPredecessor( $values );
+		}
+
+		return $this;
 	}
 
 	/**
-	 * Detects whether source endpoint of relation is bound or not.
+	 * Retrieves conditions describing all currently bound nodes.
 	 *
-	 * @return boolean
+	 * The resulting array includes element for each binding of nodes in current
+	 * relation (containing up to two elements per node). Every element consist
+	 * of element 'filter' giving SQL-like condition with parameter markers and
+	 * element 'values' containing values to bind as parameters accordingly.
+	 *
+	 * @return array
 	 */
 
-	public function isSourceBound()
-	{
-		return $this->sourceBound || $this->source->isBound();
+	public function getConditionOnBoundNodes() {
+		if ( !$this->isComplete() )
+			throw new \RuntimeException( 'relation is not complete' );
+
+		$conditions = array();
+
+		foreach ( $this->nodes as $node ) {
+			/** @var model_relation_node $node */
+			$state = $node->isBound( null );
+			if ( $state & model_relation_node::BINDING_PREDECESSOR )
+				$conditions[] = array(
+					'filter' => implode( ' AND ', array_map( function( $p ) { return "$p=?"; }, $node->getPredecessorNames( $this->datasource, true ) ) ),
+					'values' => $node->getPredecessorValues(),
+				);
+
+			if ( $state & model_relation_node::BINDING_SUCCESSOR )
+				$conditions[] = array(
+					'filter' => implode( ' AND ', array_map( function( $p ) { return "$p=?"; }, $node->getSuccessorNames( $this->datasource, true ) ) ),
+					'values' => $node->getSuccessorValues(),
+				);
+		}
+
+		return $conditions;
 	}
 
 	/**
-	 * Detects whether target endpoint of relation is bound or not.
+	 * Creates query including all models of relation properly joined according
+	 * to declared references.
 	 *
-	 * @return boolean
-	 */
-
-	public function isTargetBound()
-	{
-		return $this->targetBound || $this->target->isBound();
-	}
-
-	/**
-	 * Retrieves ID of item bound as source of relation or false if source isn't
-	 * bound.
-	 *
-	 * @return array|false ID of item bound at source, false if source is unbound
-	 */
-
-	public function getSourceBoundId()
-	{
-		return $this->sourceBound === null ? $this->source->isBound() ? $this->source->id() : false : $this->sourceBound;
-	}
-
-	/**
-	 * Retrieves ID of item bound as target of relation or false if target isn't
-	 * bound.
-	 *
-	 * @return array|false ID of item bound at target, false if target is unbound
-	 */
-
-	public function getTargetBoundId()
-	{
-		return $this->targetBound === null ? $this->target->isBound() ? $this->target->id() : false : $this->targetBound;
-	}
-
-	/**
-	 * Compiles query on described relation applied on implicitly or explicitly
-	 * bound endpoint(s).
-	 *
-	 * @note Returned query isn't configured to retrieve any property but IDs of
-	 *       relation's source and target, actually. You may add more properties
-	 *       to fetch using query's API yourself.
-	 *
+	 * @param bool $bound true to apply
+	 * @param bool $reverse true to start describing query at end point of relation
 	 * @return datasource\query
 	 */
 
-	public function query()
+	public function createQuery( $bound = true, $reverse = false ) {
+		if ( !$this->isComplete() )
+			throw new \RuntimeException( 'relation is not complete' );
+
+		if ( !$this->datasource )
+			throw new \RuntimeException( 'relation is not configured to use datasource, yet' );
+
+
+		/*
+		 * prepare to traverse nodes of relation in requested order
+		 */
+
+		if ( $reverse )
+			$range = array( 0, 1, count( $this->nodes ) - 1, 1 );
+		else
+			$range = array( count( $this->nodes ) - 1, count( $this->nodes ) - 2, 0, -1 );
+
+
+		/*
+		 * start query on data set of first node
+		 */
+
+		/** @var model_relation_node $start */
+		$start = $this->nodes[$range[0]];
+		$query = $this->datasource->createQuery( $start->getFullName( $this->datasource ) );
+
+
+		/*
+		 * joins in all further nodes' data sets
+		 */
+
+		$previous = $start;
+
+		for ( $index = $range[1]; $index != $range[2]; $index += $range[3] ) {
+			// get next node to join
+			/** @var model_relation_node $node */
+			$node = $this->nodes[$index];
+
+			// compile condition to join next data set with previously joined one
+			$there = $previous->getSuccessorNames( $this->datasource, true );
+			$here  = $node->getPredecessorNames( $this->datasource, true );
+
+			$names = array();
+			for ( $index = 0; $index < count( $there ); $index++ )
+				$names[] = $there[$index] . '=' . $here[$index];
+
+			// add data set
+			$query->addDataset( $node->getFullName( $this->datasource ), implode( ' AND ', $names ) );
+
+			// keep track of current node being previous one in next iteration
+			$previous = $node;
+		}
+
+
+		/*
+		 * add bound nodes as filters
+		 */
+
+		if ( $bound )
+			foreach ( $this->getConditionOnBoundNodes() as $condition )
+				$query->addFilter( $condition['filter'], true, $condition['values'] );
+
+
+		return $query;
+	}
+
+	/**
+	 * Detects if first node of relation is bound.
+	 *
+	 * @return bool
+	 */
+
+	public function isBoundAtStart() {
+		return $this->nodeAtIndex( 0 )->isBound();
+	}
+
+	/**
+	 * Detects if last node of relation is bound.
+	 *
+	 * @return bool
+	 */
+
+	public function isBoundAtEnd() {
+		return $this->nodeAtIndex( -1 )->isBound();
+	}
+
+	/**
+	 * Searches node in relation matching model and/or alias checking if it's
+	 * bound or not.
+	 *
+	 * @param model|\ReflectionClass|null $model model of node required to match
+	 * @param string|null $alias name of model or alias of node required to match
+	 * @return bool
+	 */
+
+	public function isBoundAtModel( $model = null, $alias = null ) {
+		$node = $this->findNode( $model, $alias, null, false );
+		if ( $node )
+			return $node->isBound();
+
+		return false;
+	}
+
+	/**
+	 * Lists all (partially) unbound nodes of relation.
+	 *
+	 * Due to the semantics of used method model_relation_node::isBound() this
+	 * list is containing nodes that can be bound actually, but are not bound
+	 * currently.
+	 *
+	 * @param bool $blnListIndexes true to have list of unbound node's indexes instead of nodes themselves
+	 * @return array list of unbounded nodes
+	 */
+
+	public function getUnboundNodes( $blnListIndexes = false ) {
+		if ( !$this->isComplete() )
+			throw new \LogicException( 'relation is not complete, yet' );
+
+		$list = array();
+
+		foreach ( $this->nodes as $index => $node )
+			/** @var model_relation_node $node */
+			if ( !$node->isBound() )
+				$list[] = $blnListIndexes ? $index : $node;
+
+		return $list;
+	}
+
+	/**
+	 * Detects if relation is of type "many-to-many".
+	 *
+	 * A many-to-many-relation consists of at least one many-to-many-node. This
+	 * is a node actively referencing either of its neighbouring nodes.
+	 *
+	 * @return bool true if at least one node of relation is many-to-many
+	 */
+
+	public function isManyToMany() {
+		if ( !$this->isComplete() )
+			return false;
+
+		if ( $this->size() <= 2 )
+			return false;
+
+		return !!$this->findNode( null, null, function( $node ) {
+			/** @var model_relation_node $node */
+			return $node->isManyToMany();
+		} );
+	}
+
+	/**
+	 * Compiles query joining sets of all nodes in relation and optionally
+	 * filtering according to current binding of relation.
+	 *
+	 * @param bool $blnBind true to add filter according to relation's binding
+	 * @return datasource\query compiled query
+	 */
+
+	public function query( $blnBind = true )
 	{
-		// basically compile datasource query for fetching records of current relation
-		$query = $this->prepareQuery();
+		if ( !$this->isComplete() )
+			throw new \LogicException( 'relation is not complete' );
 
-		// bind source/target as desired to explicit items of either endpoint
-		$sourceBound = $this->getSourceBoundId();
-		$targetBound = $this->getTargetBoundId();
+		if ( !$this->datasource )
+			throw new \RuntimeException( 'relation is not configured to use datasource, yet' );
 
-		if ( $sourceBound )
-			$query->addCondition( implode( ' AND ', array_map( function( $name ) { return "source.$name=?"; }, array_keys( $sourceBound ) ) ), true, array_values( $sourceBound ) );
-		else
-			$query->addProperty( 'source.' . $this->sourceProperty );
 
-		if ( $targetBound )
-			$query->addCondition( implode( ' AND ', array_map( function( $name ) { return "target.$name=?"; }, array_keys( $targetBound ) ) ), true, array_values( $targetBound ) );
-		else
-			$query->addProperty( 'target.' . $this->targetProperty );
+		/** @var datasource\query $query */
+		$source = $this->datasource;
+		$query  = null;
 
-		// add another filter for excluding dead links
-		if ( !$sourceBound || !$targetBound )
-		{
-			if ( $sourceBound )
-				$query->addCondition ( 'target.' . $this->targetProperty . ' IS NOT NULL' );
-			else
-				$query->addCondition ( 'source.' . $this->sourceProperty . ' IS NOT NULL' );
+		foreach ( $this->references as $reference ) {
+			/** @var model_relation_reference $reference */
+
+			// cache access on nodes of reference
+			$predecessor = $reference->getPredecessor();
+			$successor   = $reference->getSuccessor();
+
+			// create query starting on on current node
+			if ( !$query )
+				$query = $source->createQuery( $predecessor->getFullName( $source ) );
+
+			// convert reference into join
+			$preSet  = $source->quoteName( $predecessor->getName() );
+			$postSet = $source->quoteName( $successor->getName() );
+
+			$join = implode( ' AND ', array_map( function( $preProp, $postProp ) use ( $source, $preSet, $postSet ) {
+				return "$preSet.$preProp=$postSet.$postProp";
+			}, $predecessor->getSuccessorNames( $source ), $successor->getPredecessorNames( $source ) ) );
+
+			// add join to query
+			$query->addDataset( $successor->getFullName( $source ), $join );
+
+
+			// optionally convert binding of reference into filter on query
+			if ( $blnBind && $reference->isBound() ) {
+				// qualify and quote names of binding properties in reference
+				$bindSet    = $reference->getReferencingNode()->getName();
+				$properties = $source->quotePropertyNames( $bindSet, $reference->getReferencingPropertyNames() );
+
+				// convert set of names into filtering term
+				$filter = implode( ' AND ', array_map( function( $name ) { return "$name=?"; }, $properties ) );
+
+				// add filter to query
+				$query->addCondition( $filter, true, $reference->getBindingValues() );
+			}
 		}
 
 
@@ -835,29 +804,92 @@ class model_relation
 	}
 
 	/**
-	 * Retrieves selector widget for embedding in a model_editor instance.
+	 * Lists related entities of a partially bound relation.
 	 *
-	 * @param mixed $relatedElementId optional ID of related element to use instead of element provided on constructing model_relation
-	 * @return model_editor_selector
+	 * @param bool $asModelInstances true to return list of matching model
+	 *        instances instead of items' labels
+	 * @param int $listNodeAtIndex index of node to list (default: node at
+	 *        opposite end of relation)
+	 * @return array list of related elements
 	 */
 
-	public function selector()
+	public function listRelated( $asModelInstances = false, $listNodeAtIndex = -1 )
 	{
-		$matches = $this->query()
-						->addProperty( 'source.' . $this->sourceProperty )
-						->execute();
+		// get query over all nodes of relation prepared for filtering
+		$query  = $this->query( true );
 
-		$items = array();
+		$source = $query->datasource();
+		$node   = $this->nodeAtIndex( $listNodeAtIndex );
+		$model  = $node->getModel();
+		$set    = $source->quoteName( $node->getName() );
 
-		while ( ( $match = $matches->cell() ) !== false )
-		{
-			$model = new \ReflectionClass( $this->source );
-			$item  = $model->getMethod( 'select' )->invoke( null, array( $this->source->source(), $match ) );
 
-			$items[$match] = $item->label();
+		/*
+		 * select properties to fetch
+		 */
+
+		// always require IDs of listed model's instances
+		$ids = $model->getIdProperties();
+		foreach ( $ids as $index => $property )
+			$query->addProperty( $set . '.' . $source->quoteName( $property ), "i$index" );
+
+		// list labels of listed model's instance unless fetching model instances
+		if ( !$asModelInstances ) {
+			$labels = $model->getLabelProperties();
+			foreach ( $labels as $index => $property )
+				$query->addProperty( $set . '.' . $source->quoteName( $property ), "l$index" );
 		}
 
-		return new model_editor_selector( $items );
+
+		/*
+		 * query for matching records
+		 */
+
+		$matches = $query->execute();
+
+		// transform matches into map of serialized IDs into labels or model instances
+		$iCount = count( $ids );
+		$lCount = count( $labels );
+		$result = array();
+
+		while ( $row = $matches->row() )
+		{
+			// extract ID from returned record
+			$id = array();
+			for ( $i = 0; $i < $iCount; $i++ )
+				$id[$ids[$i]] = $row["i$i"];
+
+
+			if ( $asModelInstances ) {
+				// select model instance
+				$match = $model->selectInstance( $source, $id );
+			} else {
+				// extract labelling properties from returned record
+				$label = array();
+				for ( $i = 0; $i < $lCount; $i++ )
+					$label[$labels[$i]] = $row["l$i"];
+
+				// render label on item
+				$match = $model->getFormattedLabel( $label );
+			}
+
+			// add mapping to resulting list
+			$result[$model->getSerializedId( $id )] = $match;
+		}
+
+
+		return $result;
+	}
+
+	/**
+	 * Retrieves editor instance for managing current relation.
+	 *
+	 * @return model_editor_related
+	 */
+
+	public function editor()
+	{
+		return new model_editor_related( $this );
 	}
 
 	/**
@@ -866,25 +898,19 @@ class model_relation
 	 *
 	 * @param array $data custom data to be passed to template on rendering
 	 * @param string $template name of custom template to use instead of default one on rendering
+	 * @param int $listNodeAtIndex index of node to list properties of
+	 *        (default: node at opposite end of relation)
 	 * @return string rendering result
 	 */
 
-	public function render( $data = array(), $template = null )
+	public function render( $data = array(), $template = null, $listNodeAtIndex = -1 )
 	{
 		$query = $this->query();
 
-		foreach ( $this->sorting as $property => $ascending )
-			$query->addOrder( $property, !!$ascending );
+		// extend query to fetch all properties of selected node's model
+		$query->addProperty( $this->datasource->quoteName( $this->nodeAtIndex( $listNodeAtIndex )->getName() ) . '.*' );
 
-		if ( count( $this->visibleProperties ) )
-			foreach ( $this->visibleProperties as $property )
-				$query->addProperty( $property );
-		else if ( $this->isSourceBound() )
-			$query->addProperty( 'target.*' );
-		else
-			$query->addProperty( 'source.*' );
-
-		// fetch all matching relation instances from datasource
+		// process query
 		$matches = $query->execute()->all();
 
 		// start variable space initialized using provided set of custom data
@@ -915,6 +941,6 @@ class model_relation
 
 	public function count()
 	{
-		return intval( $this->query()->execute( true )->cell() );
+		return intval( $this->createQuery()->execute( true )->cell() );
 	}
 }

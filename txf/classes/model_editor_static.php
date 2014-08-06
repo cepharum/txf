@@ -3,7 +3,7 @@
 
 namespace de\toxa\txf;
 
-class model_editor_static implements model_editor_element
+class model_editor_static extends model_editor_abstract
 {
 	protected $label;
 	protected $name;
@@ -16,12 +16,12 @@ class model_editor_static implements model_editor_element
 
 	/**
 	 *
-	 * @param type $label
-	 * @param type $name
+	 * @param string type $label
+	 * @param string type $name
 	 * @return model_editor_static
 	 */
 
-	public static function create( $label, $name = null )
+	public static function create( $label = null, $name = null )
 	{
 		return new static( $label, $name );
 	}

@@ -18,6 +18,13 @@ class model_editor_texteditor extends model_editor_text
 		return $field;
 	}
 
+	public function setEditor( model_editor $editor )
+	{
+		$editor->form()->post();
+
+		return parent::setEditor( $editor );
+	}
+
 	public function render( html_form $form, $name, $input, $label, model_editor $editor )
 	{
 		$classes = implode( ' ', array_filter( array( $this->class, 'texteditor' ) ) );
