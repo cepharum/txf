@@ -72,6 +72,14 @@ class pdo extends singleton implements connection
 
 	protected $command;
 
+	/**
+	 * Caches text and code of most-recently queried statement's error.
+	 *
+	 * @var array|null
+	 */
+
+	protected $_recentStmtError;
+
 
 
 	/**
@@ -191,22 +199,29 @@ class pdo extends singleton implements connection
 	public function errorText()
 	{
 		$info = $this->link->errorInfo();
-		return $info[2];
+
+		return $info[2] ? $info[2] : $this->_recentStmtError ? $this->_recentStmtError['text'] : '';
 	}
 
 	public function errorCode()
 	{
-		return $this->link->errorCode();
+		$code = $this->link->errorCode();
+
+		return $code ? $code : $this->_recentStmtError ? $this->_recentStmtError['code'] : 0;
 	}
 
 	protected function __fastQuery( $retrievor, $arguments )
 	{
+		$this->_recentStmtError = null;
+
 		// compile statement
 		$stmt = $this->compile( array_shift( $arguments ) );
 
 		// execute compiled statement
-		if ( !call_user_func_array( array( $stmt, 'execute' ), $arguments ) || $stmt->failed )
+		if ( !call_user_func_array( array( $stmt, 'execute' ), $arguments ) || $stmt->failed ) {
+			$this->_recentStmtError = array( 'text' => $stmt->errorText(), 'code' => $stmt->errorCode() );
 			throw new datasource_exception( $stmt );
+		}
 
 		// read result using optionally named method of compiled statement
 		$match = $retrievor ? call_user_func( array( $stmt, $retrievor ) ) : true;
@@ -222,6 +237,7 @@ class pdo extends singleton implements connection
 	 *
 	 * @param string $name name of dataset to create
 	 * @param array $definition hash of element names into element types
+	 * @param array $primaries names of columns in $definition to be part of primary key
 	 * @return boolean true on success, false on failure
 	 */
 
@@ -230,25 +246,33 @@ class pdo extends singleton implements connection
 		$this->command = null;
 
 		if ( !is_array( $definition ) || empty( $definition ) )
-			throw new \InvalidArgumentException( 'missing dataset element definition' );
+			throw new \InvalidArgumentException( 'missing definition of elements in data set' );
 
 		if ( $this->exists( $name ) )
 			return true;
 
 
-		$havePrimaries = is_array( $primaries ) && count( $primaries );
+		$rows = array();
 
-		$rows = array(
-					'id' => $this->quoteName( 'id' ) . ' INTEGER NOT NULL' . ( $havePrimaries ? '' : ' PRIMARY KEY' ),
-					);
+		if ( !is_array( $primaries ) || !count( $primaries ) ) {
+			// implicitly add column "id" serving as primary key unless caller
+			// has named columns of primary key
+			$rows['id'] = $this->quoteName( 'id' ) . ' INTEGER NOT NULL';
+			$primaries  = array( 'id' );
+		}
 
 		foreach ( $definition as $key => $type )
 			$rows[$key] = $type ? $this->quoteName( $key ) . ' ' . $type : null;
 
-		if ( $havePrimaries )
-			$rows[] = 'PRIMARY KEY (' . implode( ',', $primaries ) . ')';
-		else if ( !@$rows['id'] )
-			throw new \InvalidArgumentException( 'missing primary key declaration on dataset to create' );
+
+		foreach ( $primaries as $key => $columnName )
+			if ( !array_key_exists( $columnName, $definition ) )
+				throw new \InvalidArgumentException( 'missing definition of primary key column ' . $columnName );
+			else
+				$primaries[$key] = $this->quoteName( $columnName );
+
+
+		$rows[] = 'PRIMARY KEY (' . implode( ',', $primaries ) . ')';
 
 
 		$query = 'CREATE TABLE ' . $this->quoteName( $name ) . "\n(\n\t" . implode( ",\n\t", array_filter( $rows ) ) . "\n)";
@@ -272,6 +296,11 @@ class pdo extends singleton implements connection
 
 	public function quoteName( $name )
 	{
+		if ( strpos( $name, '(' ) !== false ) {
+			// name looks like a term -> don't quote
+			return $name;
+		}
+
 		switch ( $this->driver )
 		{
 			case 'mysql' :
@@ -294,6 +323,74 @@ class pdo extends singleton implements connection
 				return $name;
 		}
 	}
+
+	/**
+	 * Qualifies one or more property names of an additionally named data set
+	 * for using it literally in queries on datasource.
+	 *
+	 * Qualification includes quoting provided name or alias of data set as well
+	 * as any provided property's name before concatenating both. Concatenation
+	 * is omitted by providing null in $setOrAlias.
+	 *
+	 * On returning array this list is mapping provided property names into
+	 * their qualified counterparts.
+	 *
+	 * @note Don't use this method for "neutralizing" values to be embedded in a
+	 *       query while datasource is featuring parameter binding as this is
+	 *       bad-practice and subject to frequent security vulnerabilities.
+	 *       This whole API is designed to advise use of parameter binding.
+	 *
+	 * @param string $setOrAlias name or alias of set property belongs to
+	 * @param string|array $property first name of several property names to
+	 *        wrap, or all names in single array
+	 * @return string|array single quoted property name on providing single string
+	 *         in $property, set of quoted property names otherwise
+	 */
+
+	public function quotePropertyNames( $setOrAlias = null, $property )
+	{
+		$qualify = !is_null( $setOrAlias );
+
+		// validate optionally provided name or alias of data set
+		if ( $qualify ) {
+			if ( !is_string( $setOrAlias ) )
+				throw new \InvalidArgumentException( 'invalid name or alias of data set for property name qualification' );
+
+			$setOrAlias = trim( $setOrAlias );
+			if ( $setOrAlias === '' )
+				throw new \InvalidArgumentException( 'empty name or alias of data set for property name qualification' );
+
+			$setOrAlias = $this->quoteName( $setOrAlias );
+		}
+
+		// normalize properties to qualify
+		$properties = func_get_args();
+		array_shift( $properties );
+
+		$haveSingle = count( $properties ) == 1 && is_string( $properties[0] );
+
+		if ( !$haveSingle )
+			if ( count( $properties ) == 1 && is_array( $properties[0] ) )
+				$properties = array_shift( $properties );
+
+		if ( !is_array( $properties ) )
+			throw new \InvalidArgumentException( 'invalid set of property names' );
+
+
+		// qualify all given names of properties
+		$qualified = array();
+
+		foreach ( $properties as $name )
+		{
+			$quoted = $this->quoteName( $name );
+
+			$qualified[$name] = $qualify ? $setOrAlias . '.' . $quoted : $quoted;
+		}
+
+
+		return $haveSingle ? array_shift( $qualified ) : $qualified;
+	}
+
 
 	/**
 	 * Tries to query database.

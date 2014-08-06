@@ -50,7 +50,7 @@ class transaction
 	/**
 	 * method to call for actually starting a transaction
 	 *
-	 * @var function
+	 * @var callable
 	 */
 
 	protected $starter;
@@ -58,7 +58,7 @@ class transaction
 	/**
 	 * method to call for actually committing a transaction
 	 *
-	 * @var function
+	 * @var callable
 	 */
 
 	protected $committer;
@@ -66,7 +66,7 @@ class transaction
 	/**
 	 * method to call for actually rolling back a transaction
 	 *
-	 * @var function
+	 * @var callable
 	 */
 
 	protected $reverter;
@@ -91,9 +91,10 @@ class transaction
 
 	/**
 	 * @throws \InvalidArgumentException on missing proper set of callbacks
-	 * @param function $starter callback to invoke on actually starting transaction
-	 * @param function $committer callback to invoke on actually committing transaction
-	 * @param function $reverter callback to invoke on actually rolling back transaction
+	 * @param connection $connection connection to start transaction on
+	 * @param callable $starter callback to invoke on actually starting transaction
+	 * @param callable $committer callback to invoke on actually committing transaction
+	 * @param callable $reverter callback to invoke on actually rolling back transaction
 	 */
 
 	public function __construct( connection $connection, $starter, $committer, $reverter )
@@ -213,6 +214,7 @@ class transaction
 	 * processor function.
 	 *
 	 * @throws \InvalidArgumentException on invalid processor
+	 * @throws \Exception on forwarding exception thrown in wrapped processor
 	 * @param callable $processor code to process in transaction
 	 * @param string $name explicit name of transaction
 	 * @return boolean true on success, false on error

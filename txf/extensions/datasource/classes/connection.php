@@ -205,10 +205,35 @@ interface connection
 	 *       bad-practice and subject to frequent security vulnerabilities.
 	 *       This whole API is designed to advise use of parameter binding.
 	 *
+	 * @param string $name name to quote for using it literally in queries on datasource
 	 * @return string
 	 */
 
 	public function quoteName( $name );
+
+	/**
+	 * Qualifies one or more property names of an additionally named data set
+	 * for using it literally in queries on datasource.
+	 *
+	 * Qualification includes quoting provided name or alias of data set as well
+	 * as any provided property's name before concatenating both.
+	 *
+	 * On returning array this list is mapping provided property names into
+	 * their qualified counterparts.
+	 *
+	 * @note Don't use this method for "neutralizing" values to be embedded in a
+	 *       query while datasource is featuring parameter binding as this is
+	 *       bad-practice and subject to frequent security vulnerabilities.
+	 *       This whole API is designed to advise use of parameter binding.
+	 *
+	 * @param string $setOrAlias name or alias of set property belongs to
+	 * @param string|array $property first name of several property names to
+	 *        wrap, or all names in single array
+	 * @return string|array single quoted property name on providing single string
+	 *         in $property, set of quoted property names otherwise
+	 */
+
+	public function quotePropertyNames( $setOrAlias, $property );
 
 	/**
 	 * Retrieves new exception instance linked with current connection,

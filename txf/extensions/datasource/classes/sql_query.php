@@ -269,6 +269,10 @@ class sql_query implements query, \de\toxa\txf\browseable
 		return $term;
 	}
 
+	/**
+	 * @inheritdoc
+	 */
+
 	public function addDataset( $dataset, $condition, $parameters = null )
 	{
 		// first get parameters provided here for joining table
@@ -337,6 +341,13 @@ class sql_query implements query, \de\toxa\txf\browseable
 		$this->columns[$alias] = $name;
 
 		$this->collectParameters( func_get_args(), $this->columnParameters, 2 );
+
+		return $this;
+	}
+
+	public function dropProperties()
+	{
+		$this->columns = array();
 
 		return $this;
 	}
@@ -421,7 +432,9 @@ class sql_query implements query, \de\toxa\txf\browseable
 			$columns = '*';
 
 		$tables = implode( ' LEFT JOIN ', array_map(
-							function( $table, $data ) { return is_array( $data ) ? "$table ON ( $data[0] )" : $table; },
+							function( $table, $joinFilter ) {
+								return is_array( $joinFilter ) ? "$table ON ( $joinFilter[0] )" : $table;
+							},
 							array_keys( $this->tables ),
 							array_values( $this->tables )
 						) );
@@ -504,6 +517,8 @@ class sql_query implements query, \de\toxa\txf\browseable
 			throw new \InvalidArgumentException( 'sql_query works on pdo datasources, only' );
 
 		$this->connection = $connection;
+
+		return $this;
 	}
 
 	public function datasource()

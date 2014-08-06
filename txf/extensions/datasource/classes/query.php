@@ -87,7 +87,7 @@ interface query
 	 * @param string|query $dataset name and optionally appended alias of dataset to join
 	 * @param string $condition condition for selecting columns of joined table
 	 * @param mixed $parameters array of parameters or first of additional arguments providing one parameter each
-	 * @return query reference to current instance for chaining calls
+	 * @return $this
 	 */
 
 	public function addDataset( $dataset, $condition, $parameters = null );
@@ -104,10 +104,21 @@ interface query
 	 * @param string $name property to fetch or term to evaluate on all matches
 	 * @param string $alias alias to assign for addressing fetched value in filter
 	 * @param mixed $parameters array of parameters or first of additional arguments providing one parameter each
-	 * @return query current instance for chaining calls
+	 * @return $this
 	 */
 
 	public function addProperty( $name, $alias = null, $parameters = null );
+
+	/**
+	 * Clears list of previously added properties.
+	 *
+	 * This method might be used to restart selection of properties to fetch
+	 * from query.
+	 *
+	 * @return $this
+	 */
+
+	public function dropProperties();
 
 	/**
 	 * Requests to fetch records matching provided conditional term, only.
@@ -128,7 +139,7 @@ interface query
 	 * @param string $term term evaluating true on records/matches to keep
 	 * @param boolean $union true to select union of matches, false for merge
 	 * @param mixed $parameters array of parameters or first of additional arguments providing one parameter each
-	 * @return query current instance for chaining calls
+	 * @return $this
 	 */
 
 	public function addCondition( $term, $union = true, $parameters = null );
@@ -152,7 +163,7 @@ interface query
 	 * @param string $term term evaluating true on records/matches to keep
 	 * @param boolean $union true to select union of matches, false for merge
 	 * @param mixed $parameters array of parameters or first of additional arguments providing one parameter each
-	 * @return query current instance for chaining calls
+	 * @return $this
 	 */
 
 	public function addFilter( $term, $union = true, $parameters = null );
@@ -161,7 +172,7 @@ interface query
 	 * Requests to group resulting records by a single property.
 	 *
 	 * @param string $name name of property in dataset of query
-	 * @return query current instance for chaining calls
+	 * @return $this
 	 */
 
 	public function addGroup( $name );
@@ -174,7 +185,7 @@ interface query
 	 *
 	 * @param string $name name of property in dataset of query
 	 * @param boolean $ascending if true sorting rule requests ascending order
-	 * @return query current instance for chaining calls
+	 * @return $this
 	 */
 
 	public function addOrder( $name, $ascending = true );
@@ -184,7 +195,7 @@ interface query
 	 *
 	 * @param integer $size maximum number of records to include in result set
 	 * @param integer $offset number of matches to skip
-	 * @return query current instance for chaining calls
+	 * @return $this
 	 */
 
 	public function limit( $size = 20, $offset = 0 );
@@ -226,6 +237,7 @@ interface query
 	 * query, e.g. on having stored in session.
 	 *
 	 * @param connection $connection datasource to use furtheron
+	 * @return $this
 	 */
 
 	public function reconnectDatasource( connection $connection );

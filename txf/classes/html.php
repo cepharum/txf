@@ -215,8 +215,8 @@ class html
 	 *
 	 * @param array $arrData single-dimensional array to render in HTML
 	 * @param string $id optional ID to use on rendered card
-	 * @param function $cellFormat method called to render value of a cell in right column
-	 * @param function $headerFormat method called to render value of a header in left column
+	 * @param callable $cellFormat method called to render value of a cell in right column
+	 * @param callable $headerFormat method called to render value of a header in left column
 	 * @param string $empty string to render in right-hand cells unset
 	 * @param string $basicIndent string prefixing every line of rendered HTML code
 	 * @return string HTML code describing card
