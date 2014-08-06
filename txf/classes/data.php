@@ -393,5 +393,46 @@ class data
 
 		return preg_replace_callback( '/\{\{([^}]+)\}\}/', $cb, $in );
 	}
+
+	/**
+	 * Retrieves normalized tail of a set of arguments varying in number.
+	 *
+	 * @example Consider method taking 2 mandatory arguments followed by a
+	 * variable number of additional arguments like this:
+	 *
+	 *      mymethod( $a, $b, $firstVar );
+	 *
+	 * Then this method might use normalizeVariadicArguments() to support these
+	 * two use cases
+	 *
+	 *      mymethod( $aValue, $bValue, $varOne, $varTwo, $varThree );
+	 *      mymethod( $aValue, $bValue, array( $varOne, $varTwo, $varThree ) );
+	 *
+	 * by using invoking
+	 *
+	 *      $varArgs = data::normalizeVariadicArguments( func_get_args(), 2 );
+	 *
+	 * to commonly access the array consisting of $varOne, $varTwo, $varThree in
+	 * either case.
+	 *
+	 * @param array $arguments arguments to calling method, provide func_get_args() here
+	 * @param int $fixedCount number of arguments to calling method to skip
+	 * @return array extracted (probably empty) set of additional arguments to calling method
+	 */
+
+	public static function normalizeVariadicArguments( $arguments, $fixedCount )
+	{
+		if ( !is_array( $arguments ) )
+			throw new \InvalidArgumentException( 'invalid set of caller\'s arguments' );
+
+		if ( !( $fixedCount >= 0 ) )
+			throw new \InvalidArgumentException( 'invalid number of fixed arguments' );
+
+		$fixedCount = intval( $fixedCount );
+		if ( count( $arguments ) == $fixedCount + 1 && is_array( $arguments[$fixedCount] ) )
+			return $arguments[$fixedCount];
+
+		return array_slice( $arguments, $fixedCount );
+	}
 }
 
