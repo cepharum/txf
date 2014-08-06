@@ -611,10 +611,9 @@ EOT
 	 * Renders current page shutting down script afterwards.
 	 *
 	 * Rendered code of page is sent to client.
-	 *
-	 * This method is not going to return at all!
 	 */
 
+/*
 	public static function render()
 	{
 		$manager = static::current();
@@ -626,6 +625,7 @@ EOT
 			// functions
 			exit();
 	}
+*/
 
 	/**
 	 * Renders previously registered flash messages.

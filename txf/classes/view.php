@@ -36,6 +36,18 @@ namespace de\toxa\txf;
  * "macros" for use in template processing.
  *
  * @author Thomas Urban
+ *
+ * == Commonly supported magic methods
+ *
+ * = writing into declared view ports
+ * @method static void title( string $text, bool $append = true ) appends text to title viewport
+ * @method static void error( string $text, bool $append = true ) appends text to error viewport
+ * @method static void main( string $text, bool $append = true ) appends text to main viewport
+ * @method static void header( string $text, bool $append = true ) appends text to header viewport
+ * @method static void footer( string $text, bool $append = true ) appends text to footer viewport
+ * @method static void debug( string $text, bool $append = true ) appends text to debug viewport
+ * @method static void navigation( string $text, bool $append = true ) appends text to navigation viewport
+ * @method static void aside( string $text, bool $append = true ) appends text to aside viewport
  */
 
 
@@ -111,7 +123,7 @@ class view extends view\skinnable\manager
 	public static function wrapNotFalse( $what, $wrapping, $wrappingAppend = null )
 	{
 		if ( $what )
-			return static::wrap( $what, $wrapping, $wrappingAppen );
+			return static::wrap( $what, $wrapping, $wrappingAppend );
 
 		return null;
 	}
@@ -137,17 +149,17 @@ class view extends view\skinnable\manager
 	 *
 	 * @param string $template template name to render
 	 * @param variable_space|array $data data to use on rendering template
-	 * @param string rendered template
+	 * @return string rendered template
 	 */
 
-	public static function render( $template, $data )
+	public static function render( $template = null, $data = null )
 	{
 		$oblevel = ob_get_level();
 
 		try
 		{
-			if ( is_array( $data ) )
-				$data = variable_space::fromArray( $data );
+			if ( $data === null || is_array( $data ) )
+				$data = variable_space::fromArray( (array) $data );
 
 			// @todo consider selecting engine depending on current configuration instead of using current view's one
 			return static::engine()->render( $template, $data );
