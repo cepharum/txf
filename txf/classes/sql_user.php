@@ -137,7 +137,7 @@ class sql_user extends user
 				$record = name_mapping::map( array(
 					'uuid'      => uuid::createRandom(),
 					'loginname' => 'admin',
-					'password'  => 'nimda',
+					'password'  => ssha::get( 'nimda' ),
 					'name'      => _L('Administrator'),
 					'lock'      => '',
 					'email'     => '',
