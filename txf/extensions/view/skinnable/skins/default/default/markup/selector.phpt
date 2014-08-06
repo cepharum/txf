@@ -33,7 +33,7 @@ foreach ( $options as $option => $label )
 	$checked = ( trim( $option ) === trim( $value ) ) ? ' selected="selected"' : '';
 
 ?>
-		<option<?php echo $attr . $checked ?>><?php echo htmlspecialchars( $label ) ?></option>
+		<option<?php echo $attr . $checked ?>><?php echo htmlspecialchars( (string) $label ) ?></option>
 <?php } ?>
 	</select>
 </span>
