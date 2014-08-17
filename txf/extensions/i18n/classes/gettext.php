@@ -36,10 +36,12 @@ use \de\toxa\txf\log;
 /**
  * Implementation of gettext-based translations support
  *
- * This class is considered to be available by redirection, thus class is called
- * "de\toxa\txf\locale" here. See txf::redirectClass() for more.
+ * # Enabling Extension
  *
- * For using gettext configuration must be adopted to contain this XML-fragment:
+ * This class is considered to be available by redirection, thus class is called
+ * "de\toxa\txf\locale" here. See txf::redirectClass() for more. Redirection must
+ * be configured in your application's configuration by properly inserting this
+ * XML fragment:
  *
  * <txf>
  *  <autoloader>
@@ -50,31 +52,84 @@ use \de\toxa\txf\log;
  *  </autoloader>
  * </txf>
  *
- * Create POT files using xgettext like this.
+ * # Creating Dictionary Templates
  *
- * cd <TXF app folder>
- * mkdir -p locale
- * find -name "*.php" | xgettext -f /dev/stdin -L PHP -k_L -k_L:1,2 -o locale/<TXF app>.pot
+ * ## Application-specific Translations
  *
- * Any translated file must be put into created folder locale using further
- * subfolders:
+ * POT files are required to contain all requests for localizing a string using
+ * shortcut _L(). Those POT files are created using xgettext like this:
  *
- * # Create subfolder for translation's locale, e.g. "de_DE". Ensure to have a
- *   translation for default locale configured in locale.language. Use shorter
- *   locales for more common namings, such as "de" for any flavour of German.
- * # Create another subfolder inside that locale's folder called "LC_MESSAGES".
- * # Put translated file into that LC_MESSAGES folder. Rename it to <your app>.mo,
- *   default.mo or <whatever is configured in locale.domain>.mo.
+ *     cd <your-TXF-app-folder>
+ *     mkdir -p locale
+ *     find -name "*.php" -o -name "*.phpt" | xgettext -f - -L PHP -k_L -k_L:1,2 --from-code=utf-8 -o locale/<TXF app>.pot
  *
- * Notes on Ubuntu:
+ * If you didn't explicitly configure any l10n domain the following code is
+ * ready to use:
  *
- * # Install locale in system first
- *     sudo apt-get install language-pack-de-base
- * # get list of locales
- *     locale -a
- * # ensure to use locale listed there, e.g. de_DE.utf8, for naming folders and
- *   choosing locale in configuration as well declaring translation locale in PO
- *   file!
+ *     find -name "*.php" -o -name "*.phpt" | xgettext -f - -L PHP -k_L -k_L:1,2 --from-code=utf-8 -o locale/"$(basename "$(pwd)")".pot
+ *
+ * Either command is parsing all script and templates files of your TXF-based
+ * application for use of _L().
+ *
+ * The resulting <somename>>.pot is a template for creating <somename>>.mo to be
+ * installed in your application's locale folder later.
+ *
+ * ## Generic Translations of TXF
+ *
+ * TXF is using second dictionary/domain for all uses of _L() in code of TXF
+ * itself. THis second domain is integrated as a fallback to your application's
+ * dictionary.
+ *
+ * Use the following code in case of extracting catalogue for TXL-generic code:
+ *
+ *     cd <parent-of-txf>
+ *     find txf -name "*.php" -o -name "*.phpt"  | xgettext -f - -L PHP -k_L -k_L:1,2 --from-code=utf-8 -o txf/extensions/i18n/locale/txf.pot
+ *
+ * The resulting txf.pot is a template for creating txf.mo to be installed in
+ * extension's locale folder later.
+ *
+ * # Translating
+ *
+ * Result POT-files are used to start translations for either locale to be
+ * supported. Try using tools like poedit for this (http://poedit.net).
+ * Translation results in PO- and MO-files. The former are sources of actual
+ * translation. The latter are used by gettext for looking up translations. Thus
+ * you must install the latter files at least.
+ *
+ * # Installing Translations
+ *
+ * Any translated file must be put into locale folder. This locale folder is
+ * either subfolder of your application in case of application-specific
+ * translations. In case of generic translations for TXF it's the subfolder
+ * locale in this extension's folder.
+ *
+ * In either case you need to create special subfolders inside that locale
+ * folder:
+ *
+ * 1. Create subfolder for translation's locale, e.g. "de_DE". Ensure to have a
+ *    translation for default locale configured in locale.language. Use shorter
+ *    locales for more common namings, such as "de" for any flavour of German.
+ * 2. Create another subfolder inside that locale's folder called "LC_MESSAGES".
+ * 3. Put translated file into that LC_MESSAGES folder. Rename it to <your app>.mo,
+ *    default.mo or <whatever is configured in locale.domain>.mo.
+ *
+ * The resulting pathname would be
+ *
+ *     <web-root>/<your-app>/locale/de_DE/LC_MESSAGES/<your-app>.mo
+ *
+ * or
+ *
+ *     <web-root>/txf/extensions/i18n/locale/de_DE/LC_MESSAGES/txf.mo
+ *
+ * ## Notes on Ubuntu
+ *
+ * 1. Install locale in system first
+ *        sudo apt-get install language-pack-de-base
+ * 2. Get list of locales
+ *        locale -a
+ * 3. Ensure to use locale listed there, e.g. de_DE.utf8, for naming folders and
+ *    choosing locale in configuration as well declaring translation locale in
+ *    PO file!
  *
  */
 
@@ -139,17 +194,36 @@ class locale extends singleton
 
 		if ( \extension_loaded( 'gettext' ) )
 		{
+			// bind configured domain to configured path containing l10n files
 			$path = config::get( 'locale.path', path::glue( TXF_APPLICATION_PATH, 'locale' ) );
 
 			bindtextdomain( $this->domain, $path );
 			textdomain( $this->domain );
 			bind_textdomain_codeset( $this->domain, 'UTF-8' );
+
+			if ( $this->domain !== 'txf' ) {
+				// bind domain "txf" to l10n path included with current extension
+				$path = path::glue( dirname( __DIR__ ), 'locale' );
+
+				bindtextdomain( 'txf', $path );
+				bind_textdomain_codeset( 'txf', 'UTF-8' );
+			}
 		}
 
 
 		self::$collectionMode = config::get( 'locale.collect.mode', '' );
 		self::$collectionFile = config::get( 'locale.collect.file' );
 	}
+
+	/**
+	 * Commonly handles cases of failing to translate string.
+	 *
+	 * This is either due to missing gettext extension or to missing requested
+	 * translation in dictionary.
+	 *
+	 * @internal
+	 * @return string lookup string or fallback matching singular/plural case according to given count value
+	 */
 
 	protected static function onMissingGettext( $singular, $plural, $count = 1, $fallbackSingular = null, $fallbackPlural = null ) {
 		// missing i18n/l10n support
@@ -159,6 +233,14 @@ class locale extends singleton
 			:
 			( $fallbackPlural !== null ? $fallbackPlural : $plural );
 	}
+
+	/**
+	 * Commonly processes result of looking l10n dictionary for translation
+	 * matching lookup string.
+	 *
+	 * @internal
+	 * @return string translated string or key/fallback if translation failed
+	 */
 
 	protected static function processTranslated( $domain, $translated, $singular, $plural, $count = 1, $fallbackSingular = null, $fallbackPlural = null ) {
 		switch ( self::$collectionMode )
@@ -222,7 +304,14 @@ class locale extends singleton
 			return static::onMissingGettext( $singular, $plural, $count, $fallbackSingular, $fallbackPlural );
 		}
 
+		// look for matching translation in default domain (l10n of current app)
 		$translated = ngettext( $singular, $plural, $count );
+
+		// try l10n of TXF as fallback on missing translation in dictionary of app
+		$isTranslated = ( $translated !== ( $count == 1 ? $singular : $plural ) );
+		if ( !$isTranslated && static::current()->getDomain() !== 'txf' ) {
+			return static::domainGet( 'txf', $singular, $plural, $count, $fallbackSingular, $fallbackPlural );
+		}
 
 		return static::processTranslated( null, $translated, $singular, $plural, $count, $fallbackSingular, $fallbackPlural );
 	}

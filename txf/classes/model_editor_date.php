@@ -81,10 +81,10 @@ class model_editor_date extends model_editor_abstract
 			$ts = $this->parseStorageToDatetime( $value );
 
 			if ( $this->notBefore instanceof \DateTime && $ts < $this->notBefore )
-				throw new \InvalidArgumentException( _Ltxl('Selected date is out of range.') );
+				throw new \InvalidArgumentException( _L('Selected date is out of range.') );
 
 			if ( $this->notAfter instanceof \DateTime && $ts > $this->notAfter )
-				throw new \InvalidArgumentException( _Ltxl('Selected date is out of range.') );
+				throw new \InvalidArgumentException( _L('Selected date is out of range.') );
 		}
 
 		return true;

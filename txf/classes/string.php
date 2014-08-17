@@ -3,25 +3,25 @@
 
 /**
  * Copyright 2012 Thomas Urban, toxA IT-Dienstleistungen
- * 
+ *
  * This file is part of TXF, toxA's web application framework.
- * 
- * TXF is free software: you can redistribute it and/or modify it under the 
- * terms of the GNU General Public License as published by the Free Software 
- * Foundation, either version 3 of the License, or (at your option) any later 
+ *
+ * TXF is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
  * version.
- * 
- * TXF is distributed in the hope that it will be useful, but WITHOUT ANY 
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR 
+ *
+ * TXF is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
  * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License along with 
+ *
+ * You should have received a copy of the GNU General Public License along with
  * TXF. If not, see http://www.gnu.org/licenses/.
  *
  * @copyright 2012, Thomas Urban, toxA IT-Dienstleistungen, www.toxa.de
  * @license GNU GPLv3+
  * @version: $Id$
- * 
+ *
  */
 
 
@@ -31,7 +31,7 @@ namespace de\toxa\txf;
 /**
  * Implements managed strings API for transparently working with strings in
  * different encodings including multi-byte encodings.
- * 
+ *
  */
 
 
@@ -42,12 +42,12 @@ class string
 	 *
 	 * @var boolean
 	 */
-	
+
 	protected static $mbMode;
 
 	/**
 	 * internally used encoding detection order to use
-	 * 
+	 *
 	 * @var string
 	 */
 
@@ -61,7 +61,7 @@ class string
 	 *
 	 * @var array
 	 */
-	
+
 	protected static $singleByteWidthEncodings = array();
 
 	/**
@@ -93,7 +93,7 @@ class string
 //		self::$encodingDetectOrder = 'utf-8,iso-8859-15';
 
 		if ( !self::$mbMode )
-			self::$singleByteWidthEncodings = array( 
+			self::$singleByteWidthEncodings = array(
 					'ASCII', '7BIT', '8BIT',
 					'CP866', 'IBM866',
 					'CP936', 'CP950',
@@ -137,7 +137,7 @@ class string
 
 			if ( !is_null( $this->encoding ) && !self::$mbMode )
 				if ( !in_array( $this->encoding, self::$singleByteWidthEncodings ) )
-					\trigger_error( sprintf( 'Use of characterset/encoding %s requires missing mbstring extension!', $this->encoding ), \E_USER_WARNING );
+					\trigger_error( sprintf( 'Use of characterset/encoding %s requires missing mbstring extension.', $this->encoding ), \E_USER_WARNING );
 		}
 	}
 
@@ -148,7 +148,7 @@ class string
 	 * @param mixed $value value to test
 	 * @return boolean true on providing native or managed string, false otherwise
 	 */
-	
+
 	public static function isString( $value )
 	{
 		return is_string( $value ) || ( $value instanceof self );
@@ -241,7 +241,7 @@ class string
 	 *
 	 * @return string
 	 */
-	
+
 	public function __toString()
 	{
 		return $this->data;
@@ -252,7 +252,7 @@ class string
 	 *
 	 * @return array type description and string value as separate elements
 	 */
-	
+
 	public function __describe()
 	{
 		return array( 'string[' . $this->length() . '/' . $this->byteCount() . ']', $this->convertTo( 'utf-8' ) );
@@ -264,7 +264,7 @@ class string
 	 * @param string $name name of property to read
 	 * @return mixed
 	 */
-	
+
 	public function __get( $name )
 	{
 		switch ( $name )
@@ -305,7 +305,7 @@ class string
 	 *
 	 * @return integer
 	 */
-	
+
 	public function length()
 	{
 		return self::$mbMode ? \mb_strlen( $this->data, $this->encoding )
@@ -329,12 +329,12 @@ class string
 	 * @param string $encoding desired encoding of string
 	 * @return string
 	 */
-	
+
 	public function convertTo( $encoding )
 	{
 		if ( !self::$mbMode )
 		{
-			\trigger_error( 'Converting encodings is not supported due to missing extension mbstring!', E_USER_WARNING );
+			\trigger_error( 'Converting encodings is not supported due to missing extension mbstring.', E_USER_WARNING );
 			return clone $this;
 		}
 
@@ -397,7 +397,7 @@ class string
 	 * @param integer $offset number of characters to skip before searching
 	 * @return string|false
 	 */
-	
+
 	public function indexOf( string $pattern, $offset = null )
 	{
 		if ( !$pattern->length )
@@ -467,7 +467,7 @@ class string
 	 *
 	 * This method is behaving differently from strrpos() and mb_strrpos() in
 	 * that provided offset is basically related to end of string.
-	 * 
+	 *
 	 * @param string $pattern pattern to search
 	 * @param integer $offset number of characters to skip before searching
 	 * @return string|false
@@ -610,7 +610,7 @@ class string
 	 * Splits string into substrings of at most $size characters each.
 	 *
 	 * This is imitating str_split().
-	 * 
+	 *
 	 * @param string $size number of maximum character per chunk
 	 * @return array set of strings each containing at most $size characters
 	 */
@@ -695,7 +695,7 @@ class string
 	 * into some other entity or substring each.
 	 *
 	 * This method tries to imitate strtr().
-	 * 
+	 *
 	 * @param string|array $original original entities to translate
 	 * @param string $translated translated entities
 	 * @return string managed string with content adjusted
@@ -715,11 +715,11 @@ class string
 	/**
 	 * Splits internally managed string into chunks using provided pattern
 	 * for selecting separators.
-	 * 
+	 *
 	 * @param string $pcre PCRE pattern used to split managed string
 	 * @return array set of chunks
 	 */
-	
+
 	public function split( string $pcre )
 	{
 		$result = preg_split( $pcre->asUtf8 . 'u', $this->asUtf8 );

@@ -11,7 +11,7 @@ class model_editor_email extends model_editor_text
 
 		if ( $input != '' ) {
 			if ( !mail::isValidAddress( $input ) )
-				throw new \InvalidArgumentException( _Ltxl('This is not a valid e-mail address!') );
+				throw new \InvalidArgumentException( _L('This is not a valid e-mail address.') );
 		}
 
 		return true;

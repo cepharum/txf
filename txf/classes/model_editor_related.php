@@ -249,7 +249,7 @@ class model_editor_related extends model_editor_abstract
 	{
 		$min = max( $this->isMandatory ? 1 : 0, $this->minCount );
 		if ( count( $input ) < $min )
-			throw new \InvalidArgumentException( $min > 1 ? _Ltxl('This information is required multiple times.') : _Ltxl('This information is required.') );
+			throw new \InvalidArgumentException( $min > 1 ? _L('This information is required multiple times.') : _L('This information is required.') );
 
 		$available = $this->getSelectableOptions();
 
@@ -280,7 +280,7 @@ class model_editor_related extends model_editor_abstract
 
 	public function render( html_form $form, $name, $input, $label, model_editor $editor )
 	{
-		$available = array_merge( array( '0' => _Ltxl('-') ), $this->getSelectableOptions() );
+		$available = array_merge( array( '0' => _L('-') ), $this->getSelectableOptions() );
 
 		$values = array_pad( $input, $this->selectorCount, null );
 
@@ -293,7 +293,7 @@ class model_editor_related extends model_editor_abstract
 		$form->setRow( $name, $label, implode( "<br />\n", $selectors ), $this->isMandatory, null, null, $classes );
 
 		if ( count( $selectors ) < $this->maxCount )
-			$form->setRowCode( $name, markup::paragraph( markup::button( $name . '_add', _Ltxl('Add Entry') ), 'actionPanel' ) );
+			$form->setRowCode( $name, markup::paragraph( markup::button( $name . '_add', _L('Add Entry') ), 'actionPanel' ) );
 
 		return $this;
 	}

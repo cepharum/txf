@@ -13,7 +13,7 @@ class model_editor_option extends model_editor_text
 	public function validate( $input, $property, model_editor $editor )
 	{
 		if ( $this->isMandatory() && !$input )
-			throw new \InvalidArgumentException( _Ltxl('You need to check this mandatory option.') );
+			throw new \InvalidArgumentException( _L('You need to check this mandatory option.') );
 
 		return true;
 	}
@@ -31,7 +31,7 @@ class model_editor_option extends model_editor_text
 	{
 		$classes = implode( ' ', array_filter( array( $this->class, 'option' ) ) );
 
-		$form->setRow( $name, $label, markup::inline( $input ? _Ltxl('yes') : _Ltxl('no'), 'static' ), null, null, $classes );
+		$form->setRow( $name, $label, markup::inline( $input ? _L('yes') : _L('no'), 'static' ), null, null, $classes );
 
 		return $this;
 	}

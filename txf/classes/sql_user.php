@@ -99,7 +99,7 @@ class sql_user extends user
 	protected function datasource()
 	{
 		if ( !is_array( $this->configuration ) )
-			throw new \RuntimeException( _Ltxl('Missing user source configuration.') );
+			throw new \RuntimeException( _L('Missing user source configuration.') );
 
 		$conf = $this->configuration;
 		$hash = sha1( serialize( $conf ) );
@@ -113,7 +113,7 @@ class sql_user extends user
 				$ds = datasource::selectConfigured( 'default' );
 
 			if ( !( $ds instanceof datasource\pdo ) )
-				throw new \UnexpectedValueException( _Ltxl('Unsupported kind of datasource for managing users.') );
+				throw new \UnexpectedValueException( _L('Unsupported kind of datasource for managing users.') );
 
 			// apply optionally configured mapping of a user's properties
 			$definition = array(
@@ -129,7 +129,7 @@ class sql_user extends user
 
 			// create dataset in datasource on demand
 			if ( !$ds->createDataset( $conf['set'], $mappedDefinition ) )
-				throw $ds->exception( _Ltxl('failed to created dataset for managing users') );
+				throw $ds->exception( _L('failed to create dataset for managing users') );
 
 			// ensure to have a single user at least by default
 			if ( !$ds->createQuery( $conf['set'] )->count() )
@@ -138,7 +138,7 @@ class sql_user extends user
 					'uuid'      => uuid::createRandom(),
 					'loginname' => 'admin',
 					'password'  => ssha::get( 'nimda' ),
-					'name'      => _Ltxl('Administrator'),
+					'name'      => _L('Administrator'),
 					'lock'      => '',
 					'email'     => '',
 				), 'txf.sql_user' );
@@ -157,7 +157,7 @@ class sql_user extends user
 									implode( ',', $markers ) );
 
 					if ( !$conn->test( $sql, $values ) )
-						throw $conn->exception( _Ltxl('failed to create default user') );
+						throw $conn->exception( _L('failed to create default user') );
 
 					return true;
 				} );
@@ -397,7 +397,7 @@ class sql_user extends user
 			if ( ssha::get( $credentials, ssha::extractSalt( $token ) ) === $token )
 			{
 				if ( trim( $record['lock'] ) !== '' )
-					throw new unauthorized_exception( _Ltxl('account is locked'), unauthorized_exception::ACCOUNT_LOCKED, $this );
+					throw new unauthorized_exception( _L('account is locked'), unauthorized_exception::ACCOUNT_LOCKED, $this );
 
 				$this->_authenticated = true;
 
@@ -415,7 +415,7 @@ class sql_user extends user
 		if ( $this->_authenticated )
 			return $this;
 
-		throw new unauthorized_exception( _Ltxl('invalid/missing password.'), unauthorized_exception::TOKEN_MISMATCH, $this );
+		throw new unauthorized_exception( _L('invalid/missing password.'), unauthorized_exception::TOKEN_MISMATCH, $this );
 	}
 
 	/**

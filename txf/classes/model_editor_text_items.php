@@ -41,10 +41,10 @@ class model_editor_text_items extends model_editor_text
 		$items = preg_split( '/[' . preg_quote( $this->separator ) . ']/', $input );
 
 		if ( $this->minCount > 0 && $this->minCount > count( $items ) )
-			throw new \InvalidArgumentException( _Ltxl('Provide additional information here!') );
+			throw new \InvalidArgumentException( _L('Provide additional information here!') );
 
 		if ( $this->maxCount > 0 && $this->maxCount < count( $items ) )
-			throw new \InvalidArgumentException( _Ltxl('Provide less information here!') );
+			throw new \InvalidArgumentException( _L('Provide less information here!') );
 
 		return true;
 	}

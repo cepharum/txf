@@ -14,10 +14,10 @@ class model_editor_url extends model_editor_text
 		if ( $input != '' )
 		{
 			if ( !url::isFile( $input ) )
-				throw new \InvalidArgumentException( _Ltxl('This is not a valid URL!') );
+				throw new \InvalidArgumentException( _L('This is not a valid URL.') );
 
 			if ( $this->absolute && url::isRelative( $input ) )
-				throw new \InvalidArgumentException( _Ltxl('This URL must be absolute. Include scheme e.g. http://www.example.com/!') );
+				throw new \InvalidArgumentException( _L('This URL must be absolute. Include scheme e.g. http://www.example.com/!') );
 		}
 
 		return true;

@@ -88,7 +88,7 @@ abstract class model_editor_abstract implements model_editor_element
 		if ( $input === null )
 		{
 			if ( $this->isMandatory )
-				throw new \InvalidArgumentException( _Ltxl('This information is required.') );
+				throw new \InvalidArgumentException( _L('This information is required.') );
 		}
 
 		return true;

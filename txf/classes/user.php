@@ -154,7 +154,7 @@ abstract class user
 
 	public function changePassword( $newToken )
 	{
-		throw new \RuntimeException( _Ltxl('Missing support for changing password of current user.') );
+		throw new \RuntimeException( _L('Missing support for changing password of current user.') );
 	}
 
 	/**
@@ -228,7 +228,7 @@ abstract class user
 
 				return self::$__current;
 			} catch ( \Exception $e ) {
-				view::flash( _Ltxl('Failed to re-validate current user\'s authentication. Please login again!'), 'error' );
+				view::flash( _L('Failed to re-validate current user\'s authentication. Please login again!'), 'error' );
 			}
 
 			unset( $session['user'] );
@@ -439,7 +439,7 @@ class guest_user extends user
 	public function getID() { return 0; }
 	public function getUUID() { return '00000000-0000-0000-0000-000000000000'; }
 	public function getLoginName() { return 'guest'; }
-	public function getName() { return _Ltxl('guest'); }
+	public function getName() { return _L('guest'); }
 	public function getProperty( $propertyName, $defaultIfMissing = null ) { return $defaultIfMissing; }
 	public function setProperty( $propertyName, $propertyValue = null ) { throw new \RuntimeException( 'property is read-only' ); }
 	public function authenticate( $credentials ) { return $this; }
