@@ -353,7 +353,7 @@ class databrowser implements widget
 		if ( is_callable( $this->columns[$name]['formatter'] ) )
 			$value = call_user_func( $this->columns[$name]['formatter'], $value, $name, $item, $itemId );
 
-		return $value !== null ? $value : _L('-');
+		return $value !== null ? $value : _Ltxl('-');
 	}
 
 	/**
@@ -402,7 +402,7 @@ class databrowser implements widget
 		}
 		catch ( \RuntimeException $e )
 		{
-			return markup::paragraph( markup::emphasize( _L('Failed to query datasource for listing items!') ) );
+			return markup::paragraph( markup::emphasize( _Ltxl('Failed to query datasource for listing items!') ) );
 		}
 
 
@@ -431,7 +431,7 @@ class databrowser implements widget
 		}
 
 
-		$text = $this->emptyText ? $this->emptyText : _L('There is no data to be listed here ...');
+		$text = $this->emptyText ? $this->emptyText : _Ltxl('There is no data to be listed here ...');
 
 		return markup::paragraph( markup::emphasize( $text ) );
 	}

@@ -151,56 +151,80 @@ class locale extends singleton
 		self::$collectionFile = config::get( 'locale.collect.file' );
 	}
 
+	protected static function onMissingGettext( $singular, $plural, $count = 1, $fallbackSingular = null, $fallbackPlural = null ) {
+		// missing i18n/l10n support
+		// -> provide matching fallback or lookup preferring the former over the latter
+		return ( $count == 1 ) ?
+			( $fallbackSingular !== null ? $fallbackSingular : $singular )
+			:
+			( $fallbackPlural !== null ? $fallbackPlural : $plural );
+	}
+
+	protected static function processTranslated( $domain, $translated, $singular, $plural, $count = 1, $fallbackSingular = null, $fallbackPlural = null ) {
+		switch ( self::$collectionMode )
+		{
+			case 'all' :
+				$collect = 1;
+				break;
+			case 'misses' :
+			default :
+				$collect = ( $translated === ( $count == 1 ? $singular : $plural ) );
+				break;
+		}
+
+		if ( $collect && self::$collectionFile && self::$collectionMode !== '' )
+		{
+			if ( !is_array( self::$collectionFileCache ) )
+			{
+				// first collected lookup in current runtime
+				register_shutdown_function( array( __CLASS__, 'writeMissesCollection' ) );
+
+				if ( file_exists( self::$collectionFile ) )
+					self::$collectionFileCache = array_flip( array_filter( array_map( function( $line ) { return preg_match( '/^msgid "(.*)"\s*$/', $line, $matches ) ? $matches[1] : null; }, @file( self::$collectionFile ) ) ) );
+				else
+					self::$collectionFileCache = array();
+			}
+
+			self::$collectionFileCache[addcslashes( $singular, "\r\n\"" )] = true;
+		}
+
+
+		if ( $collect !== true )
+			return $translated;
+
+		// requested optional collection due to missing proper translation
+		// -> process as if gettext isn't available at all
+		return static::onMissingGettext( $singular, $plural, $count, $fallbackSingular, $fallbackPlural );
+	}
+
+	public static function domainGet( $domain, $singular, $plural, $count = 1, $fallbackSingular = null, $fallbackPlural = null )
+	{
+		$count = abs( $count );
+
+		if ( !\extension_loaded( 'gettext' ) ) {
+			return static::onMissingGettext( $singular, $plural, $count, $fallbackSingular, $fallbackPlural );
+		}
+
+		if ( !$domain && trim( $domain ) === '' ) {
+			$domain = self::current()->getDomain();
+		}
+
+		$translated = dngettext( $domain, $singular, $plural, $count );
+
+		return static::processTranslated( $domain, $translated, $singular, $plural, $count, $fallbackSingular, $fallbackPlural );
+	}
+
 	public static function get( $singular, $plural, $count = 1, $fallbackSingular = null, $fallbackPlural = null )
 	{
 		$count = abs( $count );
 
-		if ( \extension_loaded( 'gettext' ) )
-		{
-//			$translated = dngettext( self::current()->getDomain(), $singular, $plural, $count );
-			$translated = ngettext( $singular, $plural, $count );
-
-			switch ( self::$collectionMode )
-			{
-				case 'all' :
-					$collect = 1;
-					break;
-				case 'misses' :
-				default :
-					$collect = ( $translated === ( $count == 1 ? $singular : $plural ) );
-					break;
-			}
-
-			if ( $collect && self::$collectionFile && self::$collectionMode !== '' )
-			{
-				if ( !is_array( self::$collectionFileCache ) )
-				{
-					// first collected lookup in current runtime
-					register_shutdown_function( array( __CLASS__, 'writeMissesCollection' ) );
-
-					if ( file_exists( self::$collectionFile ) )
-						self::$collectionFileCache = array_flip( array_filter( array_map( function( $line ) { return preg_match( '/^msgid "(.*)"\s*$/', $line, $matches ) ? $matches[1] : null; }, @file( self::$collectionFile ) ) ) );
-					else
-						self::$collectionFileCache = array();
-				}
-
-				self::$collectionFileCache[addcslashes( $singular, "\r\n\"" )] = true;
-			}
-
-
-			if ( $collect !== true )
-				return $translated;
-
-			// requested optional collection due to missing proper translation
-			// -> process as if gettext isn't available at all
+		if ( !\extension_loaded( 'gettext' ) ) {
+			return static::onMissingGettext( $singular, $plural, $count, $fallbackSingular, $fallbackPlural );
 		}
 
-		// missing i18n/l10n support
-		// -> provide matching fallback or lookup preferring the former over the latter
-		return ( $count == 1 ) ?
-					( $fallbackSingular !== null ? $fallbackSingular : $singular )
-				:
-					( $fallbackPlural !== null ? $fallbackPlural : $plural );
+		$translated = ngettext( $singular, $plural, $count );
+
+		return static::processTranslated( null, $translated, $singular, $plural, $count, $fallbackSingular, $fallbackPlural );
 	}
 
 	public static function writeMissesCollection()

@@ -206,7 +206,7 @@ class model_editor
 			return static::createOnModel( $datasource, $model, $formName );
 
 		if ( !$model->isInstance( $item ) )
-			throw new \InvalidArgumentException( _L('Selected item is not instance of requested model.') );
+			throw new \InvalidArgumentException( _Ltxl('Selected item is not instance of requested model.') );
 
 		return static::createOnItem( $datasource, $item, $formName );
 	}
@@ -383,6 +383,20 @@ class model_editor
 		$this->fields[$fieldName] = new model_editor_field( $label, $type, true );
 
 		return $this;
+	}
+
+	/**
+	 * @throws \InvalidArgumentException on trying to select missing field
+	 * @param string $fieldName name of field to retrieve
+	 * @return model_editor_field selected field
+	 */
+
+	public function getField( $fieldName ) {
+		if ( array_key_exists( $fieldName, $this->fields ) ) {
+			return $this->fields[$fieldName];
+		}
+
+		throw new \InvalidArgumentException( 'no such field in editor: ' . $fieldName );
 	}
 
 	/**
@@ -593,7 +607,7 @@ class model_editor
 						return 'delete';
 					}
 
-					view::flash( _L('You must not delete this item!'), 'error' );
+					view::flash( _Ltxl('You must not delete this item!'), 'error' );
 					return false;
 
 				case 'save' :
@@ -610,7 +624,7 @@ class model_editor
 					$this->onCreating = !$this->hasItem();
 					if ( !$this->onCreating && !$this->may['edit'] )
 					{
-						view::flash( _L('You must not edit this item!'), 'error' );
+						view::flash( _Ltxl('You must not edit this item!'), 'error' );
 						return false;
 					}
 
@@ -634,7 +648,7 @@ class model_editor
 									if ( $success )
 										$properties[$property] = $input;
 									else
-										$errors[$property] = _L('Your input is invalid!');
+										$errors[$property] = _Ltxl('Your input is invalid!');
 								}
 								catch ( \Exception $e )
 								{
@@ -705,11 +719,11 @@ class model_editor
 					if ( $success )
 					{
 						// permit closing editor after having saved all current input
-						view::flash( _L('Your changes have been saved.') );
+						view::flash( _Ltxl('Your changes have been saved.') );
 						return 'saved';
 					}
 
-					view::flash( _L('Failed to save your changes!'), 'error' );
+					view::flash( _Ltxl('Failed to save your changes!'), 'error' );
 			}
 		}
 
@@ -741,7 +755,7 @@ class model_editor
 	public function renderEditable()
 	{
 		if ( !$this->isEditable() )
-			throw new \LogicException( _L('Model editor is not enabled.') );
+			throw new \LogicException( _Ltxl('Model editor is not enabled.') );
 
 
 		$form = $this->form();
@@ -784,12 +798,12 @@ class model_editor
 
 		// compile buttons to show at end of editor
 		if ( !$this->item || $this->may['edit'] )
-			$form->setButtonRow( '_cmd', $this->item ? _L('Save') : _L('Create'), 'save' );
+			$form->setButtonRow( '_cmd', $this->item ? _Ltxl('Save') : _Ltxl('Create'), 'save' );
 
-		$form->setButtonRow( '_cmd', _L('Cancel'), 'cancel' );
+		$form->setButtonRow( '_cmd', _Ltxl('Cancel'), 'cancel' );
 
 		if ( $this->item && $this->may['delete'] )
-			$form->setButtonRow( '_cmd', _L('Delete'), 'delete' );
+			$form->setButtonRow( '_cmd', _Ltxl('Delete'), 'delete' );
 
 		if ( $this->sortingOrder )
 			$form->setSortingOrder( $this->sortingOrder );
@@ -822,7 +836,7 @@ class model_editor
 	public function renderReadonly()
 	{
 		if ( !$this->item )
-			throw new http_exception( 400, _L('Your request is not including selection of item to be displayed.') );
+			throw new http_exception( 400, _Ltxl('Your request is not including selection of item to be displayed.') );
 
 		$fields = $this->fields;
 		$editor = $this;
@@ -853,7 +867,7 @@ class model_editor
 
 		return html::arrayToCard( $record,
 					strtolower( basename( strtr( $this->class->getName(), '\\', '/' ) ) ) . 'Details',
-					$cellFormatter, $labelFormatter, _L('-') );
+					$cellFormatter, $labelFormatter, _Ltxl('-') );
 	}
 
 	/**
@@ -924,7 +938,7 @@ class model_editor
 	public function selectItem( $id )
 	{
 		if ( $this->item )
-			throw new \LogicException( _L('Editor is already operating on model instance.') );
+			throw new \LogicException( _Ltxl('Editor is already operating on model instance.') );
 
 		if ( $id !== null )
 		{

@@ -23,7 +23,7 @@ class model_editor_currency extends model_editor_abstract
 	public function __construct()
 	{
 		if ( !is_array( static::$currencies ) )
-			static::$currencies = config::get( 'data.currencies', array( 'EUR' => _L('€') ) );
+			static::$currencies = config::get( 'data.currencies', array( 'EUR' => _Ltxl('€') ) );
 	}
 
 	public function normalize( $input, $property, model_editor $editor )
@@ -56,7 +56,7 @@ class model_editor_currency extends model_editor_abstract
 		if ( $input === null )
 		{
 			if ( $this->isMandatory )
-				throw new \InvalidArgumentException( _L('This information is required.') );
+				throw new \InvalidArgumentException( _Ltxl('This information is required.') );
 
 			return true;
 		}
@@ -67,7 +67,7 @@ class model_editor_currency extends model_editor_abstract
 			if ( preg_match( '/^[+-]?\d+\.\d{2}$/', $parts[0] ) )
 				return true;
 
-		throw new \InvalidArgumentException( _L('Your input is invalid.') );
+		throw new \InvalidArgumentException( _Ltxl('Your input is invalid.') );
 	}
 
 	public function render( html_form $form, $name, $input, $label, model_editor $editor )

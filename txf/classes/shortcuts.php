@@ -45,6 +45,23 @@ function _L( $singular, $plural = null, $count = 1, $fallbackSingular = null, $f
 	return locale::get( $singular, is_null( $plural ) ? $singular : $plural, $count, $fallbackSingular, $fallbackPlural );
 }
 
+/**
+ * Looks up localized version of provided, TXL-specific text matching selected
+ * number of items text is describing.
+ *
+ * @param string $singular default text to show on single item
+ * @param string $plural default text to show on no/multiple items
+ * @param integer $count number of items text is considered to refer to
+ * @param string $fallbackSingular optional translation to provide on missing (match in) translation table for singular form
+ * @param string $fallbackPlural optional translation to provide on missing (match in) translation table for plural form
+ * @return string localized version of text or related text in $singular/$plural on mismatch
+ */
+
+function _Ltxl( $singular, $plural = null, $count = 1, $fallbackSingular = null, $fallbackPlural = null )
+{
+	return locale::domainGet( 'txf', $singular, is_null( $plural ) ? $singular : $plural, $count, $fallbackSingular, $fallbackPlural );
+}
+
 
 /**
  * Wraps provided native string in a managed string instance.

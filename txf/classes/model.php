@@ -218,10 +218,10 @@ class model
 			return static::$id;
 
 		if ( $maxDimension > count( static::$id ) )
-			throw new \LogicException( _L('Model isn\'t supporting IDs with requested dimensionality.') );
+			throw new \LogicException( _Ltxl('Model isn\'t supporting IDs with requested dimensionality.') );
 
 		if ( !( $dimension >= 0 ) || $dimension >= count( static::$id ) )
-			throw new \OutOfRangeException( _L('Model\'s ID is missing requested dimension.') );
+			throw new \OutOfRangeException( _Ltxl('Model\'s ID is missing requested dimension.') );
 
 		return static::$id[intval( $dimension )];
 	}
@@ -250,7 +250,7 @@ class model
 			return $label;
 
 		if ( !( $dimension >= 0 ) || $dimension > count( $label ) )
-			throw new \OutOfRangeException( _L('Model\'s label is missing requested dimension.') );
+			throw new \OutOfRangeException( _Ltxl('Model\'s label is missing requested dimension.') );
 
 		return $label[intval( $dimension )];
 	}
@@ -317,7 +317,7 @@ class model
 
 	public static function getterUrl( $itemId = null, $parameters = array() )
 	{
-		throw new \BadMethodCallException( _L('Generic model isn\'t providing getter URL.') );
+		throw new \BadMethodCallException( _Ltxl('Generic model isn\'t providing getter URL.') );
 	}
 
 	/**
@@ -330,7 +330,7 @@ class model
 
 	public static function listerUrl( $parameters = array() )
 	{
-		throw new \BadMethodCallException( _L('Generic model isn\'t providing lister URL.') );
+		throw new \BadMethodCallException( _Ltxl('Generic model isn\'t providing lister URL.') );
 	}
 
 	/**
@@ -347,7 +347,7 @@ class model
 
 	public static function label( $itemCount = 1 )
 	{
-		throw new \BadMethodCallException( _L('Generic model isn\'t providing localized label.') );
+		throw new \BadMethodCallException( _Ltxl('Generic model isn\'t providing localized label.') );
 	}
 
 	/**
@@ -383,6 +383,20 @@ class model
 		}
 
 		return $this->_record;
+	}
+
+	/**
+	 * Drops record containing properties load from data source before for
+	 * caching on repeated retrieval.
+	 *
+	 * @return $this
+	 */
+
+	public function dropCachedRecord()
+	{
+		$this->_record = null;
+
+		return $this;
 	}
 
 	/**
@@ -520,9 +534,9 @@ class model
 
 		$idName = static::idName();
 		if ( array_key_exists( $idName, $record ) )
-			return sprintf( _L('#%d of model %s'), $record[$idName], get_class( $this ) );
+			return sprintf( _Ltxl('#%d of model %s'), $record[$idName], get_class( $this ) );
 
-		return sprintf( _L('instance of model %s'), get_class( $this ) );
+		return sprintf( _Ltxl('instance of model %s'), get_class( $this ) );
 	}
 
 	/**
@@ -607,7 +621,7 @@ class model
 
 	public static function define()
 	{
-		throw new \RuntimeException( _L('Generic model does not have defined structure for being abstract.') );
+		throw new \RuntimeException( _Ltxl('Generic model does not have defined structure for being abstract.') );
 	}
 
 	/**
@@ -986,7 +1000,7 @@ class model
 
 	public static function formatCell( $value, $name, $record, $id )
 	{
-		return $value !== null ? $value : _L('-');
+		return $value !== null ? $value : _Ltxl('-');
 	}
 
 	public static function formatHeader( $name )
@@ -1238,7 +1252,7 @@ class model
 				// write this relation (unbound) into runtime cache
 				self::$_relationCache[$name] = $relation;
 			} catch ( \InvalidArgumentException $e ) {
-				throw new \InvalidArgumentException(sprintf('%s : %s', $e->getMessage(), $name));
+				throw new \InvalidArgumentException(sprintf('%s: %s', $e->getMessage(), $name), $e->getCode(), $e);
 			}
 		}
 
@@ -1439,13 +1453,18 @@ class model
 		 * establish reference between previous and next node as declared
 		 */
 
+		$targetProperty = @$referenceToAppend['on'];
+		if ( !$targetProperty ) {
+			$targetProperty = array( 'id' );
+		}
+
 		if ( $toNext ) {
 			// establish reference from previous node to new node
 			$previousNode->makeReferencingSuccessorIn( $referenceToAppend['with'] );
-			$nextNode->makeReferencedByPredecessorOn( $referenceToAppend['on'] );
+			$nextNode->makeReferencedByPredecessorOn( $targetProperty );
 		} else {
 			// establish reference from new node to previous one
-			$previousNode->makeReferencedBySuccessorOn( $referenceToAppend['on'] );
+			$previousNode->makeReferencedBySuccessorOn( $targetProperty );
 			$nextNode->makeReferencingPredecessorIn( $referenceToAppend['with'] );
 		}
 
@@ -1489,7 +1508,7 @@ class model
 			$source = datasource::getDefault();
 
 		if ( !( $source instanceof datasource\connection ) )
-			throw new \InvalidArgumentException( _L('missing link to datasource') );
+			throw new \InvalidArgumentException( _Ltxl('missing link to datasource') );
 
 		static::updateSchema( $source );
 

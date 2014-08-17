@@ -196,7 +196,7 @@ class html
 		}
 
 		if ( !$rowIndex )
-			$out .= "$basicIndent		<tr><td colspan=\"2\" class=\"empty\">" . _L('There is no data to display here!','',1) . "</td></tr>\n";
+			$out .= "$basicIndent		<tr><td colspan=\"2\" class=\"empty\">" . _Ltxl('There is no data to display here!','',1) . "</td></tr>\n";
 
 		$out .= "$basicIndent	</tbody>\n";
 
@@ -259,7 +259,7 @@ class html
 		}
 
 		if ( !$rowIndex )
-			$out .= "$basicIndent	<span class=\"empty\">" . _L('There is no data to display here!','',1) . "</span>\n";
+			$out .= "$basicIndent	<span class=\"empty\">" . _Ltxl('There is no data to display here!','',1) . "</span>\n";
 
 		return $out . "$basicIndent</div>\n";
 	}

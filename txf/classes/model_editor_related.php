@@ -83,6 +83,14 @@ class model_editor_related extends model_editor_abstract
 
 	protected $unique = true;
 
+	/**
+	 * Gets invoked on rendering readonly values of related ones.
+	 *
+	 * @var callable
+	 */
+
+	protected $formatRenderer = null;
+
 
 
 	public function __construct( model_relation $relation )
@@ -203,6 +211,24 @@ class model_editor_related extends model_editor_abstract
 	}
 
 	/**
+	 * Provides callback to invoke for actually rendering related items.
+	 *
+	 * @param callable $callable function invoked per related item for rendering it readonly
+	 * @return $this
+	 */
+
+	public function setFormatter( $callable )
+	{
+		if ( is_callable( $callable ) ) {
+			$this->formatRenderer = $callable;
+		} else {
+			throw new \InvalidArgumentException( 'invalid formatter callable' );
+		}
+
+		return $this;
+	}
+
+	/**
 	 * Detects if mutable reference of relation is supporting multiple bindings
 	 * or instances of relation.
 	 *
@@ -223,7 +249,7 @@ class model_editor_related extends model_editor_abstract
 	{
 		$min = max( $this->isMandatory ? 1 : 0, $this->minCount );
 		if ( count( $input ) < $min )
-			throw new \InvalidArgumentException( $min > 1 ? _L('This information is required multiple times.') : _L('This information is required.') );
+			throw new \InvalidArgumentException( $min > 1 ? _Ltxl('This information is required multiple times.') : _Ltxl('This information is required.') );
 
 		$available = $this->getSelectableOptions();
 
@@ -238,21 +264,23 @@ class model_editor_related extends model_editor_abstract
 	{
 		$available = $this->_getAvailables();
 
+		$out = array();
+
 		foreach ( $available as $key => $info ) {
 			if ( array_key_exists( 'local', $info ) )
 				$local = $info['local'];
 			else
 				$local = $available[$key]['local'] = $this->bindingToLocalId( $info['data'] );
 
-			$available[$local] = $info['label'];
+			$out[$local] = $info['label'];
 		}
 
-		return $available;
+		return $out;
 	}
 
 	public function render( html_form $form, $name, $input, $label, model_editor $editor )
 	{
-		$available = array_merge( array( '0' => _L('-') ), $this->getSelectableOptions() );
+		$available = array_merge( array( '0' => _Ltxl('-') ), $this->getSelectableOptions() );
 
 		$values = array_pad( $input, $this->selectorCount, null );
 
@@ -265,7 +293,7 @@ class model_editor_related extends model_editor_abstract
 		$form->setRow( $name, $label, implode( "<br />\n", $selectors ), $this->isMandatory, null, null, $classes );
 
 		if ( count( $selectors ) < $this->maxCount )
-			$form->setRowCode( $name, markup::paragraph( markup::button( $name . '_add', _L('Add Entry') ), 'actionPanel' ) );
+			$form->setRowCode( $name, markup::paragraph( markup::button( $name . '_add', _Ltxl('Add Entry') ), 'actionPanel' ) );
 
 		return $this;
 	}
@@ -289,9 +317,23 @@ class model_editor_related extends model_editor_abstract
 
 	public function formatValue( $name, $value, model_editor $editor )
 	{
+		if ( is_null( $value ) || !count( $value ) ) {
+			return null;
+		}
+
+		if ( $this->formatRenderer ) {
+			foreach ( $value as $id => $label ) {
+				$value[$id] = call_user_func( $this->formatRenderer, $id, $label );
+			}
+		}
+
 		$classes = implode( ' ', array_filter( array( $this->class, 'related' ) ) );
 
-		return markup::bullets( $value, $classes );
+		if ( $this->maxCount > 1 ) {
+			return markup::bullets( $value, $classes );
+		}
+
+		return markup::inline( array_shift( $value ), $classes );
 	}
 
 
@@ -575,7 +617,7 @@ class model_editor_related extends model_editor_abstract
 			$filter = $this->_compileFilterTerm( $source, $null['filter'] );
 
 			// get name of data set of mutable node's model
-			$set = $this->_setNameOfModel( $null['model'] );
+			$set = $this->_setNameOfModel( $source, $null['model'] );
 
 			// compile query to NULL referencing properties in data set
 			$term = implode( ',', array_map( function ( $name ) use ( $source ) {
@@ -867,6 +909,9 @@ class model_editor_related extends model_editor_abstract
 			// 2) write all current bindings
 			foreach ( array_values( $this->__savedBindings ) as $localId )
 				$this->_rebind( $datasource, $existing, $this->localIdToBinding( $localId ) );
+
+
+			$item->dropCachedRecord();
 		}
 
 		return $item;

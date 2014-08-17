@@ -143,7 +143,7 @@ class pdo_statement implements statement
 	protected function hasExecuted( $mayHaveFailed = false )
 	{
 		if ( $this->executed === null || ( !$mayHaveFailed && !$this->executed ) )
-			throw new \BadMethodCallException( _L('statement execution missing or failed before') );
+			throw new \BadMethodCallException( _Ltxl('statement execution missing or failed before') );
 
 		return $this->executed;
 	}

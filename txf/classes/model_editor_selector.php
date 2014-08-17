@@ -58,7 +58,7 @@ class model_editor_selector extends model_editor_text
 		if ( $this->isMandatory && $this->options->exists( $input ) )
 			$this->options->remove( '' );
 		else if ( !$this->options->exists( '' ) )
-			$this->options->insertAtIndex( '', _L('-'), 0 );
+			$this->options->insertAtIndex( '', _Ltxl('-'), 0 );
 
 		$classes = implode( ' ', array_filter( array( $this->class, 'selector' ) ) );
 
@@ -69,6 +69,6 @@ class model_editor_selector extends model_editor_text
 
 	public function formatValue( $name, $value, model_editor $editor )
 	{
-		return $this->options->exists( $value ) ? $this->options->value( $value ) : _L('-');
+		return $this->options->exists( $value ) ? $this->options->value( $value ) : _Ltxl('-');
 	}
 }

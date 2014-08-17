@@ -40,23 +40,23 @@ class model_editor_text extends model_editor_abstract
 		if ( $input === null )
 		{
 			if ( $this->isMandatory )
-				throw new \InvalidArgumentException( _L('This information is required.') );
+				throw new \InvalidArgumentException( _Ltxl('This information is required.') );
 		}
 		else
 		{
 			$text = $this->limitWithoutHtml ? preg_replace( '/\s+/', '', strip_tags( $input ) ) : $input;
 
 			if ( $this->minLength > 0 && mb_strlen( $text ) < $this->minLength )
-				throw new \InvalidArgumentException( _L('Your input is too short.') );
+				throw new \InvalidArgumentException( _Ltxl('Your input is too short.') );
 
 			if ( $this->maxLength > 0 && mb_strlen( $text ) > $this->maxLength )
-				throw new \InvalidArgumentException( _L('Your input is too long.') );
+				throw new \InvalidArgumentException( _Ltxl('Your input is too long.') );
 
 			if ( $this->pattern && $input !== null && !preg_match( $this->pattern[0], $this->pattern[1] ? preg_replace( '/\s+/', '', $input ) : $input ) )
-				throw new \InvalidArgumentException( _L('Your input is invalid.') );
+				throw new \InvalidArgumentException( _Ltxl('Your input is invalid.') );
 
 			if ( preg_match( '#<(script|object|iframe|style|link)[\s/>]#i', $input ) )
-				throw new \InvalidArgumentException( _L('This input contains invalid HTML code.') );
+				throw new \InvalidArgumentException( _Ltxl('This input contains invalid HTML code.') );
 		}
 
 		return true;
