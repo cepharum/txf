@@ -38,6 +38,24 @@ class model_editor_field
 	public function label() { return $this->label; }
 
 	/**
+	 * Adjusts label to show on field.
+	 *
+	 * @param string|false $label new label of field, false for dropping existing label
+	 * @return $this
+	 */
+
+	public function setLabel( $label )
+	{
+		if ( $label === false || is_null( $label ) ) {
+			$this->label = $label;
+		} else {
+			$this->label = trim( $label );
+		}
+
+		return $this;
+	}
+
+	/**
 	 * Retrieves type handler of current field.
 	 *
 	 * @return model_editor_element
@@ -400,6 +418,17 @@ class model_editor
 	}
 
 	/**
+	 * Detects if provided field has been declared in current editor or not.
+	 *
+	 * @param string $fieldName name of field to test
+	 * @return bool true if field has been declared in current editor before
+	 */
+
+	public function hasField( $fieldName ) {
+		return array_key_exists( $fieldName, $this->fields );
+	}
+
+	/**
 	 * Indicates whether editor is marked editable.
 	 *
 	 * @return bool
@@ -564,6 +593,17 @@ class model_editor
 	}
 
 	/**
+	 * Detects if editor has some input for processing or not.
+	 *
+	 * @return bool true if editor has some input
+	 */
+
+	public function hasInput()
+	{
+		return $this->isEditable() && $this->form()->hasInput();
+	}
+
+	/**
 	 * Processes input on current editor.
 	 *
 	 * @param callable $validatorCallback
@@ -575,7 +615,7 @@ class model_editor
 
 	public function processInput( $validatorCallback = null )
 	{
-		if ( $this->isEditable() && $this->form()->hasInput() )
+		if ( $this->hasInput() )
 		{
 			switch ( input::vget( '_cmd' ) )
 			{

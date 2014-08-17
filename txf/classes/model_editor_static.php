@@ -5,25 +5,14 @@ namespace de\toxa\txf;
 
 class model_editor_static extends model_editor_abstract
 {
-	protected $label;
-	protected $name;
+	protected $code;
 
-	public function __construct( $label, $name = null )
-	{
-		$this->label = trim( $label );
-		$this->name  = $name !== null ? trim( $name ) : uniqid( 'label' );
-	}
 
-	/**
-	 *
-	 * @param string type $label
-	 * @param string type $name
-	 * @return model_editor_static
-	 */
 
-	public static function create( $label = null, $name = null )
-	{
-		return new static( $label, $name );
+	public function setContent( $code ) {
+		$this->code = strval( $code );
+
+		return $this;
 	}
 
 	public function normalize( $input, $property, model_editor $editor )
@@ -40,28 +29,18 @@ class model_editor_static extends model_editor_abstract
 	{
 		$classes = implode( ' ', array_filter( array( $this->class, 'static' ) ) );
 
-		$form->setRow( $this->name, $label, $this->label, $this->isMandatory(), $this->hint, null, $classes );
+		$form->setRow( $name, $label, $this->code, $this->isMandatory(), $this->hint, null, $classes );
 
 		return $this;
 	}
 
 	public function renderStatic( html_form $form, $name, $input, $label, model_editor $editor )
 	{
-		return $this->render( $form, $name, markup::inline( $input, 'static' ), $label, $editor );
+		return $this->render( $form, $name, null, $label, $editor );
 	}
 
 	public function formatValue( $name, $value, model_editor $editor )
 	{
 		return $value;
-	}
-
-	public function mandatory( $mandatory = true )
-	{
-		return $this;
-	}
-
-	public function isMandatory()
-	{
-		return false;
 	}
 }
