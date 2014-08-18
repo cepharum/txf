@@ -90,7 +90,7 @@ class model_editor_date extends model_editor_abstract
 		return true;
 	}
 
-	public function render( html_form $form, $name, $input, $label, model_editor $editor )
+	public function render( html_form $form, $name, $input, $label, model_editor $editor, model_editor_field $field )
 	{
 		$ts = $this->parseStorageToDatetime( $input );
 
@@ -102,9 +102,9 @@ class model_editor_date extends model_editor_abstract
 		return $this;
 	}
 
-	public function renderStatic( html_form $form, $name, $input, $label, model_editor $editor )
+	public function renderStatic( html_form $form, $name, $input, $label, model_editor $editor, model_editor_field $field )
 	{
-		$value = $this->formatValue( $name, $input, $editor );
+		$value = $this->formatValue( $name, $input, $editor, $field );
 
 		$classes = array( $this->class, 'date', preg_replace( '/\W/', '', $this->staticFormat ) );
 		$classes = implode( ' ', array_filter( $classes ) );
@@ -114,7 +114,7 @@ class model_editor_date extends model_editor_abstract
 		return $this;
 	}
 
-	public function formatValue( $name, $value, model_editor $editor )
+	public function formatValue( $name, $value, model_editor $editor, model_editor_field $field )
 	{
 		$ts = $this->parseStorageToDatetime( $value );
 

@@ -10,7 +10,7 @@ class model_editor_texteditor extends model_editor_text
 
 	public static function create( $rows = 5, $columns = 60 )
 	{
-		$field = parent::create();
+		$field = new static();
 
 		$field->_rows    = intval( $rows );
 		$field->_columns = intval( $columns );
@@ -25,7 +25,7 @@ class model_editor_texteditor extends model_editor_text
 		return parent::setEditor( $editor );
 	}
 
-	public function render( html_form $form, $name, $input, $label, model_editor $editor )
+	public function render( html_form $form, $name, $input, $label, model_editor $editor, model_editor_field $field )
 	{
 		$classes = implode( ' ', array_filter( array( $this->class, 'texteditor' ) ) );
 
@@ -34,7 +34,7 @@ class model_editor_texteditor extends model_editor_text
 		return $this;
 	}
 
-	public function renderStatic( html_form $form, $name, $input, $label, model_editor $editor )
+	public function renderStatic( html_form $form, $name, $input, $label, model_editor $editor, model_editor_field $field )
 	{
 		$classes = implode( ' ', array_filter( array( $this->class, 'texteditor' ) ) );
 

@@ -24,14 +24,14 @@ class model_editor_hidden extends model_editor_text
 		return true;
 	}
 
-	public function render( html_form $form, $name, $input, $label, model_editor $editor )
+	public function render( html_form $form, $name, $input, $label, model_editor $editor, model_editor_field $field )
 	{
 		$form->setHidden( $name, $input );
 
 		return $this;
 	}
 
-	public function renderStatic( html_form $form, $name, $input, $label, model_editor $editor )
+	public function renderStatic( html_form $form, $name, $input, $label, model_editor $editor, model_editor_field $field )
 	{
 		$form->setHidden( $name, $input );
 

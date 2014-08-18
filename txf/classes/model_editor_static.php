@@ -25,7 +25,7 @@ class model_editor_static extends model_editor_abstract
 		return true;
 	}
 
-	public function render( html_form $form, $name, $input, $label, model_editor $editor )
+	public function render( html_form $form, $name, $input, $label, model_editor $editor, model_editor_field $field )
 	{
 		$classes = implode( ' ', array_filter( array( $this->class, 'static' ) ) );
 
@@ -34,12 +34,12 @@ class model_editor_static extends model_editor_abstract
 		return $this;
 	}
 
-	public function renderStatic( html_form $form, $name, $input, $label, model_editor $editor )
+	public function renderStatic( html_form $form, $name, $input, $label, model_editor $editor, model_editor_field $field )
 	{
-		return $this->render( $form, $name, null, $label, $editor );
+		return $this->render( $form, $name, null, $label, $editor, $field );
 	}
 
-	public function formatValue( $name, $value, model_editor $editor )
+	public function formatValue( $name, $value, model_editor $editor, model_editor_field $field )
 	{
 		return $value;
 	}

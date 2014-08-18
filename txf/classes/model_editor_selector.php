@@ -53,7 +53,7 @@ class model_editor_selector extends model_editor_text
 		return $this->options->exists( $input ) ? $input : null;
 	}
 
-	public function render( html_form $form, $name, $input, $label, model_editor $editor )
+	public function render( html_form $form, $name, $input, $label, model_editor $editor, model_editor_field $field )
 	{
 		if ( $this->isMandatory && $this->options->exists( $input ) )
 			$this->options->remove( '' );
@@ -67,7 +67,7 @@ class model_editor_selector extends model_editor_text
 		return $this;
 	}
 
-	public function formatValue( $name, $value, model_editor $editor )
+	public function formatValue( $name, $value, model_editor $editor, model_editor_field $field )
 	{
 		return $this->options->exists( $value ) ? $this->options->value( $value ) : _L('-');
 	}

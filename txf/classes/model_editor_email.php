@@ -17,7 +17,7 @@ class model_editor_email extends model_editor_text
 		return true;
 	}
 
-	public function formatValue( $name, $value, model_editor $editor )
+	public function formatValue( $name, $value, model_editor $editor, model_editor_field $field )
 	{
 		return $value ? markup::link( 'mailto:' . $value, $value ) : null;
 	}

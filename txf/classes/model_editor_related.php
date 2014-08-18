@@ -278,7 +278,7 @@ class model_editor_related extends model_editor_abstract
 		return $out;
 	}
 
-	public function render( html_form $form, $name, $input, $label, model_editor $editor )
+	public function render( html_form $form, $name, $input, $label, model_editor $editor, model_editor_field $field )
 	{
 		$available = array_merge( array( '0' => _L('-') ), $this->getSelectableOptions() );
 
@@ -298,7 +298,7 @@ class model_editor_related extends model_editor_abstract
 		return $this;
 	}
 
-	public function renderStatic( html_form $form, $name, $value, $label, model_editor $editor )
+	public function renderStatic( html_form $form, $name, $value, $label, model_editor $editor, model_editor_field $field )
 	{
 		$available = $this->getSelectableOptions();
 
@@ -315,7 +315,7 @@ class model_editor_related extends model_editor_abstract
 		return $this;
 	}
 
-	public function formatValue( $name, $value, model_editor $editor )
+	public function formatValue( $name, $value, model_editor $editor, model_editor_field $field )
 	{
 		if ( is_null( $value ) || !count( $value ) ) {
 			return null;
@@ -819,7 +819,7 @@ class model_editor_related extends model_editor_abstract
 		throw new \InvalidArgumentException( 'invalid item ID' );
 	}
 
-	public function onSelectingItem( model_editor $editor, model $item )
+	public function onSelectingItem( model_editor $editor, model $item, model_editor_field $field )
 	{
 		// bind element's relation with item sharing its data source
 		$this->relation
@@ -827,7 +827,7 @@ class model_editor_related extends model_editor_abstract
 			->bindNodeOnItem( 0, $item );
 	}
 
-	public function onLoading( model_editor $editor, model $item = null, $propertyName )
+	public function onLoading( model_editor $editor, model $item = null, $propertyName, model_editor_field $field )
 	{
 		if ( $this->relationName == $propertyName )
 		{
@@ -876,7 +876,7 @@ class model_editor_related extends model_editor_abstract
 
 	private $__savedBindings = null;
 
-	public function beforeStoring( model_editor $editor, model $item = null, $itemProperties )
+	public function beforeStoring( model_editor $editor, model $item = null, $itemProperties, model_editor_field $field )
 	{
 		if ( array_key_exists( $this->relationName, $itemProperties ) )
 		{
@@ -897,7 +897,7 @@ class model_editor_related extends model_editor_abstract
 		return $itemProperties;
 	}
 
-	public function afterStoring( model_editor $editor, model $item, $itemProperties )
+	public function afterStoring( model_editor $editor, model $item, $itemProperties, model_editor_field $field )
 	{
 		if ( is_array( $this->__savedBindings ) ) {
 			$datasource = $editor->source();
@@ -917,7 +917,7 @@ class model_editor_related extends model_editor_abstract
 		return $item;
 	}
 
-	public function onDeleting( model_editor $editor, model $item )
+	public function onDeleting( model_editor $editor, model $item, model_editor_field $field )
 	{
 		$datasource = $editor->source();
 		$existing   = $this->_getSelectorOfExisting();

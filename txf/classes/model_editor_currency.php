@@ -70,7 +70,7 @@ class model_editor_currency extends model_editor_abstract
 		throw new \InvalidArgumentException( _L('Your input is invalid.') );
 	}
 
-	public function render( html_form $form, $name, $input, $label, model_editor $editor )
+	public function render( html_form $form, $name, $input, $label, model_editor $editor, model_editor_field $field )
 	{
 		$parts = explode( ' ', $input );
 
@@ -84,9 +84,9 @@ class model_editor_currency extends model_editor_abstract
 		return $this;
 	}
 
-	public function renderStatic( html_form $form, $name, $input, $label, model_editor $editor )
+	public function renderStatic( html_form $form, $name, $input, $label, model_editor $editor, model_editor_field $field )
 	{
-		$value = $this->formatValue( $name, $input, $editor );
+		$value = $this->formatValue( $name, $input, $editor, $field );
 
 		$classes = implode( ' ', array_filter( array( $this->class, 'currency' ) ) );
 
@@ -95,7 +95,7 @@ class model_editor_currency extends model_editor_abstract
 		return $this;
 	}
 
-	public function formatValue( $name, $value, model_editor $editor )
+	public function formatValue( $name, $value, model_editor $editor, model_editor_field $field )
 	{
 		$parts = explode( ' ', $value );
 

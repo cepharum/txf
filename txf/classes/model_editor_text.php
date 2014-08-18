@@ -62,7 +62,7 @@ class model_editor_text extends model_editor_abstract
 		return true;
 	}
 
-	public function render( html_form $form, $name, $input, $label, model_editor $editor )
+	public function render( html_form $form, $name, $input, $label, model_editor $editor, model_editor_field $field )
 	{
 		$classes = implode( ' ', array_filter( array( $this->class, 'text' ) ) );
 
@@ -71,9 +71,9 @@ class model_editor_text extends model_editor_abstract
 		return $this;
 	}
 
-	public function renderStatic( html_form $form, $name, $input, $label, model_editor $editor )
+	public function renderStatic( html_form $form, $name, $input, $label, model_editor $editor, model_editor_field $field )
 	{
-		$value = $this->formatValue( $name, $input, $editor );
+		$value = $this->formatValue( $name, $input, $editor, $field );
 
 		$classes = implode( ' ', array_filter( array( $this->class, 'text' ) ) );
 
@@ -82,7 +82,7 @@ class model_editor_text extends model_editor_abstract
 		return $this;
 	}
 
-	public function formatValue( $name, $input, model_editor $editor )
+	public function formatValue( $name, $input, model_editor $editor, model_editor_field $field )
 	{
 		return $input;
 	}

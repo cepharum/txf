@@ -11,23 +11,34 @@ namespace de\toxa\txf;
 
 class model_editor_field
 {
+	protected $name;
 	protected $label;
 	protected $type;
 	protected $custom = false;
 
 	/**
+	 * @param string $name internal name of field
 	 * @param string|null $label label to show next to field
 	 * @param model_editor_element $type controller managing this field
 	 * @param bool $custom true if field isn't related to some property of model
 	 *        in editor
 	 */
 
-	public function __construct( $label = null, model_editor_element $type, $custom = false )
+	public function __construct( $name, $label = null, model_editor_element $type, $custom = false )
 	{
+		$this->name   = trim( $name );
 		$this->label  = trim( $label );
 		$this->type   = $type;
 		$this->custom = !!$custom;
 	}
+
+	/**
+	 * Retrieves internal name of field.
+	 *
+	 * @return string
+	 */
+
+	public function name() { return $this->name; }
 
 	/**
 	 * Retrieves label to show next to editor field.
@@ -322,29 +333,27 @@ class model_editor
 	 * Adds field for editing named property of associated item using provided
 	 * editor element.
 	 *
-	 * @param string $property name of property to edit using provided editor element
+	 * @param string $propertyName name of property to edit using provided editor element
 	 * @param string|null $label label to use on field
 	 * @param model_editor_element $type editor element to use on adjusting property
 	 * @return $this
 	 */
 
-	public function addField( $property, $label = null, model_editor_element $type = null )
+	public function addField( $propertyName, $label = null, model_editor_element $type = null )
 	{
-		$property = trim( $property );
+		$propertyName = trim( $propertyName );
 
-		if ( !$this->class->getMethod( 'isPropertyName' )->invoke( null, $property ) ) {
-
+		if ( !$this->class->getMethod( 'isPropertyName' )->invoke( null, $propertyName ) ) {
 			$isRelation = false;
 			if ( $type instanceof model_editor_related ) {
 				try {
-					$this->class->getMethod( 'relation' )->invoke( null, $property );
+					$this->class->getMethod( 'relation' )->invoke( null, $propertyName );
 					$isRelation = true;
-				} catch ( \InvalidArgumentException $e ) {
-				}
+				} catch ( \InvalidArgumentException $e ) {}
 			}
 
 			if ( !$isRelation )
-				throw new \InvalidArgumentException( 'no such property in associated model: ' . $property );
+				throw new \InvalidArgumentException( 'no such property in associated model: ' . $propertyName );
 		}
 
 		if ( $type === null )
@@ -353,18 +362,26 @@ class model_editor
 		$type->setEditor( $this );
 
 		if ( $label === null )
-			$label = $this->class->getMethod( 'nameToLabel' )->invoke( null, $property );
+			$label = $this->class->getMethod( 'nameToLabel' )->invoke( null, $propertyName );
 
 		if ( trim( $label ) === '' )
-			throw new \InvalidArgumentException( 'missing label on editor property: ' . $property );
+			throw new \InvalidArgumentException( 'missing label on editor property: ' . $propertyName );
 
 
-		$this->fields[$property] = new model_editor_field( $label, $type );
+		$fieldName = $this->propertyToField( $propertyName );
+
+		if ( array_key_exists( $fieldName, $this->fields ) )
+			throw new \InvalidArgumentException( 'field exists already' );
+
+
+		$field = new model_editor_field( $fieldName, $label, $type );
+
+		$this->fields[$fieldName] = $field;
 
 
 		if ( $this->item )
 			// ensure field may act on selecting particular item (done before)
-			$type->onSelectingItem( $this, $this->item );
+			$type->onSelectingItem( $this, $this->item, $field );
 
 
 		return $this;
@@ -388,6 +405,9 @@ class model_editor
 		if ( !$fieldName )
 			throw new \InvalidArgumentException( 'missing/invalid name on custom editor field' );
 
+		if ( array_key_exists( $fieldName, $this->fields ) )
+			throw new \InvalidArgumentException( 'field exists already' );
+
 		if ( $type === null )
 			throw new \InvalidArgumentException( 'missing control on custom editor field: ' . $fieldName );
 
@@ -398,7 +418,7 @@ class model_editor
 			throw new \InvalidArgumentException( 'missing label on editor property: ' . $fieldName );
 
 
-		$this->fields[$fieldName] = new model_editor_field( $label, $type, true );
+		$this->fields[$fieldName] = new model_editor_field( $fieldName, $label, $type, true );
 
 		return $this;
 	}
@@ -557,10 +577,11 @@ class model_editor
 	 * # Finally, item in editor is directly requested to provide value.
 	 *
 	 * @param string $property name of property to fetch
+	 * @param boolean $customField true if value is retrieved for custom field (and thus value can't be fetched from model instance obviously)
 	 * @return mixed value of fetched property
 	 */
 
-	public function __get( $property )
+	public function getValue( $property, $customField = false )
 	{
 		// 1. try optional set of fixed/immutable properties
 		$fixed = $this->getFixed();
@@ -576,7 +597,7 @@ class model_editor
 		foreach ( $this->fields as $name => $field ) {
 			/** @var model_editor_field $field */
 			if ( $name === $property ) {
-				$value = $field->type()->onLoading( $this, $this->item, $property );
+				$value = $field->type()->onLoading( $this, $this->item, $property, $field );
 				if ( !is_null( $value ) )
 					return $value;
 
@@ -585,11 +606,27 @@ class model_editor
 		}
 
 		// 4. try item in editor
-		if ( $this->item )
+		if ( $this->item && !$customField )
 			return $this->item->__get( $property );
 
 		// fail ... there is no value for selected property
 		return null;
+	}
+
+	/**
+	 * Fetches value of selected property in editor.
+	 *
+	 * This method is invoking getValue() internally.
+	 *
+	 * @see model_editor::getValue()
+	 *
+	 * @param string $property name of property to fetch
+	 * @return mixed value of fetched property
+	 */
+
+	public function __get( $property )
+	{
+		return $this->getValue( $property, false );
 	}
 
 	/**
@@ -635,7 +672,7 @@ class model_editor
 						{
 							foreach ( $fields as $field )
 								/** @var model_editor_field $field */
-								$field->type()->onDeleting( $ctx, $item );
+								$field->type()->onDeleting( $ctx, $item, $field );
 
 							$item->delete();
 
@@ -679,7 +716,7 @@ class model_editor
 								try
 								{
 									// normalize input
-									$input = call_user_func( array( $definition->type(), 'normalize' ), $ctx->__get( $property ), $property, $ctx );
+									$input = call_user_func( array( $definition->type(), 'normalize' ), $ctx->getValue( $property, $definition->isCustom() ), $property, $ctx );
 
 									// validate input
 									$success = call_user_func( array( $definition->type(), 'validate' ), $input, $property, $ctx );
@@ -724,7 +761,7 @@ class model_editor
 						// optionally pre-process saving properties of item
 						foreach ( $fields as $field )
 							/** @var model_editor_field $field */
-							$properties = $field->type()->beforeStoring( $ctx, $item, $properties );
+							$properties = $field->type()->beforeStoring( $ctx, $item, $properties, $field );
 
 						if ( $item )
 							// update properties of existing item
@@ -738,13 +775,13 @@ class model_editor
 							// tell all elements to have item now
 							foreach ( $fields as $field )
 								/** @var model_editor_field $field */
-								$field->type()->onSelectingItem( $ctx, $item );
+								$field->type()->onSelectingItem( $ctx, $item, $field );
 						}
 
 						// optionally post-process saving properties of item
 						foreach ( $fields as $field )
 							/** @var model_editor_field $field */
-							$item = $field->type()->afterStoring( $ctx, $item, $properties );
+							$item = $field->type()->afterStoring( $ctx, $item, $properties, $field );
 
 						return true;
 					} );
@@ -821,11 +858,11 @@ class model_editor
 				{
 					$fixed[$property] = $input;
 
-					$field->type()->renderStatic( $form, $name, $input, $label, $this );
+					$field->type()->renderStatic( $form, $name, $input, $label, $this, $field );
 				}
 				else
 				{
-					$field->type()->render( $form, $name, $input, $label, $this );
+					$field->type()->render( $form, $name, $input, $label, $this, $field );
 
 					if ( array_key_exists( $property, $this->errors ) )
 						$form->setRowError( $name, $this->errors[$property] );
@@ -866,6 +903,18 @@ class model_editor
 	}
 
 	/**
+	 * Maps name of related field of editor into name of property.
+	 *
+	 * @param string $fieldName
+	 * @return string
+	 */
+
+	public function fieldToProperty( $fieldName )
+	{
+		return $fieldName;
+	}
+
+	/**
 	 * Renders editor with fields limited to displaying values instead of
 	 * providing controls for editing them.
 	 *
@@ -889,6 +938,8 @@ class model_editor
 				$label = $fields[$name]->label();
 				if ( $label )
 					return sprintf( '%s:', $label );
+				else if ( $label === false )
+					return '';
 			}
 
 			return call_user_func( $modelLabelFormatter, $name );
@@ -897,7 +948,7 @@ class model_editor
 		$cellFormatter = function( $value, $name, $record, $id ) use ( $modelCellFormatter, $fields, $editor ) {
 			$field = @$fields[$name];
 			/** @var model_editor_field $field */
-			return $field ? $field->type()->formatValue( $name, $value, $editor ) : null;
+			return $field ? $field->type()->formatValue( $name, $value, $editor, $field ) : null;
 		};
 
 		$record = $this->item->published();
@@ -997,7 +1048,7 @@ class model_editor
 
 			foreach ( $this->fields as $field ) {
 				/** @var model_editor_field $field */
-				$field->type()->onSelectingItem( $this, $this->item );
+				$field->type()->onSelectingItem( $this, $this->item, $field );
 			}
 		}
 

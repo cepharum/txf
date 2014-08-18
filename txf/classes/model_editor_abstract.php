@@ -40,7 +40,7 @@ abstract class model_editor_abstract implements model_editor_element
 	 * @var *
 	 */
 
-	private $default = null;
+	private $__default = null;
 
 
 
@@ -147,9 +147,10 @@ abstract class model_editor_abstract implements model_editor_element
 	 *
 	 * @param model_editor $editor
 	 * @param model $item
+	 * @param model_editor_field $field currently processed field
 	 */
 
-	public function onSelectingItem( model_editor $editor, model $item ) {
+	public function onSelectingItem( model_editor $editor, model $item, model_editor_field $field ) {
 	}
 
 	/**
@@ -162,10 +163,11 @@ abstract class model_editor_abstract implements model_editor_element
 	 * @param model_editor $editor editor trying to load value of selected property
 	 * @param model|null $item item in editor, null if editor is used to create new item on storing
 	 * @param string $propertyName name of property to read value from
+	 * @param model_editor_field $field currently processed field
 	 * @return mixed|null some value loaded, null if element doesn't provide special value (e.g. to load it from item)
 	 */
 
-	public function onLoading( model_editor $editor, model $item = null, $propertyName ) {
+	public function onLoading( model_editor $editor, model $item = null, $propertyName, model_editor_field $field ) {
 		if ( $item !== null ) {
 			// has item ... provide null here to have editor load property of item
 			return null;
@@ -196,11 +198,15 @@ abstract class model_editor_abstract implements model_editor_element
 	 * @param model_editor $editor editor instance going to store values of item
 	 * @param model $item|null item to be updated, null on creating item
 	 * @param array $itemProperties values of properties going to be stored by editor
+	 * @param model_editor_field $field currently processed field
 	 * @return array filtered/extended set of values
 	 */
 
-	public function beforeStoring( model_editor $editor, model $item = null, $itemProperties )
+	public function beforeStoring( model_editor $editor, model $item = null, $itemProperties, model_editor_field $field )
 	{
+		if ( $field->isCustom() )
+			unset( $itemProperties[$editor->fieldToProperty( $field->name() )] );
+
 		// keep properties as-is by default
 		return $itemProperties;
 	}
@@ -225,10 +231,11 @@ abstract class model_editor_abstract implements model_editor_element
 	 * @param model_editor $editor editor instance having stored values of item
 	 * @param model $item item created/updated by storing values before
 	 * @param array $itemProperties properties and their values stored before
+	 * @param model_editor_field $field currently processed field
 	 * @return model provided $item or some replacement to use in editor instead
 	 */
 
-	public function afterStoring( model_editor $editor, model $item, $itemProperties )
+	public function afterStoring( model_editor $editor, model $item, $itemProperties, model_editor_field $field )
 	{
 		// don't replace item in editor by default
 		return $item;
@@ -244,9 +251,10 @@ abstract class model_editor_abstract implements model_editor_element
 	 *
 	 * @param model_editor $editor editor instance requested to delete item
 	 * @param model $item item to be deleted
+	 * @param model_editor_field $field currently processed field
 	 */
 
-	public function onDeleting( model_editor $editor, model $item )
+	public function onDeleting( model_editor $editor, model $item, model_editor_field $field )
 	{
 		// don't act on deleting item by default
 	}
