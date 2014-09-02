@@ -1669,7 +1669,7 @@ class model
 	 * @param array|null $properties optional set of properties' names to fetch
 	 *        additionally, provide empty array to get empty set of "data" per
 	 *        match, see note
-	 * @param string $filterTerm optional filter term to apply on listing query using addFilter()
+	 * @param string|array $filterTerm optional filter term to apply on listing query using addFilter() or list of property names each required to match values in $filterValue
 	 * @param array $filterValues optional set of values to associate with filter term
 	 * @return array set of entries mapping items' serialized ID into their label
 	 */
@@ -1695,6 +1695,14 @@ class model
 
 		if ( is_string( $filterTerm ) && trim( $filterTerm ) !== '' )
 			$query->addFilter( $filterTerm, true, (array) $filterValues );
+		else if ( is_array( $filterTerm ) && is_array( $filterValues ) && count( $filterTerm ) === count( $filterValues ) ) {
+			// this case is used by processing model relations
+			// (see model_relation_model::listItems() for more)
+			foreach ( $filterTerm as $name ) {
+				$query->addFilter( $name . '=?', true, array_shift( $filterValues ) );
+			}
+		} else if ( $filterTerm )
+			throw new \InvalidArgumentException( 'invalid kind of filter term' );
 
 		$matches = $query->execute();
 

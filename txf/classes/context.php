@@ -3,25 +3,25 @@
 
 /**
  * Copyright 2012 Thomas Urban, toxA IT-Dienstleistungen
- * 
+ *
  * This file is part of TXF, toxA's web application framework.
- * 
- * TXF is free software: you can redistribute it and/or modify it under the 
- * terms of the GNU General Public License as published by the Free Software 
- * Foundation, either version 3 of the License, or (at your option) any later 
+ *
+ * TXF is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
  * version.
- * 
- * TXF is distributed in the hope that it will be useful, but WITHOUT ANY 
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR 
+ *
+ * TXF is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
  * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License along with 
+ *
+ * You should have received a copy of the GNU General Public License along with
  * TXF. If not, see http://www.gnu.org/licenses/.
  *
  * @copyright 2012, Thomas Urban, toxA IT-Dienstleistungen, www.toxa.de
  * @license GNU GPLv3+
  * @version: $Id$
- * 
+ *
  */
 
 
@@ -58,7 +58,7 @@ class context
 	/**
 	 * pathname of installation relative to document root folder
 	 * (e.g. for use in URL)
-	 * 
+	 *
 	 * @example http://www.domain.com/SOME/PREFIX/application/action
 	 *
 	 * @var string
@@ -171,7 +171,7 @@ class context
 		{
 			// installation's folder might be linked into document root using symlink
 			// --> comparing pathname of current script with document root will fail then
-			//     --> try alternative method to find prefix pathname 
+			//     --> try alternative method to find prefix pathname
 			$this->prefixPathname = path::relativeToAnother( $_SERVER['DOCUMENT_ROOT'], dirname( $_SERVER['SCRIPT_FILENAME'] ) );
 		}
 
@@ -274,10 +274,10 @@ class context
 
 	/**
 	 * Simplifies retrieval of compiled URLs to a current script.
-	 * 
-	 * @param array $parameters set of parameters to include in reference
+	 *
+	 * @param array|false $parameters set of parameters to include in reference
 	 * @param string $selector one of several selectors to include in reference
-	 * @return string URL referring to currently running script 
+	 * @return string URL referring to currently running script
 	 */
 
 	public static function selfURL( $parameters = array(), $selectors = null )
@@ -288,13 +288,13 @@ class context
 	}
 
 	/**
-	 * Simplifies retrieval of compiled URLs to a selected script of current 
+	 * Simplifies retrieval of compiled URLs to a selected script of current
 	 * application.
-	 * 
+	 *
 	 * @param string $scriptName name of script to refer to
 	 * @param array $parameters set of parameters to include in reference
 	 * @param string $selector one of several selectors to include in reference
-	 * @return string URL referring to selected script 
+	 * @return string URL referring to selected script
 	 */
 
 	public static function scriptURL( $scriptName, $parameters = array(), $selector = null )

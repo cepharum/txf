@@ -434,6 +434,12 @@ class model_editor
 			return $this->fields[$fieldName];
 		}
 
+		// what if "field name" isn't a field's name but a property's name?
+		$name = $this->propertyToField( $fieldName );
+		if ( array_key_exists( $name, $this->fields ) ) {
+			return $this->fields[$name];
+		}
+
 		throw new \InvalidArgumentException( 'no such field in editor: ' . $fieldName );
 	}
 
@@ -445,7 +451,33 @@ class model_editor
 	 */
 
 	public function hasField( $fieldName ) {
-		return array_key_exists( $fieldName, $this->fields );
+		if ( array_key_exists( $fieldName, $this->fields ) )
+			return true;
+
+		// what if "field name" isn't a field's name but a property's name?
+		$name = $this->propertyToField( $fieldName );
+		return array_key_exists( $name, $this->fields );
+	}
+
+	/**
+	 * Drops existing field from set of declared fields.
+	 *
+	 * @param string $fieldName name of field to drop
+	 * @return $this
+	 */
+
+	public function dropField( $fieldName ) {
+		if ( array_key_exists( $fieldName, $this->fields ) ) {
+			unset( $this->fields[$fieldName] );
+		} else {
+			// what if "field name" isn't a field's name but a property's name?
+			$name = $this->propertyToField( $fieldName );
+			if ( array_key_exists( $name, $this->fields ) ) {
+				unset( $this->fields[$name] );
+			}
+		}
+
+		return $this;
 	}
 
 	/**
