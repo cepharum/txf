@@ -111,6 +111,7 @@ Setting up server involves these tasks:
         ServerName foobar.example.com
     
         DocumentRoot /var/www/txf/foobar
+		SetEnv TXF_DOCUMENT_ROOT /var/www/txf
     
         Alias /txf/run.php /var/www/txf/run.php
     
