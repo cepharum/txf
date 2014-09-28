@@ -1,45 +1,46 @@
 <?php
 
-
 /**
- * Copyright 2012 Thomas Urban, toxA IT-Dienstleistungen
- * 
- * This file is part of TXF, toxA's web application framework.
- * 
- * TXF is free software: you can redistribute it and/or modify it under the 
- * terms of the GNU General Public License as published by the Free Software 
- * Foundation, either version 3 of the License, or (at your option) any later 
- * version.
- * 
- * TXF is distributed in the hope that it will be useful, but WITHOUT ANY 
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR 
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License along with 
- * TXF. If not, see http://www.gnu.org/licenses/.
+ * The MIT License (MIT)
  *
- * @copyright 2012, Thomas Urban, toxA IT-Dienstleistungen, www.toxa.de
- * @license GNU GPLv3+
- * @version: $Id$
- * 
+ * Copyright (c) 2014 cepharum GmbH, Berlin, http://cepharum.de
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ *
+ * @author: Thomas Urban
  */
-
 
 namespace de\toxa\txf;
 
 
 /**
  * Logging
- * 
+ *
  * @author Thomas Urban <thomas.urban@toxa.de>
- * 
+ *
  */
 
 class log
 {
 	/**
 	 * mark on whether logging has been prepared already or not
-	 * 
+	 *
 	 * @var boolean
 	 */
 
@@ -47,11 +48,11 @@ class log
 
 	/**
 	 * Prepares use of logger.
-	 * 
-	 * This method may be called to switch previous name of application. It 
+	 *
+	 * This method may be called to switch previous name of application. It
 	 * might be called at any time as it's preventing multiple preparations
 	 * internally.
-	 * 
+	 *
 	 * @param string $applicationName name of application to show in logs
 	 */
 
@@ -61,17 +62,17 @@ class log
 		{
 			openlog( ( $applicationName !== null ) ? "TXF.$applicationName" : 'TXF', LOG_NDELAY+LOG_PID, LOG_USER );
 
-			self::$prepared = ( $applicationName !== null ) ? $applicationName : true; 
+			self::$prepared = ( $applicationName !== null ) ? $applicationName : true;
 		}
 	}
 
 	/**
 	 * Logs a message for debugging.
-	 * 
-	 * This method takes a variable number of arguments and processes them 
+	 *
+	 * This method takes a variable number of arguments and processes them
 	 * similarly to sprintf(). The resulting message is logged accordingly and
 	 * returned for further processing.
-	 * 
+	 *
 	 * @return string formatted message
 	 */
 
@@ -88,11 +89,11 @@ class log
 
 	/**
 	 * Logs a message containing notice.
-	 * 
-	 * This method takes a variable number of arguments and processes them 
+	 *
+	 * This method takes a variable number of arguments and processes them
 	 * similarly to sprintf(). The resulting message is logged accordingly and
 	 * returned for further processing.
-	 * 
+	 *
 	 * @return string formatted message
 	 */
 
@@ -109,11 +110,11 @@ class log
 
 	/**
 	 * Logs a message containing warnings.
-	 * 
-	 * This method takes a variable number of arguments and processes them 
+	 *
+	 * This method takes a variable number of arguments and processes them
 	 * similarly to sprintf(). The resulting message is logged accordingly and
 	 * returned for further processing.
-	 * 
+	 *
 	 * @return string formatted message
 	 */
 
@@ -130,11 +131,11 @@ class log
 
 	/**
 	 * Logs a message containing error.
-	 * 
-	 * This method takes a variable number of arguments and processes them 
+	 *
+	 * This method takes a variable number of arguments and processes them
 	 * similarly to sprintf(). The resulting message is logged accordingly and
 	 * returned for further processing.
-	 * 
+	 *
 	 * @return string formatted message
 	 */
 
@@ -151,11 +152,11 @@ class log
 
 	/**
 	 * Logs a message containing exceptional state.
-	 * 
-	 * This method takes a variable number of arguments and processes them 
+	 *
+	 * This method takes a variable number of arguments and processes them
 	 * similarly to sprintf(). The resulting message is logged accordingly and
 	 * returned for further processing.
-	 * 
+	 *
 	 * @return string formatted message
 	 */
 

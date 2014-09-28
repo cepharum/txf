@@ -1,29 +1,30 @@
 <?php
 
-
 /**
- * Copyright 2012 Thomas Urban, toxA IT-Dienstleistungen
- * 
- * This file is part of TXF, toxA's web application framework.
- * 
- * TXF is free software: you can redistribute it and/or modify it under the 
- * terms of the GNU General Public License as published by the Free Software 
- * Foundation, either version 3 of the License, or (at your option) any later 
- * version.
- * 
- * TXF is distributed in the hope that it will be useful, but WITHOUT ANY 
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR 
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License along with 
- * TXF. If not, see http://www.gnu.org/licenses/.
+ * The MIT License (MIT)
  *
- * @copyright 2012, Thomas Urban, toxA IT-Dienstleistungen, www.toxa.de
- * @license GNU GPLv3+
- * @version: $Id$
- * 
+ * Copyright (c) 2014 cepharum GmbH, Berlin, http://cepharum.de
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ *
+ * @author: Thomas Urban
  */
-
 
 namespace de\toxa\txf;
 
@@ -43,7 +44,7 @@ class typed_set extends set
 
 	protected $type;
 
-	
+
 	/**
 	 * @param array $set array to be managed
 	 */
@@ -99,7 +100,7 @@ class typed_set extends set
 				if ( is_array( $element ) )
 				{
 					$filtered = $this->filterByType( $element, $failOnInvalidType );
-					
+
 					if ( empty( $filtered ) && count( $element ) )
 						unset( $set[$key] );
 					else
@@ -115,7 +116,7 @@ class typed_set extends set
 
 			if ( !self::isHash( $set ) )
 				$set = array_values( $set );
-			
+
 			return $set;
 		}
 		else
@@ -137,7 +138,7 @@ class typed_set extends set
 	 * @param array $set
 	 * @return set created set managing (copy of) provided data
 	 */
-	
+
 	public static function wrap( $set = array(), $type = null )
 	{
 		return new static( $type, $set );
@@ -149,7 +150,7 @@ class typed_set extends set
 		{
 			case 'type' :
 				return $this->type;
-				
+
 			default :
 				return parent::__get( $name );
 		}
@@ -239,7 +240,7 @@ class typed_set extends set
 	 * @param string|\SimpleXMLElement $xml xml
 	 * @return set set representing data found in XML
 	 */
-	
+
 	public static function fromXml( $xml )
 	{
 		return static::wrap( parent::fromXml( $xml ) );
@@ -249,7 +250,7 @@ class typed_set extends set
 	 * Extends current set by provided set(s).
 	 *
 	 * @note This method is actually adjusting set managed by current instance.
-	 * 
+	 *
 	 * @return set extended set
 	 */
 

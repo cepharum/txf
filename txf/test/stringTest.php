@@ -1,5 +1,31 @@
 <?php
 
+/**
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2014 cepharum GmbH, Berlin, http://cepharum.de
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ *
+ * @author: Thomas Urban
+ */
+
 namespace de\toxa\txf;
 
 require_once 'classes/shortcuts.php';
@@ -33,7 +59,7 @@ class stringTest extends \PHPUnit_Framework_TestCase
 	{
 		string::encodingDetectionOrder( $this->previous );
 	}
-	
+
 	public function provideEncodedStringsAndLengths()
 	{
 		return array(
@@ -81,7 +107,7 @@ class stringTest extends \PHPUnit_Framework_TestCase
 	/**
 	 * @expectedException \Exception
 	 */
-	
+
 	public function testWrapping2()
 	{
 		$this->assertThat( _S( (object) array( 4, 5 ) ), $this->isInstanceOf( 'de\toxa\txf\string' ) );
@@ -397,7 +423,7 @@ class stringTest extends \PHPUnit_Framework_TestCase
 		$this->assertEquals( _S('+IKw--Soiet+AOk-'), $this->short->translate( 'ec', 'e' ) );
 		$this->assertEquals( _S('+IKw--Societ+AOk-'), $this->short->translate( '', 'eabcdef' ) );
 	}
-	
+
 	/**
 	 * @expectedException \InvalidArgumentException
 	 */

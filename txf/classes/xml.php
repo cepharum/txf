@@ -1,29 +1,30 @@
 <?php
 
-
 /**
- * Copyright 2012 Thomas Urban, toxA IT-Dienstleistungen
- * 
- * This file is part of TXF, toxA's web application framework.
- * 
- * TXF is free software: you can redistribute it and/or modify it under the 
- * terms of the GNU General Public License as published by the Free Software 
- * Foundation, either version 3 of the License, or (at your option) any later 
- * version.
- * 
- * TXF is distributed in the hope that it will be useful, but WITHOUT ANY 
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR 
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License along with 
- * TXF. If not, see http://www.gnu.org/licenses/.
+ * The MIT License (MIT)
  *
- * @copyright 2012, Thomas Urban, toxA IT-Dienstleistungen, www.toxa.de
- * @license GNU GPLv3+
- * @version: $Id$
- * 
+ * Copyright (c) 2014 cepharum GmbH, Berlin, http://cepharum.de
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ *
+ * @author: Thomas Urban
  */
-
 
 namespace de\toxa\txf;
 
@@ -31,14 +32,14 @@ namespace de\toxa\txf;
 class xml
 {
 	/**
-	 * Regular expression partial pattern matching valid initial character of 
+	 * Regular expression partial pattern matching valid initial character of
 	 * element name.
 	 */
 
 	const nameLeadingCharPattern = ':A-Z_a-z\x{C0}-\x{D6}\x{D8}-\x{F6}\x{F8}-\x{2FF}\x{370}-\x{37D}\x{37F}-\x{1FFF}\x{200C}\x{200D}\x{2070}-\x{218F}\x{2C00}-\x{2FEF}\x{3001}-\x{D7FF}\x{F900}-\x{FDCF}\x{FDF0}-\x{FFFD}\x{10000}-\x{EFFFF}';
 
 	/**
-	 * Regular expression partial pattern matching valid non-initial character 
+	 * Regular expression partial pattern matching valid non-initial character
 	 * of element name.
 	 */
 
@@ -48,7 +49,7 @@ class xml
 
 	/**
 	 * Detects if provided name is a valid XML element name.
-	 * 
+	 *
 	 * @param string $name element name to test
 	 * @return boolean true if provided name is a valid XML element name
 	 */
@@ -60,9 +61,9 @@ class xml
 
 	/**
 	 * Fixes provided name to be usable as a valid XML element name.
-	 * 
+	 *
 	 * The method is replacing all invalid characters in name by an underscore.
-	 * 
+	 *
 	 * @param string $name element name to fix
 	 * @return string fixed element name
 	 */
@@ -74,7 +75,7 @@ class xml
 
 	/**
 	 * Serializes provided hash as element attribute descriptor.
-	 * 
+	 *
 	 * @param array $hash associative set of attributes
 	 * @return string XML-like description of array elements as element attributes
 	 */
@@ -90,9 +91,9 @@ class xml
 	}
 
 	/**
-	 * Fixes name and optionally given namespace and combines them into 
+	 * Fixes name and optionally given namespace and combines them into
 	 * qualified element name.
-	 * 
+	 *
 	 * @param string $name name of element
 	 * @param string $namespace namespace tag of element
 	 * @return string qualified name of element
@@ -108,7 +109,7 @@ class xml
 
 	/**
 	 * Describes XML element.
-	 * 
+	 *
 	 * This method is to support creation of XML code by providing single method
 	 * for describing single element in XML. It might be used bottom-up from
 	 * leaves to the root by successively wrapping values in an element and then
