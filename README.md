@@ -29,6 +29,32 @@ txf - PHP web application framework
 > THE SOFTWARE.
 
 
+# Motivation
+
+This framework has evolved over several projects now resulting in a simple but
+useful set of classes suitable for developing web applications view by view. 
+
+Classes perfectly aid in writing stateful scripts accepting filtered input for
+accessing SQL databases using parameter binding for safely querying databases.
+Furthermore scripts may use semantic description of output to be converted into
+HTML web pages using integrated template engine. This includes description of
+forms including support for preventing XSRF attacks.
+
+By using rewriting URLs of all scripts are pretty-printed and suitable for 
+implementing REST-ful APIs on your own. Creating links to current or any other
+script of application is supported without knowing the actual context. On linking
+to current script embedding of current input parameters is optionally managed 
+for you.
+
+Further classes simplify data modelling, data model relationships, encrypted 
+on-server session storage, SQL- and LDAP-based user management, i18n/l10n using
+gettext, data browsing and detailed per-record cards and more. Querying SQL
+databases is available using API for incrementally describing an SQL query for
+highly simplifying scripts for processing custom search filtering depending on
+input parameters.
+
+A single txf framework installation is suitable for running several applications.
+
 # Installation
 
 Let's create a typical Hello-World-application ...
@@ -113,6 +139,10 @@ Setting up server involves these tasks:
     Alias /foobar /var/www/txf/foobar
     Alias /txf/run.php /var/www/txf/run.php
 
+    # provide pathname of folder containing txf and any installed application 
+    # unless document root of web server is pointing there already
+    SetEnv TXF_DOCUMENT_ROOT /var/www/txf
+    
     <Directory /var/www/txf/foobar>
         Options FollowSymLinks
         AllowOverride None
@@ -134,3 +164,16 @@ Setting up server involves these tasks:
 ### nginx
 
 **TODO!** _See comments in .htaccess.default!_
+
+## Try it!
+
+Use your favourite browser for opening URL of your installation at 
+`http://foobar.example.com` or `http://example.com/foobar` depending on whether
+having set up application in a separate virtual host or contained in an existing
+one. Of course you need to choose different domain than `example.com` in either
+case.
+
+This will open a nearly blank page showing well-formed XHTML document reading 
+"Hello World!". By inspecting the document you will encounter a properly set of
+DOM elements ready for rendering multi-column views. The page is simply missing
+some styling, yet.

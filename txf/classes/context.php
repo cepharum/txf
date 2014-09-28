@@ -167,13 +167,13 @@ class context
 			throw new \InvalidArgumentException( 'script is not part of TXF installation' );
 
 		// derive URL's path prefix to select folder containing TXF installation
-		$this->prefixPathname = path::relativeToAnother( realpath( $_SERVER['DOCUMENT_ROOT'] ), $this->installationPathname );
+		$this->prefixPathname = path::relativeToAnother( realpath( static::getDocumentRoot() ), $this->installationPathname );
 		if ( $this->prefixPathname === false )
 		{
 			// installation's folder might be linked into document root using symlink
 			// --> comparing pathname of current script with document root will fail then
 			//     --> try alternative method to find prefix pathname
-			$this->prefixPathname = path::relativeToAnother( $_SERVER['DOCUMENT_ROOT'], dirname( $_SERVER['SCRIPT_FILENAME'] ) );
+			$this->prefixPathname = path::relativeToAnother( static::getDocumentRoot(), dirname( $_SERVER['SCRIPT_FILENAME'] ) );
 		}
 
 
@@ -267,6 +267,12 @@ class context
 
 	public static function getDocumentRoot()
 	{
+		if ( array_key_exists( 'TXF_DOCUMENT_ROOT', $_ENV ) )
+			return $_ENV['TXF_DOCUMENT_ROOT'];
+
+		if ( array_key_exists( 'TXF_DOCUMENT_ROOT', $_SERVER ) )
+			return $_SERVER['TXF_DOCUMENT_ROOT'];
+
 		if ( array_key_exists( 'DOCUMENT_ROOT', $_ENV ) )
 			return $_ENV['DOCUMENT_ROOT'];
 
