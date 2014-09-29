@@ -34,6 +34,13 @@ namespace de\toxa\txf;
  *
  * This class provides API for basically building HTML-based forms.
  *
+ * @method string setTexteditRow( string $name, string $label, string $value = null ) adds/updates single-line text edit control to form
+ * @method string setPasswordRow( string $name, string $label ) adds/updates single-line password edit control to form
+ * @method string setButtonRow( string $name, string $label, string $value = null ) adds/updates single button control to form
+ * @method string setSelectorRow( string $name, string $label, array $options, string $value = null ) adds/updates drop down list control to form
+ * @method string setTextareaRow( string $name, string $label, string $value = null, int $rows, int $columns ) adds/updates multiline text edit control to form
+ * @method string setFileRow( string $name, string $label ) adds/updates file upload control to form
+ * @method string setCheckboxRow( string $name, string $label, string $value = null ) adds/updates single checkbox control to form
  */
 
 class html_form implements widget
@@ -191,6 +198,8 @@ class html_form implements widget
 					$label = null;
 					break;
 				case 'file' :
+					$type = 'upload';
+				case 'upload' :
 					$args = array( $name, $label );
 					break;
 				case 'password' :
