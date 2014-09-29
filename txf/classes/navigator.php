@@ -91,10 +91,10 @@ class navigator implements widget
 	/**
 	 * Normalizes name of navigator/item.
 	 *
-	 * @throws InvalidArgumentException on a missing/invalid name
+	 * @throws \InvalidArgumentException on a missing/invalid name
 	 *
 	 * @param string $name caller-provided name to use
-	 * @param string normalized name to use actually
+	 * @return string normalized name to use actually
 	 */
 
 	protected static function normalizeName( $name )
