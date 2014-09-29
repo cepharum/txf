@@ -267,7 +267,7 @@ class pdo extends singleton implements connection
 
 
 		foreach ( $primaries as $key => $columnName )
-			if ( !array_key_exists( $columnName, $definition ) )
+			if ( !array_key_exists( $columnName, $rows ) )
 				throw new \InvalidArgumentException( 'missing definition of primary key column ' . $columnName );
 			else
 				$primaries[$key] = $this->quoteName( $columnName );
