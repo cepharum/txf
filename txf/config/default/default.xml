@@ -41,13 +41,13 @@
 			<!-- declare title to show by default on every page -->
 <!--
 			<title><![CDATA[
-				<h1>My Brand</h1>
+				<h1><a href="{{appurl::home}}">My Brand</a></h1>
 			]]></title>
 -->
 			<!-- declare page footer to show by default on every page -->
 <!--
 			<footer><![CDATA[
-				&copy; <a href="http://www.example.com">example.com</a>
+				&copy; {{date::Y}}, <a href="http://www.example.com">example.com</a>
 			]]></footer>
 -->
 		</static>
@@ -72,6 +72,7 @@
 		</region>
 		<region>
 			<name>main</name>
+			<viewport>flash</viewport>
 			<viewport>error</viewport>
 			<viewport>main</viewport>
 		</region>

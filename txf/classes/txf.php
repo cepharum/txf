@@ -211,7 +211,7 @@ class txf extends singleton
 
 				if ( !$relativeClassName )
 					// loader disabled by class redirection
-					return;
+					return null;
 			}
 
 

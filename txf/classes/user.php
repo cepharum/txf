@@ -61,7 +61,7 @@ abstract class user
 	 * This might be any kind of data, e.g. numeric ID of a Unix system user or
 	 * the DN of a user stored in an LDAP tree.
 	 *
-	 * @return opaque internal ID of user
+	 * @return * internal ID of user, actual format depends on implementation
 	 */
 
 	abstract public function getID();
@@ -385,7 +385,7 @@ abstract class user
 	 * Loads selected user either from sources selected in configuration or
 	 * from source(s) provided in call explicitly.
 	 *
-	 * @throws \OutOfBoundsException when user wasn't found
+	 * @throws unauthorized_exception when user wasn't found
 	 * @param string $userIdOrLoginName ID or login name of user to load
 	 * @param string $explicitSource first source to look for selected user
 	 * @return user found user
