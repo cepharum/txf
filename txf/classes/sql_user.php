@@ -519,7 +519,7 @@ class sql_user extends user
 	 *
 	 * @param string $userIdOrLoginName ID or name of user to load
 	 * @return \de\toxa\txf\user
-	 * @throws \OutOfBoundsException when uniquely selecting user failed
+	 * @throws unauthorized_exception
 	 */
 
 	protected function search( $userIdOrLoginName )
@@ -536,7 +536,7 @@ class sql_user extends user
 		switch ( $matches->count() )
 		{
 			case 0 :
-				throw new unauthorized_exception( 'ambigious user selection', unauthorized_exception::USER_NOT_FOUND );
+				throw new unauthorized_exception( 'ambiguous user selection', unauthorized_exception::USER_NOT_FOUND );
 			case 1 :
 				$this->rowID = intval( $matches->cell() );
 				return $this;

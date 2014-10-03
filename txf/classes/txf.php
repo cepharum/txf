@@ -192,13 +192,13 @@ class txf extends singleton
 		 * check for matching namespace
 		 */
 
-		$nsLength = strlen( __NAMESPACE__ );
+		$namespace = __NAMESPACE__ . '\\';
+		$nsLength  = strlen( $namespace );
 
-		if ( !strncmp( $className, __NAMESPACE__ . '\\', $nsLength + 1 ) )
+		if ( !strncmp( $className, $namespace, $nsLength ) )
 		{
-
-			// extract qualified class name relative to current namespace
-			$relativeClassName = substr( $className, $nsLength + 1 );
+			// extract namespace-local name of class
+			$className = substr( $className, $nsLength );
 
 
 			// optionally support class redirection
@@ -206,56 +206,77 @@ class txf extends singleton
 			{
 				$map = self::current()->getClassRedirectionMap();
 
-				if ( \array_key_exists( $relativeClassName, $map ) )
-					$relativeClassName = $map[$relativeClassName];
+				if ( \array_key_exists( $className, $map ) )
+					$className = $map[$className];
 
-				if ( !$relativeClassName )
-					// loader disabled by class redirection
+				if ( !$className )
+					// auto-loader disabled by class redirection
 					return null;
 			}
 
 
-			// detect subnamespaces selecting class of extension
-			if ( strpos( $relativeClassName, '\\' ) )
+			// detect subordinated namespace selecting class of extension
+			if ( strpos( $className, '\\' ) )
 			{
-				$relativeClassName = strtr( $relativeClassName, '\\', '/' );
-				$classPathname = '/extensions/' . dirname( $relativeClassName ) . '/classes/' . basename( $relativeClassName );
+				$temp      = strtr( $className, '\\', '/' );
+				$subNS     = dirname( $temp );
+				$className = basename( $temp );
+
+				$pathname  = '/extensions/' . $subNS . '/classes/';
 			}
 			else
-				$classPathname = '/classes/' . $relativeClassName;
+				$pathname  = '/classes/';
 
 
-			// prefer to load class file shipped with current application
+			// select repositories to check for class files
+			// - always try TXF core
+			$locations = array( dirname( dirname( __FILE__ ) ) . $pathname );
+
+			// - prefer current application's repository if available
 			if ( defined( 'TXF_APPLICATION_PATH' ) )
 			{
-				$classFile = TXF_APPLICATION_PATH . $classPathname . '.php';
-				if ( is_file( $classFile ) /*&& path::isInWebfolder( $classFile )*/ )
-				{
-					include_once( $classFile );
-					return true;
+				array_unshift( $locations, TXF_APPLICATION_PATH . $pathname );
+			}
+
+
+			// derive set of relative path names to test for matching class file
+			$names = array(
+				strtr( $className, '_', '/' )       // try deeply-structured files first
+			);
+
+			if ( $names[0] !== $className ) {
+				array_push( $names, $className );   // try surface-structured files then
+			}
+
+
+			/*
+			 * iterate over all prepared repositories in proper fall-back order
+			 * for detecting file implementing selected class
+			 */
+
+			foreach ( $locations as $location ) {
+				foreach ( $names as $name ) {
+					$classFilePrefix = $location . $name;
+
+					/*
+					 * Always try file used in current installation for
+					 * overloading some externally managed file, e.g. core file
+					 * of TXF to be replaced probably on updating TXF.
+					 */
+
+					$fileName = $classFilePrefix . '.overload.php';
+					if ( is_file( $fileName ) ) {
+						include_once( $fileName );
+						return true;
+					}
+
+					// try non-overloading file next
+					$fileName = $classFilePrefix . '.php';
+					if ( is_file( $fileName ) ) {
+						include_once( $fileName );
+						return true;
+					}
 				}
-			}
-
-
-			// look for selected class in context of framework
-			$classFile = dirname( dirname( __FILE__ ) ) . $classPathname;
-
-			if ( is_file( $classFile . '.overload.php' ) )
-			{
-				// Overload-class files are considered to replace existing
-				// txf-internal classes without utilizing complex extension.
-				// Overloads are good for collections of applications that
-				// share special behaviour not found in distributed TXF core.
-				// They are never upgraded and thus survive upgrading core
-				// though they might break upgraded API ...
-				include_once( $classFile . '.overload.php' );
-				return true;
-			}
-
-			if ( is_file( $classFile . '.php' ) )
-			{
-				include_once( $classFile . '.php' );
-				return true;
 			}
 		}
 	}
