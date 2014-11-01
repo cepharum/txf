@@ -61,4 +61,14 @@ interface role
 	public function isAdoptedByUser( user $user );
 
 	public function __get( $property );
+
+	/**
+	 * Makes user adopting current role.
+	 *
+	 * @param user $user user to adopt current role
+	 * @return $this
+	 * @throws \Exception on failing to adopt role
+	 */
+
+	public function makeAdoptedBy( user $user );
 }

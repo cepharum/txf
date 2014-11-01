@@ -29,6 +29,8 @@
 namespace de\toxa\txf;
 
 
+use de\toxa\txf\datasource\datasource_exception;
+
 class sql_user extends user
 {
 	/**
@@ -94,6 +96,7 @@ class sql_user extends user
 	/**
 	 * Retrieves connection to configured datasource containing users database.
 	 *
+	 * @throws \Exception
 	 * @return datasource\connection connection to datasource
 	 */
 
@@ -128,12 +131,12 @@ class sql_user extends user
 
 			$mappedDefinition = name_mapping::map( $definition, 'txf.sql_user' );
 
-			// create dataset in datasource on demand
+			// create data set in datasource on demand
 			if ( !$ds->createDataset( $conf['set'], $mappedDefinition ) )
 				throw $ds->exception( _L('failed to create dataset for managing users') );
 
 			// ensure to have a single user at least by default
-			if ( !$ds->createQuery( $conf['set'] )->count() )
+			if ( !intval( $ds->createQuery( $conf['set'] )->execute( true )->cell() ) )
 			{
 				$record = name_mapping::map( array(
 					'uuid'      => uuid::createRandom(),
@@ -144,21 +147,28 @@ class sql_user extends user
 					'email'     => '',
 				), 'txf.sql_user' );
 
-				$ds->transaction()->wrap( function( datasource\connection $conn ) use ( $record, $conf )
+				$currentUser = $this;
+
+				$ds->transaction()->wrap( function( datasource\connection $conn ) use ( $record, $conf, $currentUser )
 				{
 					$names   = array_map( function( $n ) use ( $conn ) { return $conn->quoteName( $n ); }, array_keys( $record ) );
 					$markers = array_map( function() { return '?'; }, $record );
 
+					$newUserID = $conn->nextID( $conf['set'] );
+
 					$values = array_values( $record );
-					array_unshift( $values, $conn->nextID( $conf['set'] ) );
+					array_unshift( $values, $newUserID );
 
 					$sql = sprintf( 'INSERT INTO %s (id,%s) VALUES (?,%s)',
-									$conn->quoteName( $conf['set'] ),
+									$conn->qualifyDatasetName( $conf['set'] ),
 									implode( ',', $names ),
 									implode( ',', $markers ) );
 
 					if ( !$conn->test( $sql, $values ) )
 						throw $conn->exception( _L('failed to create default user') );
+
+					// load created user for adopting administrator role
+					sql_role::select( $conn, 'administrator' )->makeAdoptedBy( user::load( $newUserID ) );
 
 					return true;
 				} );
@@ -173,6 +183,7 @@ class sql_user extends user
 	/**
 	 * Retrieves record of user selected by ID unless cached before.
 	 *
+	 * @throws unauthorized_exception on having lost user's record (e.g. due to externally modified datasource)
 	 * @return array record describing single user
 	 */
 
@@ -189,6 +200,10 @@ class sql_user extends user
 			$record = $ds->createQuery( $this->configuration['set'] )
 						->addCondition( 'id=?', true, $this->rowID )
 						->execute()->row();
+
+			if ( !is_array( $record ) || !count( $record ) ) {
+				throw new unauthorized_exception( 'lost user in data source' );
+			}
 
 			// translate property names according to configuration
 			$this->record = name_mapping::mapReversely( $record, 'txf.sql_user' );
@@ -303,7 +318,7 @@ class sql_user extends user
 				if ( !is_null( $propertyName ) )
 				{
 					$sql = sprintf( 'UPDATE %s SET %s=? WHERE id=?',
-								$ds->quoteName( $this->configuration['set'] ),
+								$ds->qualifyDatasetName( $this->configuration['set'] ),
 								$ds->quoteName( $propertyName ) );
 
 					if ( !$ds->test( $sql, $propertyValue, $this->rowID ) )
@@ -451,7 +466,7 @@ class sql_user extends user
 		$conf = $this->configuration;
 
 		$sql  = sprintf( 'UPDATE %s SET %s=? WHERE %s=?',
-					$db->quoteName( $conf['set'] ),
+					$db->qualifyDatasetName( $conf['set'] ),
 					$db->quoteName( name_mapping::mapSingle( 'password', 'txf.sql_user' ) ),
 					$db->quoteName( name_mapping::mapSingle( 'id', 'txf.sql_user' ) )
 					);
@@ -500,7 +515,7 @@ class sql_user extends user
 		if ( is_array( $configuration ) && count( $configuration ) && !is_array( $this->configuration ) )
 		{
 			if ( !array_key_exists( 'set', $configuration ) )
-				$configuration['set'] = 'users';
+				$configuration['set'] = 'user';
 
 			if ( !array_key_exists( 'datasource', $configuration ) )
 				$configuration['datasource'] = 'users';

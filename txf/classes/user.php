@@ -362,7 +362,7 @@ abstract class user
 	}
 
 	/**
-	 * Retrieves first configuration user database provider.
+	 * Retrieves first configured user database provider.
 	 *
 	 * @return user
 	 * @throws \RuntimeException

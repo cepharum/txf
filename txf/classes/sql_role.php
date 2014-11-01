@@ -76,7 +76,7 @@ class sql_role implements role
 
 	public function __construct( db $source = null, $role )
 	{
-		$this->_source = static::validateDatasource( $source, false );
+		$this->_source = static::validateDatasource( $source );
 
 
 		if ( ctype_digit( trim( $role ) ) )
@@ -91,20 +91,21 @@ class sql_role implements role
 	}
 
 	/**
-	 * Ensures provided datasource is containing datasets required for backing
+	 * Ensures provided datasource is containing data sets required for backing
 	 * roles management.
 	 *
-	 * @param \de\toxa\txf\datasource\connection $source
+	 * @param db $source
 	 * @param boolean $force true to force validating provided source
+	 * @return db validated datasource provided in $source
 	 * @throws \RuntimeException
 	 */
 
-	public static function validateDatasource( db $source = null, $force = true )
+	public static function validateDatasource( db $source = null, $force = false )
 	{
 		if ( $source === null )
 			$source = datasource::getDefault();
 
-		if ( !self::$validated )
+		if ( !self::$validated || $force )
 		{
 			if ( !$source->exists( 'role' ) )
 				if ( false === $source->createDataset( 'role', array(
@@ -115,10 +116,10 @@ class sql_role implements role
 
 			if ( !$source->exists( 'user_role' ) )
 				if ( false === $source->createDataset( 'user_role', array(
-						'id'          => null,
-						'user_id'     => 'INT UNSIGNED NOT NULL',
-						'role_id'     => 'INT UNSIGNED NOT NULL',
-						), array( 'user_id', 'role_id' ) ) )
+						'id'        => null,  // prevent datasource connection from adding `id` implicitly
+						'user_uuid' => 'CHAR(36) NOT NULL',
+						'role_id'   => 'INT UNSIGNED NOT NULL',
+						), array( 'user_uuid', 'role_id' ) ) )
 					throw new \RuntimeException( 'failed to prepare role/user mapping set' );
 
 			self::$validated = true;
@@ -164,7 +165,7 @@ class sql_role implements role
 
 		if ( !$this->_source->transaction()->wrap( function( datasource\connection $db ) use ( $property, $role, &$record )
 		{
-			$existing = $db->createQuery( 'role' )->addCondition( $property . '=?', true, $role )->execute()->row();
+			$existing = $db->createQuery( 'role' )->addCondition( $db->quoteName( $property ) . '=?', true, $role )->execute()->row();
 			if ( $existing )
 			{
 				$record = $existing;
@@ -172,8 +173,9 @@ class sql_role implements role
 			}
 
 			$nextID = $db->nextID( 'role' );
+			$qSet   = $db->qualifyDatasetName( 'role' );
 
-			if ( $property === 'name' && $db->test( 'INSERT INTO role (id,name,label) VALUES (?,?,?)', $nextID, $role, $role ) !== false )
+			if ( $property === 'name' && $db->test( 'INSERT INTO ' . $qSet . ' (id,name,label) VALUES (?,?,?)', $nextID, $role, $role ) !== false )
 			{
 				$record = array( 'id' => $nextID, 'name' => $role, 'label' => $role );
 				return true;
@@ -202,7 +204,7 @@ class sql_role implements role
 			throw new \LogicException( 'unprepared role instance' );
 
 		$count = $this->_source->createQuery( 'user_role' )
-									->addCondition( 'user_id=?', true, $user->getID() )
+									->addCondition( 'user_uuid=?', true, $user->getUUID() )
 									->addCondition( 'role_id=?', true, $this->_id )
 									->execute( true )->cell();
 
@@ -215,5 +217,42 @@ class sql_role implements role
 			throw new \LogicException( 'unprepared role instance' );
 
 		return @$this->_record[$property];
+	}
+
+	/**
+	 * Makes user adopting current role.
+	 *
+	 * @param user $user user to adopt current role
+	 * @return $this
+	 * @throws \Exception on failing to adopt role
+	 */
+
+	public function makeAdoptedBy( user $user )
+	{
+		$role = $this;
+
+		if ( !$this->_source->transaction()->wrap( function( datasource\connection $db ) use ( $role, $user )
+		{
+			$userID = $user->getUUID();
+			$roleID = $role->id;
+
+			$count = $db->createQuery( 'user_role' )
+				->addCondition( 'user_uuid=?', true, $userID )
+				->addCondition( 'role_id=?', true, $roleID )
+				->execute( true )->cell();
+
+			if ( $count > 0 ) {
+				// role has been adopted before
+				return true;
+			}
+
+
+			$qSet = $db->qualifyDatasetName( 'user_role' );
+
+			return ( $db->test( 'INSERT INTO ' . $qSet . ' (user_uuid,role_id) VALUES (?,?)', $userID, $roleID ) !== false );
+		} ) )
+			throw new \RuntimeException( sprintf( 'adopting role %s by user %s failed', $this->label, $user->getName() ) );
+
+		return $this;
 	}
 }
