@@ -81,6 +81,14 @@ class pdo extends singleton implements connection
 
 	protected $_recentStmtError;
 
+	/**
+	 * Stores prefix to use implicitly on every provided name of a dataset.
+	 *
+	 * @var string
+	 */
+
+	protected $prefix = '';
+
 
 
 	/**
@@ -92,8 +100,16 @@ class pdo extends singleton implements connection
 
 	public function __construct( $dsn = null, $username = null, $password = null )
 	{
+		// got DSN in parameters?
 		if ( $dsn === null )
 		{
+			// no -> use simple definition in runtime configuration
+
+			/**
+			 * @note This case isn't preferred one.
+			 * @see datasource::selectConfigured()
+			 */
+
 			$setup = config::get( 'datasource' );
 
 			$dsn = data::qualifyString( @$setup['dsn'] );
@@ -101,9 +117,27 @@ class pdo extends singleton implements connection
 			$password = @$setup['password'];
 		}
 
+		// store normalized name of driver used to connect with datasource
 		$this->driver = strtolower( trim( strtok( $dsn, ':' ) ) );
 
+		// establish connection to datasource
 		$this->link = new \PDO( $dsn, $username, $password );
+
+		/**
+		 * ensure connection is using utf8 encoding unless disabled in configuration
+		 */
+
+		if ( config::get( 'datasource.set-utf8-encoding', true ) ) {
+			switch ( $this->driver ) {
+				case 'mysql' :
+					$this->link->exec( 'SET NAMES utf8' );
+					break;
+
+				case 'mssql' :
+					$this->link->setAttribute( PDO::SQLSRV_ENCODING_UTF8, 1 );
+					break;
+			}
+		}
 
 		$this->transaction = new transaction(
 									$this,
@@ -111,6 +145,31 @@ class pdo extends singleton implements connection
 									function( connection $c ) { txf\log::debug( "committing transaction" ); return $c->link->commit(); },
 									function( connection $c ) { txf\log::debug( "reverting transaction" ); return $c->link->rollBack(); }
 								);
+	}
+
+	/**
+	 * Adjusts prefix to use on currently connected datasource.
+	 *
+	 * This prefix is used implicitly on naming data sets in data source unless
+	 * querying individual statements.
+	 *
+	 * @param string $prefix prefix to use, provide '' to disable prefixing
+	 * @return $this
+	 */
+
+	public function setPrefix( $prefix )
+	{
+		if ( !is_string( $prefix ) ) {
+			throw new \InvalidArgumentException( 'invalid type of prefix' );
+		}
+
+		if ( preg_match( '/\s/', trim( $prefix ) ) ) {
+			throw new \InvalidArgumentException( 'invalid use of whitespace in prefix' );
+		}
+
+		$this->prefix = trim( $prefix );
+
+		return $this;
 	}
 
 	/**
@@ -152,6 +211,9 @@ class pdo extends singleton implements connection
 	/**
 	 * Detects if a selected dataset ("table") exists or not.
 	 *
+	 * The provided dataset name is qualified internally by prepending any
+	 * configured prefix.
+	 *
 	 * @param string $dataset name of dataset to test
 	 * @param boolean $noCache true to force actually checking datasource
 	 * @return boolean|null true if dataset exists, false if not, null if unknown
@@ -160,6 +222,8 @@ class pdo extends singleton implements connection
 	public function exists( $dataset, $noCache = false )
 	{
 		$this->command = null;
+
+		$dataset = $this->qualifyDatasetName( $dataset, false );
 
 		if ( !$noCache && $this->_existsCache[$dataset] )
 			return true;
@@ -215,8 +279,13 @@ class pdo extends singleton implements connection
 	{
 		$this->_recentStmtError = null;
 
+		$query = array_shift( $arguments );
+
+		// qualify special markers in query
+		$query = $this->qualifyBindingsInQuery( $query, $arguments );
+
 		// compile statement
-		$stmt = $this->compile( array_shift( $arguments ) );
+		$stmt = $this->compile( $query );
 
 		// execute compiled statement
 		if ( !call_user_func_array( array( $stmt, 'execute' ), $arguments ) || $stmt->failed ) {
@@ -231,6 +300,40 @@ class pdo extends singleton implements connection
 		$stmt->close();
 
 		return $match;
+	}
+
+	protected function qualifyBindingsInQuery( $query, $values ) {
+		if ( count( $values ) === 1 && is_array( $values[0] ) ) {
+			$values = $values[0];
+		}
+
+		$pos = 0;
+		$valueIndex = 0;
+		$out = '';
+
+		while ( preg_match( '/(\?|%array%)/', $query, $matches, PREG_OFFSET_CAPTURE, $pos ) ) {
+			$match = $matches[1];
+
+			$out .= substr( $query, $pos, $match[1] - $pos );
+
+			switch ( $match[0] ) {
+				case '%array%' :
+					if ( is_array( $values[$valueIndex] ) ) {
+						$out .= implode( ',', array_pad( array(), count( $values[$valueIndex] ), '?' ) );
+						break;
+					}
+
+				case '?' :
+				default :
+					$out .= '?';
+					break;
+			}
+
+			$valueIndex++;
+			$pos = $match[1] + strlen( $match[0] );
+		}
+
+		return $out . substr( $query, $pos );
 	}
 
 	/**
@@ -276,13 +379,16 @@ class pdo extends singleton implements connection
 		$rows[] = 'PRIMARY KEY (' . implode( ',', $primaries ) . ')';
 
 
-		$query = 'CREATE TABLE ' . $this->quoteName( $name ) . "\n(\n\t" . implode( ",\n\t", array_filter( $rows ) ) . "\n)";
+		$query = 'CREATE TABLE ' . $this->qualifyDatasetName( $name ) .
+		         "\n(\n\t" . implode( ",\n\t", array_filter( $rows ) ) . "\n)";
 
 		return $this->test( $query );
 	}
 
 	/**
 	 * Retrieves new query instance on selected dataset.
+	 *
+	 * @note Provided dataset name must not be qualified and/or quoted!
 	 *
 	 * @param string $onDataset name of a dataset query is operating on
 	 * @return sql_query instance providing complex query description
@@ -295,10 +401,45 @@ class pdo extends singleton implements connection
 		return new sql_query( $this, $onDataset );
 	}
 
+	/**
+	 * Detects if provided string is quoted for literal use in an SQL statement.
+	 *
+	 * @param string $string
+	 * @return bool true if string is quoted, false otherwise
+	 */
+
+	protected function isQuoted( $string ) {
+		switch ( $this->driver ) {
+			case 'mysql' :
+			case 'sqlite' :
+				return !!preg_match( '/^`.*`$/', trim( $string ) );
+
+			case 'sqlsrv' :
+				return !!preg_match( '/^\[.*\]$/', trim( $string ) );
+
+			default :
+				return false;
+		}
+	}
+
+	/**
+	 * Quotes provided name of a data set or one of its properties for literal
+	 * use in a statement to be queried.
+	 *
+	 * This method isn't qualifying any provided name.
+	 *
+	 * @param string $name name of data set or property
+	 * @return string quoted name
+	 */
+
 	public function quoteName( $name )
 	{
 		if ( strpos( $name, '(' ) !== false ) {
 			// name looks like a term -> don't quote
+			return $name;
+		}
+
+		if ( $this->isQuoted( $name ) ) {
 			return $name;
 		}
 
@@ -326,6 +467,24 @@ class pdo extends singleton implements connection
 	}
 
 	/**
+	 * Qualifies provided name of data set by prepending internally set prefix.
+	 *
+	 * In addition, dataset name might be quoted to be embeddable in an SQL
+	 * statement as a literal name.
+	 *
+	 * @param string $datasetName name of data set to qualify
+	 * @param bool $quoted true for quoting qualified name in addition
+	 * @return string
+	 */
+
+	public function qualifyDatasetName( $datasetName, $quoted = true )
+	{
+		$qualified = $this->prefix . $datasetName;
+
+		return $quoted ? $this->quoteName( $qualified ) : $qualified;
+	}
+
+	/**
 	 * Qualifies one or more property names of an additionally named data set
 	 * for using it literally in queries on datasource.
 	 *
@@ -339,29 +498,29 @@ class pdo extends singleton implements connection
 	 * @note Don't use this method for "neutralizing" values to be embedded in a
 	 *       query while datasource is featuring parameter binding as this is
 	 *       bad-practice and subject to frequent security vulnerabilities.
-	 *       This whole API is designed to advise use of parameter binding.
+	 *       **This whole API is designed to advise use of parameter binding.**
 	 *
-	 * @param string $setOrAlias name or alias of set property belongs to
+	 * @param string $qualifiedSetOrAlias qualified name of set or its alias
 	 * @param string|array $property first name of several property names to
 	 *        wrap, or all names in single array
 	 * @return string|array single quoted property name on providing single string
 	 *         in $property, set of quoted property names otherwise
 	 */
 
-	public function quotePropertyNames( $setOrAlias = null, $property )
+	public function qualifyPropertyNames( $qualifiedSetOrAlias = null, $property, $quoted = true )
 	{
-		$qualify = !is_null( $setOrAlias );
+		$qualify = !is_null( $qualifiedSetOrAlias );
 
 		// validate optionally provided name or alias of data set
 		if ( $qualify ) {
-			if ( !is_string( $setOrAlias ) )
+			if ( !is_string( $qualifiedSetOrAlias ) )
 				throw new \InvalidArgumentException( 'invalid name or alias of data set for property name qualification' );
 
-			$setOrAlias = trim( $setOrAlias );
-			if ( $setOrAlias === '' )
+			$qualifiedSetOrAlias = trim( $qualifiedSetOrAlias );
+			if ( $qualifiedSetOrAlias === '' )
 				throw new \InvalidArgumentException( 'empty name or alias of data set for property name qualification' );
 
-			$setOrAlias = $this->quoteName( $setOrAlias );
+			$qualifiedSetOrAlias = $this->quoteName( $qualifiedSetOrAlias );
 		}
 
 		// normalize properties to qualify
@@ -383,9 +542,8 @@ class pdo extends singleton implements connection
 
 		foreach ( $properties as $name )
 		{
-			$quoted = $this->quoteName( $name );
-
-			$qualified[$name] = $qualify ? $setOrAlias . '.' . $quoted : $quoted;
+			$quotedName       = $quoted  ? $this->quoteName( $name ) : $name;
+			$qualified[$name] = $qualify ? $qualifiedSetOrAlias . '.' . $quotedName : $quotedName;
 		}
 
 
@@ -540,15 +698,17 @@ class pdo extends singleton implements connection
 		if ( !$this->transaction->inProgress() )
 			throw new \LogicException( 'fetching next ID must be wrapped in transaction' );
 
-		if ( $this->exists( '__keys' ) === false )
-			$this->cell( 'CREATE TABLE __keys ( dataset CHAR(128) PRIMARY KEY, previousId INT UNSIGNED NOT NULL )' );
+		$qName = $this->qualifyDatasetName( '__keys', true );
 
-		$previousId = $this->cell( 'SELECT previousId FROM __keys WHERE dataset=?', $dataset );
+		if ( $this->exists( '__keys' ) === false )
+			$this->cell( 'CREATE TABLE ' . $qName . ' ( dataset CHAR(128) PRIMARY KEY, previousId INT UNSIGNED NOT NULL )' );
+
+		$previousId = $this->cell( 'SELECT previousId FROM ' . $qName . ' WHERE dataset=?', $dataset );
 		if ( $previousId === false )
 			// there is no track of previously fetching ID for this dataset -> add now
-			$this->cell( 'INSERT INTO __keys (dataset,previousId) VALUES (?,?)', $dataset, $previousId = 1 );
+			$this->cell( 'INSERT INTO ' . $qName . ' (dataset,previousId) VALUES (?,?)', $dataset, $previousId = 1 );
 		else
-			$this->cell( 'UPDATE __keys SET previousId=? WHERE dataset=?', ( $previousId += 1 ), $dataset );
+			$this->cell( 'UPDATE ' . $qName . ' SET previousId=? WHERE dataset=?', ( $previousId += 1 ), $dataset );
 
 
 		return $previousId;

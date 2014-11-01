@@ -611,7 +611,7 @@ class model
 
 		array_unshift( $values, $value );
 
-		$qSet   = $link->quoteName( static::set() );
+		$qSet   = $link->qualifyDatasetName( static::set() );
 		$qName  = $link->quoteName( $name );
 		$filter = array_map( function( $col ) use ( $link ) { return $link->quoteName( $col ) . "=?"; }, $filter );
 
@@ -623,7 +623,8 @@ class model
 	}
 
 	/**
-	 * Retrieves name of current model's set in datasource.
+	 * Retrieves unqualified and unquoted name of current model's set in
+	 * datasource.
 	 *
 	 * @return string
 	 */
@@ -822,7 +823,7 @@ class model
 		$marks   = array_pad( array(), count( $arrProperties ), '?' );
 
 		$columns = array_map( function( $n ) use ( $link ) { return $link->quoteName( $n ); }, $columns );
-		$qSet    = $link->quoteName( $set );
+		$qSet    = $link->qualifyDatasetName( $set );
 
 		$columns = implode( ',', $columns );
 		$marks   = implode( ',', $marks );
@@ -886,7 +887,7 @@ class model
 			 * step 1) actually delete current item
 			 */
 
-			$qSet = $connection->quoteName( $set );
+			$qSet = $connection->qualifyDatasetName( $set );
 			if ( $connection->test( sprintf( 'DELETE FROM %s WHERE %s', $qSet, $item->filter() ), $idValues ) === false )
 				throw new datasource_exception( $connection, 'failed to delete requested model instance' );
 
@@ -903,6 +904,7 @@ class model
 				                  @$relationSpec['options']['tight'];
 
 				// get first reference in relation
+				/** @var model_relation $relation */
 				$relation      = call_user_func( array( $class, "relation" ), $relationName );
 				$firstNode     = $relation->nodeAtIndex( 0 );
 				$secondNode    = $relation->nodeAtIndex( 1 );
@@ -920,6 +922,7 @@ class model
 				// extract reusable code to prepare filter for selecting record
 				// of second node actually related to deleted item
 				$getFilter = function() use ( &$onSecond, $connection, $firstNode, $secondNode, $record ) {
+					// retrieve _qualified and quoted_ names of predecessor's properties
 					$onSecond['filter']['properties'] = $secondNode->getPredecessorNames( $connection );
 					foreach ( $firstNode->getSuccessorNames() as $property )
 						$onSecond['filter']['values'][] = @$record[$property];
@@ -962,7 +965,7 @@ class model
 					if ( $secondModel->isVirtual() ) {
 						// second model is virtual, only
 						// -> it's okay to simply delete matching records in datasource
-						$qSet = $connection->quoteName( $secondNodeSet );
+						$qSet = $connection->qualifyDatasetName( $secondNodeSet );
 						$term = implode( ' AND ', $filter );
 
 						if ( !$connection->test( "DELETE FROM $qSet WHERE $term", $onSecond['filter']['values'] ) )
@@ -975,7 +978,7 @@ class model
 
 						// - select related items using properties involved in relation
 						foreach ( $onSecond['filter']['properties'] as $index => $name )
-							$query->addFilter( $connection->quoteName( $name ) . '=?', true, $onSecond['filter']['values'][$index] );
+							$query->addFilter( "$name=?", true, $onSecond['filter']['values'][$index] );
 
 						// - fetch all properties used to identify items
 						$ids = $secondModel->getIdProperties();
@@ -1005,7 +1008,7 @@ class model
 									$onSecond['filter']['values']
 								);
 
-					$qSet     = $connection->quoteName( $secondNodeSet );
+					$qSet     = $connection->qualifyDatasetName( $secondNodeSet );
 					$matching = implode( ' AND ', $filter );
 					$setting  = implode( ',', $filter );
 
@@ -1636,7 +1639,7 @@ class model
 		 */
 
 		$db  = $query->datasource();
-		$set = $db->quoteName( static::$set_prefix . static::$set );
+		$set = $db->qualifyDatasetName( static::$set_prefix . static::$set );
 
 		if ( is_null( $properties ) )
 			$properties = array( '.*' );

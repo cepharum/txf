@@ -156,6 +156,8 @@ interface connection
 	 * Retrieves new instance for programmatically compiling query for fetching
 	 * data from datasource.
 	 *
+	 * @note Provided dataset name must not be qualified and/or quoted!
+	 *
 	 * @param string $dataset name of main dataset (table) query is associated with
 	 * @return query
 	 */
@@ -204,13 +206,23 @@ interface connection
 	 * @note Don't use this method for "neutralizing" values to be embedded in a
 	 *       query while datasource is featuring parameter binding as this is
 	 *       bad-practice and subject to frequent security vulnerabilities.
-	 *       This whole API is designed to advise use of parameter binding.
+	 *       **This whole API is designed to advise use of parameter binding.**
 	 *
 	 * @param string $name name to quote for using it literally in queries on datasource
 	 * @return string
 	 */
 
 	public function quoteName( $name );
+
+	/**
+	 * Qualifies provided name of a data set.
+	 *
+	 * @param string $name name of data set to be qualified
+	 * @param bool $quoted true to additionally quote qualified data set name
+	 * @return string
+	 */
+
+	public function qualifyDatasetName( $name, $quoted = true );
 
 	/**
 	 * Qualifies one or more property names of an additionally named data set
@@ -225,16 +237,17 @@ interface connection
 	 * @note Don't use this method for "neutralizing" values to be embedded in a
 	 *       query while datasource is featuring parameter binding as this is
 	 *       bad-practice and subject to frequent security vulnerabilities.
-	 *       This whole API is designed to advise use of parameter binding.
+	 *       **This whole API is designed to advise use of parameter binding.**
 	 *
-	 * @param string $setOrAlias name or alias of set property belongs to
-	 * @param string|array $property first name of several property names to
-	 *        wrap, or all names in single array
-	 * @return string|array single quoted property name on providing single string
-	 *         in $property, set of quoted property names otherwise
+	 * @param string $qualifiedSetOrAlias qualified name of set or its alias
+	 * @param string|array $property first out of several names of properties
+	 *        contained in set or all names in single array
+	 * @return string|array single qualified and quoted property name on
+	 *         providing single string in $property, set of qualified and quoted
+	 *         property names otherwise
 	 */
 
-	public function quotePropertyNames( $setOrAlias, $property );
+	public function qualifyPropertyNames( $qualifiedSetOrAlias, $property, $quoted = true );
 
 	/**
 	 * Retrieves new exception instance linked with current connection,

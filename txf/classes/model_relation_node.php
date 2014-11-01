@@ -289,22 +289,32 @@ class model_relation_node {
 	 * Retrieves name to use on addressing this node's set in datasource.
 	 *
 	 * This method is retrieving any alias declared explicitly using setAlias()
-	 * or name of datasource set managed by associated model.
+	 * or name of data set managed by associated model. On providing connection
+	 * to datasource the retrieved name (not the alias!) is qualified BUT NOT
+	 * quoted according to qualification rules of connected datasource.
 	 *
 	 * @param bool $ignoreAlias set true to force retrieval of model's set name
+	 * @param datasource\connection $datasource connected datasource used for optionally qualifying set's name
 	 * @return string name to use on addressing this node's data set
 	 */
 
-	public function getName( $ignoreAlias = false )
+	public function getName( $ignoreAlias = false, datasource\connection $datasource = null )
 	{
-		return ( $this->alias && !$ignoreAlias ) ? $this->alias : $this->model->getSetName();
+		if ( $this->alias && !$ignoreAlias ) {
+			return $this->alias;
+		}
+
+		$set = $this->model->getSetName();
+
+		return $datasource ? $datasource->qualifyDatasetName( $set, false ) : $set;
 	}
 
 	/**
 	 * Retrieves name of data set optionally combined with declared alias.
 	 *
 	 * On providing datasource connection either part of resulting name is
-	 * quoted according to quoting rules of connected datasource.
+	 * quoted (and qualified) according to quoting and qualification rules of
+	 * connected datasource.
 	 *
 	 * @param datasource\connection $db
 	 * @return string
@@ -312,17 +322,18 @@ class model_relation_node {
 
 	public function getFullName( datasource\connection $db = null )
 	{
-		$names = array( $this->getName( true ) );
+		$name  = $this->getName( true );
+		$alias = $this->alias ? $this->alias : null;
 
-		if ( $this->alias )
-			$names[] = $this->alias;
+		if ( $db ) {
+			$name = $db->qualifyDatasetName( $name );
 
-		if ( $db )
-			$names = array_map( function( $name ) use ( $db ) {
-				return $db->quoteName( $name );
-			}, $names );
+			if ( $alias ) {
+				$alias = $db->quoteName( $alias );
+			}
+		}
 
-		return implode( ' ', $names );
+		return $alias ? $name . ' ' . $alias : $name;
 	}
 
 	/**
@@ -405,8 +416,9 @@ class model_relation_node {
 	 * reference on preceding node of relation.
 	 *
 	 * Returned array is empty if no reference on preceding node has been
-	 * declared. On providing datasource connection all names are quoted
-	 * implicitly according to quoting rules of linked datasource.
+	 * declared. On providing datasource connection all names are quoted and
+	 * qualified implicitly according to quoting and qualification rules of
+	 * linked datasource.
 	 *
 	 * @param datasource\connection $context
 	 * @param bool $qualifyNames true to have all names prefixed with name or alias of node's data set
@@ -656,10 +668,10 @@ class model_relation_node {
 		if ( is_null( $names ) )
 			return array();
 
-		$setName = $qualifyActually ? $this->getName() : null;
+		$setName = $qualifyActually ? $this->getName( false, $context ) : null;
 
 		if ( $context )
-			return $context->quotePropertyNames( $setName, $names );
+			return $context->qualifyPropertyNames( $setName, $names );
 
 		if ( $qualifyActually )
 			return array_map( function( $name ) use ( $setName ) { return "$setName.$name"; }, $names );

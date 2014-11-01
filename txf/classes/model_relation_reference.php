@@ -448,7 +448,7 @@ class model_relation_reference
 		$parts = array();
 
 		if ( is_string( $strSetOrAlias ) )
-			$parts[] = $source ? $source->quoteName( trim( $strSetOrAlias ) ) : $strSetOrAlias;
+			$parts[] = $source ? $source->qualifyDatasetName( trim( $strSetOrAlias ) ) : $strSetOrAlias;
 
 		foreach ( $arrNames as $key => $name ) {
 			$temp = $parts;

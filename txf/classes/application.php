@@ -29,10 +29,18 @@
 namespace de\toxa\txf;
 
 
+/**
+ * Manages application.
+ *
+ * @package de\toxa\txf
+ *
+ * @property array $selectors
+ */
+
 class application
 {
 	/**
-	 * name of application
+	 * Provides name of application.
 	 *
 	 * @var string
 	 */
@@ -40,7 +48,7 @@ class application
 	protected $name;
 
 	/**
-	 * pathname of application's folder
+	 * Provides pathname of application's folder.
 	 *
 	 * @var string
 	 */
@@ -48,7 +56,8 @@ class application
 	protected $pathname;
 
 	/**
-	 * pathname of current script, set on managing current application, only
+	 * Provides pathname of current script, set on managing current application,
+	 * only.
 	 *
 	 * @var string
 	 */
@@ -56,7 +65,7 @@ class application
 	protected $script;
 
 	/**
-	 * additional resource selectors provided in request
+	 * Provides additional resource selectors provided in request.
 	 *
 	 * @var array
 	 */
@@ -64,7 +73,8 @@ class application
 	protected $selectors;
 
 	/**
-	 * public URL of application, e.g. for addressing related images and files
+	 * Provides public URL of application, e.g. for addressing related images
+	 * and files.
 	 *
 	 * @var string
 	 */
@@ -72,7 +82,7 @@ class application
 	protected $url;
 
 	/**
-	 * used proxy script or true on detecting use of rewrite engine
+	 * Provides used proxy script or true on detecting use of rewrite engine.
 	 *
 	 * @var string|boolean
 	 */
@@ -80,7 +90,7 @@ class application
 	protected $usedProxy;
 
 	/**
-	 * Context of current application.
+	 * Provides context of current application.
 	 *
 	 * @var context
 	 */
@@ -89,9 +99,7 @@ class application
 
 
 
-	protected function __construct()
-	{
-	}
+	protected function __construct() {}
 
 	/**
 	 * Detects if current application instance is valid.

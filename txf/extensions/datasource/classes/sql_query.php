@@ -29,6 +29,7 @@
 namespace de\toxa\txf\datasource;
 
 use de\toxa\txf\string as string;
+use de\toxa\txf\browseable as browseable;
 
 
 /**
@@ -102,7 +103,7 @@ use de\toxa\txf\string as string;
  */
 
 
-class sql_query implements query, \de\toxa\txf\browseable
+class sql_query implements query, browseable
 {
 
 	/**
@@ -211,11 +212,10 @@ class sql_query implements query, \de\toxa\txf\browseable
 	{
 		$this->reconnectDatasource( $connection );
 
-		$table = \de\toxa\txf\_S($table,null,'')->trim();
-		if ( $table->isEmpty )
+		if ( !is_string( $table ) || trim( $table ) === '' )
 			throw new \InvalidArgumentException( 'bad table name' );
 
-		$this->tables[$table->asUtf8] = false;
+		$this->tables[$connection->qualifyDatasetName(trim( $table ))] = false;
 	}
 
 	/**
@@ -271,7 +271,19 @@ class sql_query implements query, \de\toxa\txf\browseable
 	}
 
 	/**
-	 * @inheritdoc
+	 * Joins selected data set to include (some of) its columns.
+	 *
+	 * @example $query->addDataset( 'salary s', 's.employee=em.id AND tax=?', 'full' );
+	 *
+	 * On providing another instance of query in $dataset it's considered a
+	 * subselect and gets instantly compiled prior to joining here.
+	 *
+	 * The number of parameters must match number of markers in term.
+	 *
+	 * @param string|query $dataset name and optionally appended alias of data set to join
+	 * @param string $condition condition for selecting columns of joined table
+	 * @param mixed $parameters array of parameters or first of additional arguments providing one parameter each
+	 * @return $this
 	 */
 
 	public function addDataset( $dataset, $condition, $parameters = null )
@@ -317,7 +329,7 @@ class sql_query implements query, \de\toxa\txf\browseable
 			if ( $dataset->isEmpty )
 				throw new \InvalidArgumentException( 'bad table name' );
 
-			$dataset = $dataset->asUtf8;
+			$dataset = $this->connection->qualifyDatasetName( $dataset->asUtf8 );
 
 			if ( $this->tables[$dataset] === false )
 				throw new \InvalidArgumentException( 'cannot rejoin base table' );

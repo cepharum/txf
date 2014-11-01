@@ -589,7 +589,8 @@ class model_editor_related extends model_editor_abstract
 	/**
 	 * Retrieves name of set associated with described model.
 	 *
-	 * The name is optionally quoted on providing data source to use for quoting.
+	 * The name is optionally qualified and quoted on providing data source
+	 * considered to contain data set.
 	 *
 	 * @param datasource\connection $source data source to use for quoting name
 	 * @param model_relation_model $model description of a model
@@ -600,7 +601,7 @@ class model_editor_related extends model_editor_abstract
 	{
 		$set = $model->getSetName();
 
-		return is_null( $source ) ? $set : $source->quoteName( $set );
+		return is_null( $source ) ? $set : $source->qualifyDatasetName( $set );
 	}
 
 	/**
@@ -728,7 +729,7 @@ class model_editor_related extends model_editor_abstract
 			// compile insertion statement
 			$set        = $this->_setNameOfModel( $source, $selector['model'] );
 			$markers    = implode( ',', array_pad( array(), count( $properties ), '?' ) );
-			$properties = implode( ',', $source->quotePropertyNames( null, $properties ) );
+			$properties = implode( ',', $source->qualifyPropertyNames( null, $properties ) );
 
 			$query = "INSERT INTO $set ($properties) VALUES ($markers)";
 
@@ -770,7 +771,7 @@ class model_editor_related extends model_editor_abstract
 
 			// compile statement
 			$set         = $this->_setNameOfModel( $source, $selector['model'] );
-			$assignments = implode( ',', array_map( function( $name ) { return "$name=?"; }, $source->quotePropertyNames( null, $properties ) ) );
+			$assignments = implode( ',', array_map( function( $name ) { return "$name=?"; }, $source->qualifyPropertyNames( null, $properties ) ) );
 			$values      = array_merge( $values, $selector['filter']['values'] );
 
 			$query = "UPDATE $set SET $assignments WHERE $filter";

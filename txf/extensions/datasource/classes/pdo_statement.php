@@ -74,6 +74,8 @@ class pdo_statement implements statement
 			case 'failed' :
 				$this->hasExecuted( true );
 				return ( $this->executed === false );
+			default :
+				return null;
 		}
 	}
 
@@ -144,7 +146,7 @@ class pdo_statement implements statement
 	protected function hasExecuted( $mayHaveFailed = false )
 	{
 		if ( $this->executed === null || ( !$mayHaveFailed && !$this->executed ) )
-			throw new \BadMethodCallException( _L('statement execution missing or failed before') );
+			throw new \BadMethodCallException( \de\toxa\txf\_L('statement execution missing or failed before') );
 
 		return $this->executed;
 	}

@@ -85,7 +85,7 @@ interface query
 	 *
 	 * The number of parameters must match number of markers in term.
 	 *
-	 * @param string|query $dataset name and optionally appended alias of dataset to join
+	 * @param string|query $dataset name and optionally appended alias of data set to join
 	 * @param string $condition condition for selecting columns of joined table
 	 * @param mixed $parameters array of parameters or first of additional arguments providing one parameter each
 	 * @return $this

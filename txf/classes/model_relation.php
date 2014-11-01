@@ -641,7 +641,7 @@ class model_relation
 
 		/** @var model_relation_node $start */
 		$start = $this->nodes[$range[0]];
-		$query = $this->datasource->createQuery( $start->getFullName( $this->datasource ) );
+		$query = $this->datasource->createQuery( $start->getFullName() );
 
 
 		/*
@@ -797,11 +797,11 @@ class model_relation
 
 			// create query starting on on current node
 			if ( !$query )
-				$query = $source->createQuery( $predecessor->getFullName( $source ) );
+				$query = $source->createQuery( $predecessor->getFullName() );
 
 			// convert reference into join
-			$preSet  = $source->quoteName( $predecessor->getName() );
-			$postSet = $source->quoteName( $successor->getName() );
+			$preSet  = $source->qualifyDatasetName( $predecessor->getName() );
+			$postSet = $source->qualifyDatasetName( $successor->getName() );
 
 			$join = implode( ' AND ', array_map( function( $preProp, $postProp ) use ( $source, $preSet, $postSet ) {
 				return "$preSet.$preProp=$postSet.$postProp";
@@ -814,8 +814,8 @@ class model_relation
 			// optionally convert binding of reference into filter on query
 			if ( $blnBind && $reference->isBound() ) {
 				// qualify and quote names of binding properties in reference
-				$bindSet    = $reference->getReferencingNode()->getName();
-				$properties = $source->quotePropertyNames( $bindSet, $reference->getReferencingPropertyNames() );
+				$bindSet    = $reference->getReferencingNode()->getName( false, $source );
+				$properties = $source->qualifyPropertyNames( $bindSet, $reference->getReferencingPropertyNames() );
 
 				// convert set of names into filtering term
 				$filter = implode( ' AND ', array_map( function( $name ) { return "$name=?"; }, $properties ) );
@@ -847,7 +847,7 @@ class model_relation
 		$source = $query->datasource();
 		$node   = $this->nodeAtIndex( $listNodeAtIndex );
 		$model  = $node->getModel();
-		$set    = $source->quoteName( $node->getName() );
+		$set    = $source->qualifyDatasetName( $node->getName() );
 
 
 		/*
@@ -934,7 +934,7 @@ class model_relation
 		$query = $this->query();
 
 		// extend query to fetch all properties of selected node's model
-		$query->addProperty( $this->datasource->quoteName( $this->nodeAtIndex( $listNodeAtIndex )->getName() ) . '.*' );
+		$query->addProperty( $this->datasource->qualifyDatasetName( $this->nodeAtIndex( $listNodeAtIndex )->getName() ) . '.*' );
 
 		// process query
 		$matches = $query->execute()->all();

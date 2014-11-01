@@ -59,7 +59,7 @@ function _L( $singular, $plural = null, $count = 1, $fallbackSingular = null, $f
  * @param string $string native or managed string to wrap/clone
  * @param string $encoding encoding of provided string, ignored on cloning
  * @param string $useIfNotAString if $string is not a string this string is used instead
- * @return string managed string instance
+ * @return \de\toxa\txf\string managed string instance
  */
 
 function _S( $string, $encoding = null, $useIfNotAString = null )

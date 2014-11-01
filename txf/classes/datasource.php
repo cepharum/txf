@@ -64,7 +64,7 @@ class datasource
 	/**
 	 * cached set of established connections to datasources
 	 *
-	 * @var array
+	 * @var array[datasource\connection]
 	 */
 
 	protected static $connections = array();
@@ -130,7 +130,7 @@ class datasource
 	 * @return datasource\connection established connection to datasource
 	 */
 
-	public static function selectConfigured( $name, $reentrant = false )
+	public static function selectConfigured( $name, $reEntrant = false )
 	{
 		/*
 		 * look for cached connection matching selected name
@@ -188,17 +188,23 @@ class datasource
 
 			$creator = new \ReflectionClass( $class );
 
-			return self::$connections[$name] = $creator->newInstance(
+			self::$connections[$name] = $creator->newInstance(
 													@self::$definitions[$name]['dsn'],
 													@self::$definitions[$name]['user'],
 													@self::$definitions[$name]['password'],
 													self::$definitions[$name] );
+
+			if ( @self::$definitions[$name]['prefix'] && $creator->hasMethod( 'setPrefix' ) ) {
+				self::$connections[$name]->setPrefix( self::$definitions[$name]['prefix'] );
+			}
+
+			return self::$connections[$name];
 		}
 
 
 		// haven't found selected datasource
 		// -> use default as a fallback
-		if ( !$reentrant )
+		if ( !$reEntrant )
 			return static::selectConfigured( 'default', true );
 
 

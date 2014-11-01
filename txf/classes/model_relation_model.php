@@ -214,8 +214,8 @@ class model_relation_model
 	}
 
 	/**
-	 * Retrieves model's name of data set containing records of model in data
-	 * source.
+	 * Retrieves model's unqualified and unquoted name of data set containing
+	 * records of model in data source.
 	 *
 	 * @return string
 	 */
