@@ -34,7 +34,7 @@ interface widget
 	/**
 	 * Processes input of widget updating its internal state.
 	 *
-	 * @return widget current instance
+	 * @return $this current instance
 	 */
 
 	public function processInput();

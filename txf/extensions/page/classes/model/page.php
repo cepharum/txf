@@ -18,41 +18,28 @@
  * @author: Thomas Urban
  */
 
-namespace de\toxa\txf;
+namespace de\toxa\txf\page;
 
+use \de\toxa\txf\model as model;
 
-class widget_user_logout implements widget {
+class model_page extends model {
 
-	/**
-	 * Processes input of widget updating its internal state.
-	 *
-	 * @return widget current instance
-	 */
+	protected static $set = 'txf_page';
+	protected static $label = 'title';
 
-	public function processInput() {
-
-		if ( user::current()->isAuthenticated() ) {
-			user::dropCurrent();
-		}
-
-		view::flash( _L('You logged out successfully.') );
-
-		$referrer = input::vget( 'referrer' );
-		$referrer = url::isRelative( $referrer ) ? $referrer : null;
-
-		txf::redirectTo( _1($referrer, 'home') );
+	public static function label( $count = 1 ) {
+		return \de\toxa\txf\_L('page','pages',$count);
 	}
 
-	/**
-	 * Retrieves code for embedding widget in current view.
-	 *
-	 * This widget isn't actually providing any code for its logging out current
-	 * user without interacting.
-	 *
-	 * @return string code embeddable in view
-	 */
-
-	public function getCode() {
-		return '';
+	public static function define() {
+		return array(
+			'name'         => 'CHAR(32) NOT NULL UNIQUE',
+		    'title'        => 'CHAR(255)',
+		    'content'      => 'LONGTEXT',
+		    'visible_from' => 'DATE',
+		    'visible_til'  => 'DATE',
+			'menuid'       => 'CHAR(16)',
+		    'menusort'     => 'INTEGER',
+		);
 	}
 }
