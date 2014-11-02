@@ -34,6 +34,8 @@ namespace de\toxa\txf;
  *
  * @author Thomas Urban <thomas.urban@toxa.de>
  * @version 1.0
+ *
+ * @method input input::current()
  */
 
 
@@ -63,7 +65,14 @@ class input extends singleton
 
 
 
+	/**
+	 * Lists registered and optionally enabled input sources.
+	 *
+	 * @var array
+	 */
+
 	protected $sources = array();
+
 
 
 	public function __construct()
@@ -119,7 +128,7 @@ class input extends singleton
 
 	public function sourceIsEnabled( $source )
 	{
-		return $this->hasSource( $source ) && $this->sources[$sources]['enabled'];
+		return $this->hasSource( $source ) && $this->sources[$source]['enabled'];
 	}
 
 	/**
@@ -163,6 +172,7 @@ class input extends singleton
 	 *
 	 * Omit $manager to move any existing manager selected by name in $source.
 	 *
+	 * @throws \Exception
 	 * @param string $source name of source, must be keyword
 	 * @param input_source $manager input source manager to insert/move
 	 * @param array $providing names of sources becoming successors of $manager
@@ -180,6 +190,8 @@ class input extends singleton
 
 		try
 		{
+			$existingSourcesInOrder = array_keys( $this->sources );
+
 			/*
 			 * support moving existing manager
 			 */
@@ -205,20 +217,18 @@ class input extends singleton
 			 * find index of requested location for inserting new source
 			 */
 
-			$existingSourcesInOrder = array_keys( $this->sources );
-
 			$providing = data::asArray( $providing );
 			$depends   = data::asArray( $depends );
 
 			if ( empty( $providing ) )
 				$providingIndex = count( $this->sources );
 			else
-				$providingIndex = min( array_map( function( $a ) { return array_search( $a, $existingSourcesInOrder ); }, $providing ) );
+				$providingIndex = min( array_map( function( $a ) use ( $existingSourcesInOrder ) { return array_search( $a, $existingSourcesInOrder ); }, $providing ) );
 
 			if ( empty( $depends ) )
 				$dependsIndex = -1;
 			else
-				$dependsIndex = max( array_map( function( $a ) { return array_search( $a, $existingSourcesInOrder ); }, $depends ) );
+				$dependsIndex = max( array_map( function( $a ) use ( $existingSourcesInOrder ) { return array_search( $a, $existingSourcesInOrder ); }, $depends ) );
 
 			if ( $providingIndex <= $dependsIndex )
 				throw new \InvalidArgumentException( 'cannot insert manager at requested location' );
@@ -241,7 +251,7 @@ class input extends singleton
 
 			return $this;
 		}
-		catch ( Exception $e )
+		catch ( \Exception $e )
 		{
 			$this->sources = $queueBackup;
 
@@ -270,6 +280,7 @@ class input extends singleton
 	 * @param string $name name of value to read
 	 * @param mixed $default default to use
 	 * @param mixed $format expected format's definition
+	 * @param boolean $optional set true to suppress exception on missing valid input from any enabled source
 	 * @return mixed found value, processed according to format definition
 	 */
 
@@ -290,6 +301,7 @@ class input extends singleton
 	 * @param string $name name of value to read, must be keyword
 	 * @param mixed $default default to use
 	 * @param mixed $format format definition
+	 * @param boolean $optional set true to suppress exception on missing valid input from any enabled source
 	 * @return mixed validated and normalized value
 	 */
 
@@ -351,7 +363,7 @@ class input extends singleton
 		if ( !$name )
 			throw new \InvalidArgumentException( 'invalid name' );
 
-		static::current()->persistValue( $name, $value );
+		static::current()->dropValue( $name );
 	}
 
 	/**
@@ -402,6 +414,7 @@ class input extends singleton
 	 * @param mixed $default value to return by default
 	 * @param boolean $checkPersistents if true, check persistent sources as well
 	 * @param mixed $format format definition used to filter values
+	 * @param boolean $optional set true to suppress exception on missing valid input from any enabled source
 	 * @return mixed|null available input value, null on missing any
 	 */
 
@@ -451,6 +464,8 @@ class input extends singleton
 		// according to provided format definition
 		if ( !$optional && !$this->valueIsValid( null, $format ) )
 			throw new \RuntimeException( 'invalid input' );
+
+		return null;
 	}
 
 	/**
@@ -473,35 +488,35 @@ class input extends singleton
 			{
 				case self::FORMAT_STRING :
 					return array(
-								'valid'   => function( $value, $format ) { return !preg_match( '/<\s*script\W/i', $value ); },
-								'convert' => function( $value, $format ) { return strval( $value ); },
+								'valid'   => function( $value/*, $format*/ ) { return !preg_match( '/<\s*script\W/i', $value ); },
+								'convert' => function( $value/*, $format*/ ) { return strval( $value ); },
 								);
 
 				case self::FORMAT_KEYWORD :
 					return array(
-								'prepare' => function( $value, $format ) { return trim( $value ); },
+								'prepare' => function( $value/*, $format*/ ) { return trim( $value ); },
 								'valid'   => '/^[_a-z]+[_a-z0-9]*$/i',
 								);
 
 				case self::FORMAT_INTEGER :
 					return array(
-								'prepare' => function( $value, $format ) { return trim( $value ); },
+								'prepare' => function( $value/*, $format*/ ) { return trim( $value ); },
 								'valid'   => '/^[+-]?\d+$/',
-								'convert' => function( $value, $format ) { return intval( $value ); },
+								'convert' => function( $value/*, $format*/ ) { return intval( $value ); },
 								);
 
 				case self::FORMAT_BOOL :
 					return array(
-								'prepare' => function( $value, $format ) { if ( is_string( $value ) ) return trim( $value ); else return !!$value ? 'y' : 'n'; },
+								'prepare' => function( $value/*, $format*/ ) { if ( is_string( $value ) ) return trim( $value ); else return !!$value ? 'y' : 'n'; },
 								'valid'   => '/^(on|off|y(es)?|no?|true|false|0|1)$/i',
-								'convert' => function( $value, $format ) { return in_array( strtolower( $value ), array( 'y', 'yes', 'on', 'true', '1' ) ); }
+								'convert' => function( $value/*, $format*/ ) { return in_array( strtolower( $value ), array( 'y', 'yes', 'on', 'true', '1' ) ); }
 								);
 
 				case self::FORMAT_GUID :
 					return array(
-								'prepare' => function( $value, $format ) { return trim( $value ); },
+								'prepare' => function( $value/*, $format*/ ) { return trim( $value ); },
 								'valid'   => '/^[\da-f]{8}(-[\da-f]{4}){3}-[\da-f]{12}$/i',
-								'convert' => function( $value, $format ) { return strtolower( $value ); }
+								'convert' => function( $value/*, $format*/ ) { return strtolower( $value ); }
 								);
 
 				default :
@@ -604,8 +619,7 @@ class input extends singleton
 	 * Persists value in all enabled input sources.
 	 *
 	 * @param string $name name of value to persist
-	 * @param mixed $value value to persist
-	 * @return mixed provided value
+	 * @return $this
 	 */
 
 	final protected function dropValue( $name )
@@ -614,7 +628,7 @@ class input extends singleton
 			if ( $source['enabled'] )
 				$source['manager']->dropValue( $name );
 
-		return $value;
+		return $this;
 	}
 }
 
