@@ -29,6 +29,16 @@
 namespace de\toxa\txf\datasource;
 
 
+/**
+ * Implements statement interface in context of PDO-connected data sources for
+ * working with a single statement.
+ *
+ * @property-read string $command provided text of original command
+ * @property-read bool $failed true if executing command has failed, false otherwise
+ *
+ * @package de\toxa\txf\datasource
+ */
+
 class pdo_statement implements statement
 {
 	/**
