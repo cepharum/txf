@@ -34,6 +34,7 @@ namespace de\toxa\txf;
  *
  * This class provides API for basically building HTML-based forms.
  *
+ * @method string setStaticRow( string $name, string $label, string $value ) adds/updates single-line with static code to form
  * @method string setTexteditRow( string $name, string $label, string $value = null ) adds/updates single-line text edit control to form
  * @method string setPasswordRow( string $name, string $label ) adds/updates single-line password edit control to form
  * @method string setButtonRow( string $name, string $label, string $value = null ) adds/updates single button control to form
@@ -207,6 +208,10 @@ class html_form implements widget
 					break;
 				case 'textarea' :
 					$args = array( $name, $value, '', $rows, $columns );
+					break;
+				case 'static' :
+					$type = 'inline';
+					$args = array( $value );
 					break;
 				default :
 					$args = array( $name, $value );
