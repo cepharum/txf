@@ -302,7 +302,7 @@ class pdo extends singleton implements connection
 		return $match;
 	}
 
-	protected function qualifyBindingsInQuery( $query, $values ) {
+	protected function qualifyBindingsInQuery( $query, &$values ) {
 		if ( count( $values ) === 1 && is_array( $values[0] ) ) {
 			$values = $values[0];
 		}
@@ -310,6 +310,8 @@ class pdo extends singleton implements connection
 		$pos = 0;
 		$valueIndex = 0;
 		$out = '';
+		$outValues = array();
+		$changed = false;
 
 		while ( preg_match( '/(\?|%array%)/', $query, $matches, PREG_OFFSET_CAPTURE, $pos ) ) {
 			$match = $matches[1];
@@ -320,17 +322,24 @@ class pdo extends singleton implements connection
 				case '%array%' :
 					if ( is_array( $values[$valueIndex] ) ) {
 						$out .= implode( ',', array_pad( array(), count( $values[$valueIndex] ), '?' ) );
+						$outValues = array_merge( $outValues, $values[$valueIndex] );
+						$changed = true;
 						break;
 					}
 
 				case '?' :
 				default :
 					$out .= '?';
+					$outValues[] = $values[$valueIndex];
 					break;
 			}
 
 			$valueIndex++;
 			$pos = $match[1] + strlen( $match[0] );
+		}
+
+		if ( $changed ) {
+			$values = $outValues;
 		}
 
 		return $out . substr( $query, $pos );
