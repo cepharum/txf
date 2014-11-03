@@ -808,11 +808,17 @@ class model_editor
 						}
 
 
-						if ( !$item )
-							// will be creating new item below, but ensure to
-							// use fixed initial values provided additionally
+						if ( $item ) {
+							// on updating item -> don't adjust values of
+							// properties marked as fixed
+							foreach ( $fixed as $name => $value )
+								unset( $properties[$name] );
+						} else {
+							// creating new item -> ensure to use fixed initial
+							// values provided additionally
 							foreach ( $fixed as $name => $value )
 								$properties[$name] = $value;
+						}
 
 
 						// optionally pre-process saving properties of item
