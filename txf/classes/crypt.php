@@ -137,7 +137,9 @@ class crypt
 			$key = ssha::get( uniqid( mt_rand(), true ) . uniqid( mt_rand(), true ) ) .
 				   ssha::get( uniqid( mt_rand(), true ) . uniqid( mt_rand(), true ) );
 
-			\setcookie( '_txf', $_COOKIE['_txf'] = base64_encode( $key ) );
+			session::getScopeParameter( $domain, $path );
+
+			\setcookie( '_txf', $_COOKIE['_txf'] = base64_encode( $key ), null, $path, $domain );
 		}
 
 		return $_COOKIE['_txf'];

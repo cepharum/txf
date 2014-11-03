@@ -34,23 +34,40 @@ include_once( 'shortcuts.php' );
 include_once( 'extension.php' );
 
 
+/**
+ * Implements most generic code establishing TXF framework.
+ *
+ * @method static txf current()
+ * @method static context getContext()
+ * @property-read context $context
+ * @property-read session $session
+ * @property-read array $classRedirectionMap
+ * @property-read string $contextMode
+ *
+ * @package de\toxa\txf
+ */
+
 class txf extends singleton
 {
-
 	/**
 	 * instance of class context describing current context
 	 *
-	 * @var \de\toxa\txf\context
+	 * @var context
 	 */
 
 	private $context;
 
+	/**
+	 * @var session
+	 */
 
 	private $session;
 
+	/**
+	 * @var array
+	 */
 
-	protected $classRedirectionMap = array();
-
+	protected $classRedirectionMap;
 
 	/**
 	 * One of the txf::CTXMODE_* constants' value selecting one of several
@@ -59,7 +76,7 @@ class txf extends singleton
 	 * The context mode is used to separate different ways of executing a
 	 * script in TXF from each other resulting in different behaviours each.
 	 *
-	 * @var enum
+	 * @var string
 	 */
 
 	private static $contextMode = null;
@@ -119,7 +136,7 @@ class txf extends singleton
 	 *        $scriptSession =& txf::session()
 	 *
 	 * @see session::access()
-	 * @param enum $scope valid combination of session::SCOPE_* constants
+	 * @param int $scope valid combination of session::SCOPE_* constants
 	 * @param string $parameter additional parameter used depending on $scope
 	 * @return array-ref reference on session-based space
 	 */
@@ -138,7 +155,7 @@ class txf extends singleton
 	public function onLoad()
 	{
 		// install class autoloader
-		spl_autoload_register( array( self, 'classAutoloader' ) );
+		spl_autoload_register( array( get_class( $this ), 'classAutoloader' ) );
 
 		// analyse pathnames and prepare context for addressing related resources
 		$this->context = new context;
@@ -204,7 +221,7 @@ class txf extends singleton
 			// optionally support class redirection
 			if ( self::hasCurrent() )
 			{
-				$map = self::current()->getClassRedirectionMap();
+				$map = self::current()->classRedirectionMap;
 
 				if ( \array_key_exists( $className, $map ) )
 					$className = $map[$className];
@@ -279,6 +296,8 @@ class txf extends singleton
 				}
 			}
 		}
+
+		return null;
 	}
 
 	/**
@@ -333,14 +352,14 @@ class txf extends singleton
 
 		if ( $this->context )
 		{
-			if ( $this->context->application() )
+			if ( $this->context->application )
 			{
-				$pathname = path::glue( $this->context->applicationPathname(), $resourcePathname );
+				$pathname = path::glue( $this->context->applicationPathname, $resourcePathname );
 				if ( is_dir( $pathname ) )
 					return $pathname;
 			}
 
-			$pathname = path::glue( $this->context->frameworkPathname(), $resourcePathname );
+			$pathname = path::glue( $this->context->frameworkPathname, $resourcePathname );
 			if ( is_dir( $pathname ) )
 				return $pathname;
 		}
@@ -381,7 +400,7 @@ class txf extends singleton
 	/**
 	 * Sets context mode to use in processing current request.
 	 *
-	 * @param enum $contextMode on of txf::CTXMODE_* constants
+	 * @param string $contextMode one of txf::CTXMODE_* constants
 	 */
 
 	public static function setContextMode( $contextMode )
@@ -402,7 +421,7 @@ class txf extends singleton
 	/**
 	 * Retrieves current context mode.
 	 *
-	 * @return enum one of the txf::CTXMODE_* constants' value
+	 * @return string one of the txf::CTXMODE_* constants' value
 	 */
 
 	public static function getContextMode()

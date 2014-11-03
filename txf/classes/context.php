@@ -29,6 +29,23 @@
 namespace de\toxa\txf;
 
 
+/**
+ * Implements API describing context of currently running script.
+ *
+ * @property-read boolean $isHTTPS
+ * @property-read string $installationPathname
+ * @property-read string $frameworkPathname
+ * @property-read string $prefixPathname
+ * @property-read string $scriptPathname
+ * @property-read string $applicationPathname
+ * @property-read string $applicationScriptPathname
+ * @property-read string $url
+ * @property-read string $hostname
+ * @property-read application $application
+ *
+ * @package de\toxa\txf
+ */
+
 class context
 {
 
@@ -110,7 +127,7 @@ class context
 	/**
 	 * detected name of current application
 	 *
-	 * @var string
+	 * @var application
 	 */
 
 	private $application;
@@ -218,7 +235,7 @@ class context
 	 *
 	 *       myapp/myscript/par1-of-script/par2-of-script
 	 *
-	 * @param $detectedProxy name of detected proxy script
+	 * @param string $detectedProxy name of detected proxy script
 	 * @return array sequence of filenames contained in requested URI for selecting script
 	 */
 
@@ -283,7 +300,7 @@ class context
 	 * Simplifies retrieval of compiled URLs to a current script.
 	 *
 	 * @param array|false $parameters set of parameters to include in reference
-	 * @param string $selector one of several selectors to include in reference
+	 * @param string $selectors... one of several selectors to include in reference
 	 * @return string URL referring to currently running script
 	 */
 

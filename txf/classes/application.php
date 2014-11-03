@@ -34,7 +34,13 @@ namespace de\toxa\txf;
  *
  * @package de\toxa\txf
  *
- * @property array $selectors
+ * @property-read string $name
+ * @property-read string $pathname
+ * @property-read string $script
+ * @property-read array $selectors
+ * @property-read string $url
+ * @property-read string|boolean $usedProxy
+ * @property-read context $context
  */
 
 class application
@@ -252,6 +258,7 @@ class application
 		switch ( txf::getContextMode() )
 		{
 			case txf::CTXMODE_NORMAL :
+			default :
 				$url = path::glue( $this->url, $scriptName, $selectors );
 				break;
 
