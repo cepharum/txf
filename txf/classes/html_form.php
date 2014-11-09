@@ -34,14 +34,14 @@ namespace de\toxa\txf;
  *
  * This class provides API for basically building HTML-based forms.
  *
- * @method string setStaticRow( string $name, string $label, string $value ) adds/updates single-line with static code to form
- * @method string setTexteditRow( string $name, string $label, string $value = null ) adds/updates single-line text edit control to form
- * @method string setPasswordRow( string $name, string $label ) adds/updates single-line password edit control to form
- * @method string setButtonRow( string $name, string $label, string $value = null ) adds/updates single button control to form
- * @method string setSelectorRow( string $name, string $label, array $options, string $value = null ) adds/updates drop down list control to form
- * @method string setTextareaRow( string $name, string $label, string $value = null, int $rows, int $columns ) adds/updates multiline text edit control to form
- * @method string setFileRow( string $name, string $label ) adds/updates file upload control to form
- * @method string setCheckboxRow( string $name, string $label, string $value = null ) adds/updates single checkbox control to form
+ * @method html_form setStaticRow( string $name, string $label, string $value ) adds/updates single-line with static code to form
+ * @method html_form setTexteditRow( string $name, string $label, string $value = null ) adds/updates single-line text edit control to form
+ * @method html_form setPasswordRow( string $name, string $label ) adds/updates single-line password edit control to form
+ * @method html_form setButtonRow( string $name, string $label, string $value = null ) adds/updates single button control to form
+ * @method html_form setSelectorRow( string $name, string $label, array $options, string $value = null ) adds/updates drop down list control to form
+ * @method html_form setTextareaRow( string $name, string $label, string $value = null, int $rows, int $columns ) adds/updates multiline text edit control to form
+ * @method html_form setFileRow( string $name, string $label ) adds/updates file upload control to form
+ * @method html_form setCheckboxRow( string $name, string $label, string $value = null ) adds/updates single checkbox control to form
  */
 
 class html_form implements widget
@@ -293,28 +293,44 @@ class html_form implements widget
 	}
 
 	/**
-	 * Detects if current input is considered containing input for current form.
+	 * Stores result of previously detecting if form is having input actually.
 	 *
+	 * @var boolean
+	 */
+
+	private $_hasInput = null;
+
+	/**
+	 * Detects if current input of script is considered containing input for
+	 * current form.
+	 *
+	 * @param boolean $keepFormIdInInput set true to keep any valid ID of form in input of current script
 	 * @return boolean true if form has actual input, false otherwise
 	 */
 
-	public function hasInput()
+	public function hasInput( $keepFormIdInInput = false )
 	{
-		try
-		{
-			$source = input::source( $this->usePost ? input::SOURCE_ACTUAL_POST : input::SOURCE_ACTUAL_GET );
-			if ( $source->hasValue( $this->idName() ) )
-			{
-				$value = $source->getValue( $this->idName() );
+		if ( $this->_hasInput === null ) {
+			$this->_hasInput = false;
 
-				return ( $value == $this->idValue() );
-			}
-		}
-		catch ( \InvalidArgumentException $e )
-		{
+			try {
+				$idName = $this->idName();
+
+				$source = input::source( $this->usePost ? input::SOURCE_ACTUAL_POST : input::SOURCE_ACTUAL_GET );
+				if ( $source->hasValue( $idName ) ) {
+					$value = $source->getValue( $idName );
+
+					if ( $value == $this->idValue() ) {
+						if ( !$keepFormIdInInput )
+							$source->dropValue( $idName );
+
+						$this->_hasInput = true;
+					}
+				}
+			} catch ( \InvalidArgumentException $e ) {}
 		}
 
-		return false;
+		return $this->_hasInput;
 	}
 
 	/**
