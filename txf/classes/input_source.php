@@ -104,5 +104,13 @@ interface input_source
 	 */
 
 	public function dropValue( $name );
+
+	/**
+	 * Fetches list of names of all parameters currently available in source.
+	 *
+	 * @return string[] names of properties available in source
+	 */
+
+	public function listNames();
 }
 

@@ -86,9 +86,9 @@ class input_source_actual implements input_source
 		unset( $this->set[$name] );
 	}
 
-	public function getAllValues()
+	public function listNames()
 	{
-		return $this->set;
+		return array_keys( $this->set );
 	}
 }
 

@@ -298,14 +298,16 @@ class application
 		else
 		{
 			// find all non-persistent input parameters of current script
-			$currentParameters = input::source( input::SOURCE_ACTUAL_GET )->getAllValues();
-			foreach ( $currentParameters as $name => $value )
-				if ( !data::isKeyword( $name ) || input::isPersistent( $name ) )
-					unset( $currentParameters[$name] );
+			$currentVolatileParameters = array();
+
+			$get = input::source( input::SOURCE_ACTUAL_GET );
+			foreach ( $get->listNames() as $name )
+				if ( data::isKeyword( $name ) && !input::isPersistent( $name ) )
+					$currentVolatileParameters[$name] = $get->getValue( $name );
 
 			// merge volatile input with given parameters, but drop all those
 			// finally set NULL (to support removal per $parameters)
-			$parameters = array_filter( array_merge( $currentParameters, $parameters ), function( $item ) { return $item !== null; } );
+			$parameters = array_filter( array_merge( $currentVolatileParameters, $parameters ), function( $item ) { return $item !== null; } );
 		}
 
 

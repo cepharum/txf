@@ -60,5 +60,10 @@ class input_source_config implements input_source
 	public function dropValue( $name )
 	{
 	}
+
+	public function listNames()
+	{
+		return array_keys( config::get( 'input.default', array() ) );
+	}
 }
 

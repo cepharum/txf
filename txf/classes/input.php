@@ -35,7 +35,7 @@ namespace de\toxa\txf;
  * @author Thomas Urban <thomas.urban@toxa.de>
  * @version 1.0
  *
- * @method input input::current()
+ * @method static input current()
  */
 
 
@@ -389,7 +389,7 @@ class input extends singleton
 
 	final public static function normalize( $value, $format = null )
 	{
-		return static::current()->fixValue( $value, $format );
+		return static::current()->convertValue( $value, $format );
 	}
 
 	/**
@@ -402,6 +402,17 @@ class input extends singleton
 	final public static function source( $name )
 	{
 		return static::current()->getSourceManager( $name );
+	}
+
+	/**
+	 * Fetches list of names of all properties currently available as input.
+	 *
+	 * @param bool $includePersistents true to include persistent parameters on listing
+	 * @return string[] list of (volatile or all) parameters' names currently available
+	 */
+
+	final public static function listNames( $includePersistents = false ) {
+		return static::current()->listAvailableNames( $includePersistents );
 	}
 
 	/**
@@ -466,6 +477,26 @@ class input extends singleton
 			throw new \RuntimeException( 'invalid input' );
 
 		return null;
+	}
+
+	/**
+	 * Fetches list of names of all properties currently available as input.
+	 *
+	 * @param bool $includePersistents true to include persistent parameters on listing
+	 * @return string[] list of (volatile or all) parameters' names currently available
+	 */
+
+	final protected function listAvailableNames( $includePersistents = false ) {
+		$names = array();
+
+		foreach ( $this->sources as $source )
+			if ( $source['enabled'] )
+				if ( $includePersistents || $source['volatile'] )
+					foreach ( $source['manager']->listNames() as $name ) {
+						$names[$name] = true;
+					}
+
+		return array_keys( $names );
 	}
 
 	/**

@@ -67,5 +67,10 @@ class input_source_default implements input_source
 	public function dropValue( $name )
 	{
 	}
+
+	public function listNames()
+	{
+		return array();
+	}
 }
 

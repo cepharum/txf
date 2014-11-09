@@ -70,5 +70,10 @@ class input_source_stateful implements input_source
 	{
 		unset( $this->set[$name] );
 	}
+
+	public function listNames()
+	{
+		return array_keys( $this->set );
+	}
 }
 
