@@ -74,8 +74,11 @@ namespace de\toxa\txf;
  * @method static string flash( $context, $messages ) renders messages in given context
  *
  * = form related
- * @method static string textedit( $name, $value, $label = null ) renders single-line text editing control
- * @method static string textarea( $name, $value, $label = null, $rows, $columns ) renders multi-line text editing control
+ * @method static string textedit( $name, $value, $label = null, $placeholder = null ) renders single-line text editing control
+ * @method static string date( $name, $value, $label = null, $placeholder = null ) renders single-line date editing control
+ * @method static string time( $name, $value, $label = null, $placeholder = null ) renders single-line date editing control
+ * @method static string datetime( $name, $value, $label = null, $placeholder = null ) renders single-line datetime editing control
+ * @method static string textarea( $name, $value, $label = null, $rows, $columns, $placeholder = null ) renders multi-line text editing control
  * @method static string password( $name, $label = null ) renders input field for blindly entering password
  * @method static string checkbox( $name, $value, $checked, $label = null, $title = null ) renders checkbox
  * @method static string selector( $name, $options, $value, $label = null ) renders selector

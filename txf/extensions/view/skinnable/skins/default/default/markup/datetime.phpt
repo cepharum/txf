@@ -22,5 +22,5 @@ if ( $placeholder ) {
 
 ?>
 <span>
- <input type="text" class="text" name="<?php echo $name ?>"<?php echo $value . $placeholder ?>/>
+ <input type="datetime" class="text date time" name="<?php echo $name ?>"<?php echo $value . $placeholder ?>/>
 </span>
