@@ -188,9 +188,10 @@ class data
 	 *
 	 * @param array $array hash of elements to rearrange/sort, !!pass-by-reference!!
 	 * @param array $manualOrder properly sorted list of names of elements in $array
-	 * @param bool $keepOnMissing set true to append elements not mentioned in
-	 *                            $manualOrder in undefined sorting order,
-	 *                            otherwise those elements are removed from $array
+	 * @param bool|callable $keepOnMissing set true to append elements not
+	 *                      mentioned in $manualOrder to resulting array instead
+	 *                      of removing them, provide callback for sorting those
+	 *                      elements using external function
 	 * @return array sorted array
 	 */
 
@@ -203,18 +204,24 @@ class data
 				if ( !array_key_exists( $key, $manualOrder ) )
 					unset( $array[$key] );
 
-		uksort( $array, function( $left, $right ) use ( $manualOrder ) {
-			$left  = @$manualOrder[$left];
-			$right = @$manualOrder[$right];
+		uksort( $array, function( $left, $right ) use ( $manualOrder, $array, $keepOnMissing ) {
+			$leftValue  = @$manualOrder[$left];
+			$rightValue = @$manualOrder[$right];
 
-			if ( is_null( $right ) )
-				return is_null( $left ) ? 0 : -1;
+			if ( is_null( $leftValue ) || is_null( $rightValue ) ) {
+				if ( is_callable( $keepOnMissing ) ) {
+					return call_user_func( $keepOnMissing, $left, $right, $array, $leftValue, $rightValue );
+				} else {
+					if ( is_null( $rightValue ) )
+						return is_null( $leftValue ) ? 0 : -1;
 
-			if ( is_null( $left ) )
-				return 1;
+					return 1;
+				}
+			}
 
-			return $left - $right;
+			return $leftValue - $rightValue;
 		} );
+
 
 		return $array;
 	}
