@@ -164,6 +164,7 @@ class manager extends \de\toxa\txf\singleton
 	 *
 	 * @param string $viewport "method name" actually selecting viewport here
 	 * @param array $arguments set of arguments
+	 * @return mixed
 	 */
 
 	public static function __callStatic( $viewport, $arguments )
@@ -318,6 +319,7 @@ class manager extends \de\toxa\txf\singleton
 	 * Renders exception without utilizing template engine.
 	 *
 	 * @param \Exception $exception
+	 * @return string
 	 */
 
 	protected static function simpleRenderException( \Exception $exception )
@@ -387,7 +389,7 @@ EOT
 	 *
 	 * @param string $name name of variable to access
 	 * @param mixed $value value to assign, omit it to read current value
-	 * @return mixed read variables value on read, null on missing it
+	 * @return mixed|null read variables value on read, null on missing it
 	 */
 
 	public function accessVariable( $name, $value = null )
@@ -404,6 +406,8 @@ EOT
 
 			return $this->variables->read( $name );
 		}
+
+		return null;
 	}
 
 	/**
