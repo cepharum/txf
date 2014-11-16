@@ -434,7 +434,7 @@ class databrowser implements widget
 
 		$text = $this->emptyText ? $this->emptyText : _L('There is no data to be listed here ...');
 
-		return markup::paragraph( markup::emphasize( $text ) );
+		return markup::paragraph( markup::emphasize( $text ), trim( $this->className . ' empty-text' ) );
 	}
 
 	public function render()
