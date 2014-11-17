@@ -1,8 +1,11 @@
-<?php namespace de\toxa\txf; list( $name, $options, $value, $label ) = $arguments ?>
+<?php namespace de\toxa\txf; list( $name, $options, $value, $label, $multiSelect ) = $arguments ?>
 <?php
 
 if ( !is_array( $options ) )
 	$options = array();
+
+if ( !is_array( $value ) && $multiSelect )
+	$value = array( $value );
 
 if ( count( $arguments ) == 2 )
 	if ( count( $options ) )
@@ -12,9 +15,13 @@ $name = html::idname( $name, true );
 
 echo view::wrapNotEmpty( $label, "<label for=\"$name\">|:</label>" );
 
+$class = $multiSelect ? 'multi' : 'single';
+$mode  = $multiSelect ? ' multiple="multiple"' : '';
+$tag   = $multiSelect ? '[]' : '';
+
 ?>
 <span>
-	<select class="single" name="<?php echo $name ?>">
+	<select class="<?php echo html::inAttribute( $class ) ?>" name="<?php echo $name . $tag ?>"<?php echo $mode ?>>
 <?php
 foreach ( $options as $option => $label )
 {
@@ -30,7 +37,12 @@ foreach ( $options as $option => $label )
  */
 		$attr = ' value="' . html::inAttribute( $option ) . '"';
 
-	$checked = ( trim( $option ) === trim( $value ) ) ? ' selected="selected"' : '';
+	if ( $multiSelect )
+		$checked = in_array( trim( $option ), $value );
+	else
+		$checked = ( trim( $option ) === trim( $value ) );
+
+	$checked = $checked ? ' selected="selected"' : '';
 
 ?>
 		<option<?php echo $attr . $checked ?>><?php echo htmlspecialchars( (string) $label ) ?></option>

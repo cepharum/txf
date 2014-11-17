@@ -37,6 +37,8 @@ use de\toxa\txf\singleton as singleton;
 /**
  * PDO-driven datasource manager
  *
+ * @property-read PDO $link
+ * @property-read string $command
  */
 
 class pdo extends singleton implements connection

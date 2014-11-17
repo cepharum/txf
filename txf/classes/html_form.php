@@ -39,6 +39,7 @@ namespace de\toxa\txf;
  * @method html_form setPasswordRow( string $name, string $label ) adds/updates single-line password edit control to form
  * @method html_form setButtonRow( string $name, string $label, string $value = null ) adds/updates single button control to form
  * @method html_form setSelectorRow( string $name, string $label, array $options, string $value = null ) adds/updates drop down list control to form
+ * @method html_form setMultiSelectorRow( string $name, string $label, array $options, string $value = null ) adds/updates multi-selectable list control to form
  * @method html_form setTextareaRow( string $name, string $label, string $value = null, int $rows, int $columns ) adds/updates multiline text edit control to form
  * @method html_form setFileRow( string $name, string $label ) adds/updates file upload control to form
  * @method html_form setCheckboxRow( string $name, string $label, string $value = null ) adds/updates single checkbox control to form
@@ -175,6 +176,7 @@ class html_form implements widget
 			switch ( $type )
 			{
 				case 'selector' :
+				case 'multiselector' :
 					list( $name, $label, $options, $value ) = array_splice( $arguments, 0, 4 );
 					break;
 				case 'textarea' :
@@ -193,6 +195,10 @@ class html_form implements widget
 			{
 				case 'selector' :
 					$args = array( $name, $options, $value );
+					break;
+				case 'multiselector' :
+					$type = 'selector';
+					$args = array( $name, $options, $value, null, true );
 					break;
 				case 'button' :
 					$args = array( $name, $value, $label );
@@ -526,6 +532,17 @@ class html_form implements widget
 
 
 		return $this;
+	}
+
+	/**
+	 * Detects if selected row exists in current form.
+	 *
+	 * @param string $name name of row to check
+	 * @return boolean true if row exists, false otherwise
+	 */
+
+	public function hasRow( $name ) {
+		return array_key_exists( $name, $this->rows );
 	}
 
 	/**
