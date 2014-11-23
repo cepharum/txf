@@ -111,7 +111,9 @@ Setting up server involves these tasks:
         ServerName foobar.example.com
     
         DocumentRoot /var/www/txf/foobar
-		SetEnv TXF_DOCUMENT_ROOT /var/www/txf
+
+        SetEnv TXF_DOCUMENT_ROOT /var/www/txf
+        SetEnv TXF_APPLICATION foobar
     
         Alias /txf/run.php /var/www/txf/run.php
     
@@ -132,8 +134,6 @@ Setting up server involves these tasks:
             RewriteRule .* /txf/run.php [L]
         </Directory>
     </VirtualHost>>
-
-**TODO!** Test this configuration.
 
 #### Contained in Existing Virtual Host
 
