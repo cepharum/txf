@@ -136,6 +136,8 @@ class application
 
 		$application->context = $context;
 
+		$envApplicationName = getenv( 'TXF_APPLICATION' );
+
 
 		/*
 		 * extract selected application and source
@@ -147,7 +149,12 @@ class application
 			throw new http_exception( 400, 'Request missing application. Check your setup!' );
 
 		// extract information on application folder and name
-		$application->name = array_shift( $frames );
+		if ( $envApplicationName ) {
+			$application->name = $envApplicationName;
+		} else {
+			$application->name = array_shift( $frames );
+		}
+
 		if ( $application->name == 'txf' )
 			throw new http_exception( 404, 'Requested application doesn\'t exist.' );
 
@@ -192,7 +199,11 @@ class application
 
 
 		// prepare application's base URL
-		$application->url = path::glue( $context->url, $application->name );
+		if ( $envApplicationName ) {
+			$application->url = $context->url;
+		} else {
+			$application->url = path::glue( $context->url, $application->name );
+		}
 
 
 		return $application;

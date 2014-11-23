@@ -284,14 +284,13 @@ class context
 
 	public static function getDocumentRoot()
 	{
-		if ( array_key_exists( 'TXF_DOCUMENT_ROOT', $_ENV ) )
-			return $_ENV['TXF_DOCUMENT_ROOT'];
+		$envTxfRoot = getenv( 'TXF_DOCUMENT_ROOT' );
+		if ( $envTxfRoot )
+			return $envTxfRoot;
 
-		if ( array_key_exists( 'TXF_DOCUMENT_ROOT', $_SERVER ) )
-			return $_SERVER['TXF_DOCUMENT_ROOT'];
-
-		if ( array_key_exists( 'DOCUMENT_ROOT', $_ENV ) )
-			return $_ENV['DOCUMENT_ROOT'];
+		$envRoot = getenv( 'DOCUMENT_ROOT' );
+		if ( $envRoot )
+			return $envRoot;
 
 		return $_SERVER['DOCUMENT_ROOT'];
 	}
