@@ -149,7 +149,7 @@ class session	// don't derive from anything external here!!! That's breaking maj
 			case 'application' :
 				// valid for current application, only
 				$domain = $_SERVER['HTTP_HOST'];
-				$path   = '/' . path::glue( txf::getContext()->prefixPathname, txf::getContext()->application->name );
+				$path   = '/' . application::current()->prefixPathname;
 				break;
 
 			default :
@@ -158,7 +158,7 @@ class session	// don't derive from anything external here!!! That's breaking maj
 					$focus  = strtr( $focus, array(
 						'%H' => $_SERVER['HTTP_HOST'],
 						'%T' => '/' . txf::getContext()->prefixPathname,
-						'%A' => '/' . path::glue( txf::getContext()->prefixPathname, txf::getContext()->application->name ),
+						'%A' => '/' . application::current()->prefixPathname,
 					) );
 
 				$temp   = explode( '/', $focus );

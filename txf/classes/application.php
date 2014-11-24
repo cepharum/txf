@@ -41,6 +41,9 @@ namespace de\toxa\txf;
  * @property-read string $url
  * @property-read string|boolean $usedProxy
  * @property-read context $context
+ * @property-read boolean $gotNameFromEnvironment
+ *
+ * @package de\toxa\txf
  */
 
 class application
@@ -228,8 +231,13 @@ class application
 
 	public function __get( $name )
 	{
-		if ( property_exists( $this, $name ) )
-			return $this->$name;
+		switch ( $name ) {
+			case 'prefixPathname' :
+				return $this->gotNameFromEnvironment ? $this->context->prefixPathname : path::glue( $this->context->prefixPathname, $this->name );
+
+			default :
+				return property_exists( $this, $name ) ? $this->$name : null;
+		}
 	}
 
 	/**
