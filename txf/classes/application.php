@@ -103,6 +103,14 @@ class application
 
 	protected $context;
 
+	/**
+	 * Marks if application's name was selected by environment variable.
+	 *
+	 * @var boolean
+	 */
+
+	protected $gotNameFromEnvironment;
+
 
 
 	protected function __construct() {}
@@ -138,6 +146,8 @@ class application
 
 		$envApplicationName = getenv( 'TXF_APPLICATION' );
 
+		$application->gotNameFromEnvironment = !!$envApplicationName;
+
 
 		/*
 		 * extract selected application and source
@@ -149,7 +159,7 @@ class application
 			throw new http_exception( 400, 'Request missing application. Check your setup!' );
 
 		// extract information on application folder and name
-		if ( $envApplicationName ) {
+		if ( $application->gotNameFromEnvironment ) {
 			$application->name = $envApplicationName;
 		} else {
 			$application->name = array_shift( $frames );
@@ -199,7 +209,7 @@ class application
 
 
 		// prepare application's base URL
-		if ( $envApplicationName ) {
+		if ( $application->gotNameFromEnvironment ) {
 			$application->url = $context->url;
 		} else {
 			$application->url = path::glue( $context->url, $application->name );
@@ -275,7 +285,11 @@ class application
 
 			case txf::CTXMODE_REWRITTEN :
 				$proxy = ( $this->usedProxy === true ) ? '' : $this->usedProxy;
-				$url   = path::glue( $this->context->url, $proxy, $this->name, $scriptName, $selectors );
+				if ( $this->gotNameFromEnvironment ) {
+					$url = path::glue( $this->context->url, $proxy, $scriptName, $selectors );
+				} else {
+					$url = path::glue( $this->context->url, $proxy, $this->name, $scriptName, $selectors );
+				}
 				break;
 		}
 
