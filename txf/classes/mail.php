@@ -267,7 +267,7 @@ class mail {
 		 * send mail
 		 */
 
-		return !!mail( $recipients, $subject, $content, $headers );
+		return !!mail( $recipients, $subject, $content, $headers, '-f' . $this->getSender() );
 	}
 
 	/**
