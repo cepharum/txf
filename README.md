@@ -164,7 +164,63 @@ Setting up server involves these tasks:
 
 ### nginx
 
-**TODO!** _See comments in .htaccess.default!_
+#### Using Separate Virtual Host
+
+    server {
+            listen 80;
+
+            server_name foobar.example.com;
+
+            root /var/www/txf/foobar;
+
+            location = /run.php {
+                    alias /var/www/txf;
+
+                    fastcgi_split_path_info ^(.+\.php)(/.+)$;
+                    # NOTE: You should have "cgi.fix_pathinfo = 0;" in php.ini
+
+                    fastcgi_pass 127.0.0.1:9000;
+                    fastcgi_index index.php;
+
+                    include fastcgi_params;
+
+                    fastcgi_param TXF_DOCUMENT_ROOT /var/www/txf;
+                    fastcgi_param TXF_APPLICATION foobar;
+
+                    # This might be contained in included fastcgi_params as well:
+                    fastcgi_param SCRIPT_FILENAME $document_root/$fastcgi_script_name;
+                    fastcgi_param QUERY_STRING    $query_string;
+                    # Set if request is over https.
+                    # fastcgi_param HTTPS         $https if_not_empty;
+            }
+
+            location = / {
+                    rewrite / /home permanent;
+            }
+
+            location ~ ^/txf|/config/|/classes/|/skins/ {
+                    deny all;
+            }
+
+            location ~ /assets/ {
+                    try_files $uri =404;
+            }
+
+            location / {
+                    try_files $uri /run.php?$args;
+            }
+
+            # Deny access to .htaccess files, if an Apache's document root
+            # concurs with nginx's one.
+            location ~ /\.ht {
+                    deny all;
+            }
+
+            # Prevent unprocessed access on PHP scripts.
+            location ~ \.php(/.+)?$ {
+                    deny all;
+            }
+    }
 
 ## Try it!
 
