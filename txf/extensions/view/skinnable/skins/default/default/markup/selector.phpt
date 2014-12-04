@@ -1,4 +1,4 @@
-<?php namespace de\toxa\txf; list( $name, $options, $value, $label, $multiSelect ) = $arguments ?>
+<?php namespace de\toxa\txf; list( $name, $options, $value, $label, $multiSelect, $class ) = $arguments ?>
 <?php
 
 if ( !is_array( $options ) )
@@ -15,13 +15,17 @@ $name = html::idname( $name, true );
 
 echo view::wrapNotEmpty( $label, "<label for=\"$name\">|:</label>" );
 
-$class = $multiSelect ? 'multi' : 'single';
-$mode  = $multiSelect ? ' multiple="multiple"' : '';
-$tag   = $multiSelect ? '[]' : '';
+$type = $multiSelect ? 'multi' : 'single';
+$mode = $multiSelect ? ' multiple="multiple"' : '';
+$tag  = $multiSelect ? '[]' : '';
+
+if ( $class ) {
+	$class = ' class="' . html::inAttribute( $class ) . '"';
+}
 
 ?>
-<span>
-	<select class="<?php echo html::inAttribute( $class ) ?>" name="<?php echo $name . $tag ?>"<?php echo $mode ?>>
+<span<?php echo $class ?>>
+	<select class="<?php echo html::inAttribute( $type ) ?>" name="<?php echo $name . $tag ?>"<?php echo $mode ?>>
 <?php
 foreach ( $options as $option => $label )
 {
