@@ -84,9 +84,19 @@ class navigator implements widget
 
 		$this->name = $name;
 
+		$this->configure( $name );
+
 		// initially enable auto-selecting mode using built-in detector
 		$this->autoselect( true );
 	}
+
+	/**
+	 * Provides opportunity to describe items of named menu on creating it.
+	 *
+	 * @param string $name name of menu to configure
+	 */
+
+	protected function configure( $name ) {}
 
 	/**
 	 * Normalizes name of navigator/item.
