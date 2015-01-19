@@ -304,7 +304,7 @@ class model
 	 * @return integer
 	 */
 
-	public function idSize()
+	public static function idSize()
 	{
 		return count( static::$id );
 	}
