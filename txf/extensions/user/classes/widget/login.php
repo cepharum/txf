@@ -36,12 +36,12 @@ use \de\toxa\txf\unauthorized_exception as unauthorized_exception;
  *
  *     <?php namespace de\toxa\txf;
  *
- *     $widget = widget_user_login::create()->processInput();
+ *     $widget = user\widget_login::create()->processInput();
  *
  *     view::main( markup::h2( _L('Log In') ) );
  *     view::main( $widget->getCode() );
  *
- * @package de\toxa\txf
+ * @package de\toxa\txf\user
  */
 
 class widget_login implements widget {
@@ -174,7 +174,7 @@ class widget_login implements widget {
 		if ( $form->hasInput() ) {
 
 			if ( input::vget( 'submit' ) == 'cancel' ) {
-				txf::redirectTo( 'home' );
+				$this->redirect();
 			}
 
 			$username = input::vget( 'name' );

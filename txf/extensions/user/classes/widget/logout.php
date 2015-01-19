@@ -37,7 +37,7 @@ use \de\toxa\txf\url as url;
  *
  *     user\widget_logout::create()->processInput();
  *
- * @package de\toxa\txf
+ * @package de\toxa\txf\user
  */
 
 
