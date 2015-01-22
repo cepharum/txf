@@ -352,7 +352,7 @@ class widget_editor implements widget {
 
 	public function getCode() {
 		if ( $this->mayEdit && $this->wantEdit ) {
-			return $this->getEditor()->render();
+			return markup::h2( \de\toxa\txf\_L('Edit Page') ) . $this->getEditor()->render();
 		} else {
 			$page = $this->getPage();
 
