@@ -139,6 +139,9 @@ class databrowser implements widget
 		$this->sessionScope = session::SCOPE_SCRIPT;
 		$this->emptyText    = $textOnEmpty;
 		$this->className    = $className;
+
+		if ( trim( $className ) !== 'databrowser' )
+			$this->className .= ( trim( $this->className ) !== '' ) ? ' databrowser' : 'databrowser';
 	}
 
 	/**
