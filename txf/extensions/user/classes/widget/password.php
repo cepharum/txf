@@ -39,7 +39,7 @@ use \de\toxa\txf\unauthorized_exception as unauthorized_exception;
  *
  *     $widget = user\widget_password::create()->processInput();
  *
- *     view::main( markup::h2( _L('Log In') ) );
+ *     view::main( markup::h2( _L('Change Password') ) );
  *     view::main( $widget->getCode() );
  *
  * @package de\toxa\txf\user
