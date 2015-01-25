@@ -94,13 +94,59 @@ class sql_user extends user
 	public function __construct() {}
 
 	/**
+	 * Retrieves name of set of users in datasource.
+	 *
+	 * @return string
+	 */
+
+	public function datasourceSet() {
+		if ( !is_array( $this->configuration ) )
+			throw new \RuntimeException( _L('Missing user source configuration.') );
+
+		$conf = $this->configuration;
+
+		return $conf['set'];
+	}
+
+	/**
+	 * Retrieves names of properties to use on accessing datasource.
+	 *
+	 * Retrieving names this way obeys any configured mapping to fit special
+	 * datasource.
+	 *
+	 * You might provide additional property names to look up in further
+	 * arguments to this method. Method is returning map of internal names into
+	 * mapped ones then.
+	 *
+	 * @param string $internalName
+	 * @return string|array mapped name of single given property, map of mapped property names on providing multiple
+	 */
+
+	public function datasourcePropertyName( $internalName ) {
+		$names = array_unique( func_get_args() );
+		$names = array_combine( $names, $names );
+		$names = name_mapping::map( $names, 'txf.sql_user' );
+
+		$names = array_flip( $names );
+
+		switch ( count( $names ) ) {
+			case 0 :
+				return null;
+			case 1 :
+				return array_shift( $names );
+			default :
+				return $names;
+		}
+	}
+
+	/**
 	 * Retrieves connection to configured datasource containing users database.
 	 *
 	 * @throws \Exception
 	 * @return datasource\connection connection to datasource
 	 */
 
-	protected function datasource()
+	public function datasource()
 	{
 		if ( !is_array( $this->configuration ) )
 			throw new \RuntimeException( _L('Missing user source configuration.') );
@@ -178,6 +224,107 @@ class sql_user extends user
 		}
 
 		return self::$datasources[$hash];
+	}
+
+	/**
+	 * Creates new user record.
+	 *
+	 * @param string[] $properties set of properties (incl. loginname, password, name, email, lock)
+	 * @return int|null created user's ID or null on unexpected error
+	 * @throws \InvalidArgumentException on missing selected required properties (loginname, password)
+	 * @throws datasource_exception on user existing in datasource already or on failing to add new record
+	 */
+
+	public function create( $properties ) {
+
+		// prepare properties to be written on creating new record in datasource
+		$record  = array();
+		$mapping = $this->datasourcePropertyName( 'uuid', 'loginname', 'password', 'name', 'lock', 'email' );
+
+		foreach ( $mapping as $old => $new ) {
+			switch ( $old ) {
+				case 'uuid' :
+					$record[$new] = uuid::createRandom();
+					break;
+				case 'password' :
+					$record[$new] = ssha::get( $properties[$old] );
+					break;
+				case 'loginname' :
+					$record[$new] = substr( trim( $properties[$old] ), 0, 64 );
+					break;
+				default :
+					$record[$new] = substr( trim( $properties[$old] ), 0, 128 );
+					break;
+			}
+		}
+
+		// validate normalized properties
+		if ( !$record['loginname'] )
+			throw new \InvalidArgumentException( _L('Creating user without login name rejected.') );
+
+		if ( trim( $properties['password'] ) === '' )
+			throw new \InvalidArgumentException( _L('Creating user without password rejected.') );
+
+
+		// create new record unless found record matching login name (thus using transaction)
+		$conf      = $this->configuration;
+		$newUserID = null;
+
+		return $this->datasource()->transaction()->wrap( function( datasource\connection $conn ) use ( $record, $conf, $mapping, &$newUserID ) {
+
+			$dataSet = $conn->qualifyDatasetName( $conf['set'] );
+
+
+			// test if user with same login name exists or not
+			$sql = sprintf( 'SELECT id FROM %s WHERE %s=?', $dataSet,
+			                $conn->quoteName( $mapping['loginname'] ) );
+
+			if ( $conn->cell( $sql, $record['loginname'] ) )
+				throw $conn->exception( _L( 'Selected user exists already.' ) );
+
+
+			// create new record using provided properties
+			$names   = array_map( function ( $n ) use ( $conn ) { return $conn->quoteName( $n ); }, array_keys( $record ) );
+			$markers = array_map( function () { return '?'; }, $record );
+
+			$newUserID = $conn->nextID( $conf['set'] );
+
+			$values = array_values( $record );
+			array_unshift( $values, $newUserID );
+
+			$sql = sprintf( 'INSERT INTO %s (id,%s) VALUES (?,%s)', $dataSet,
+			                implode( ',', $names ),
+			                implode( ',', $markers ) );
+
+			if ( !$conn->test( $sql, $values ) )
+				throw $conn->exception( _L( 'Creating new user in datasource failed.' ) );
+
+
+			return true;
+		} ) ? $this->search( $newUserID ) : null;
+	}
+
+	/**
+	 * Deletes user from datasource.
+	 *
+	 * @throws datasource_exception on failed deleting user
+	 */
+
+	public function delete() {
+		assert( '$this->rowID' );
+
+		$conn = $this->datasource();
+		$conf = $this->configuration;
+
+		if ( !$conn->test( sprintf( 'DELETE FROM %s WHERE %s=?',
+		                      $conn->qualifyDatasetName( $conf['set'] ),
+		                      $conn->quoteName( name_mapping::mapSingle( 'id', 'txf.sql_user' ) ) ),
+		             $this->rowID ) )
+			throw new datasource_exception( $conn, _L('Deleting user in datasource failed.') );
+
+
+		$this->rowID = null;
+		$this->record = null;
 	}
 
 	/**
