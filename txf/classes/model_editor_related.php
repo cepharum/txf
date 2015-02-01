@@ -374,7 +374,7 @@ class model_editor_related extends model_editor_abstract
 		);
 	}
 
-	protected function _getSelectorOfExisting()
+	protected function _getSelectorOfExisting( model $item = null )
 	{
 		$mutableNode = $this->mutable->getReferencingNode();
 
@@ -458,8 +458,10 @@ class model_editor_related extends model_editor_abstract
 
 			// is editor actually working on existing item?
 			// (... having ID for use in relations?)
-			$editor = $this->getEditor();
-			if ( !$editor->hasItem() )
+			$editor    = $this->getEditor();
+			$itemToUse = $editor->hasItem() ? $editor->item() : $item;
+
+			if ( !$itemToUse )
 			{
 				// -> no
 				//    there aren't any existing records to load, actually
@@ -481,8 +483,7 @@ class model_editor_related extends model_editor_abstract
 				// yes, there is an item in editor
 
 				// is mutable node's model compatible with model of item in editor?
-				$itemInEditor = $editor->item();
-				if ( !$mutableNode->getModel()->isSameModel( $itemInEditor->getReflection() ) )
+				if ( !$mutableNode->getModel()->isSameModel( $itemToUse->getReflection() ) )
 					// -> no
 					throw new \RuntimeException( 'relation is not compatible with item in editor' );
 
@@ -492,7 +493,7 @@ class model_editor_related extends model_editor_abstract
 				//    (since mutable node is referring to item in editor and
 				//     since mutable node is the referencing node, there is
 				//     a single existing relation at most, though)
-				$id = $itemInEditor->id();
+				$id = $itemToUse->id();
 
 				$selector['filter']['properties'] = array_keys( $id );
 				$selector['filter']['values']     = array_values( $id );
@@ -928,7 +929,7 @@ class model_editor_related extends model_editor_abstract
 	{
 		if ( is_array( $this->__savedBindings ) ) {
 			$datasource = $editor->source();
-			$existing   = $this->_getSelectorOfExisting();
+			$existing   = $this->_getSelectorOfExisting( $item );
 
 			// 1) drop all previously existing bindings
 			$this->_unbindSelected( $datasource, $existing );
