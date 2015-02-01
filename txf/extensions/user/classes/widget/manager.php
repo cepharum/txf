@@ -478,7 +478,8 @@ class widget_manager implements widget {
                            markup::link( sprintf( $urls->edit, $id ), \de\toxa\txf\_L('edit') ),
                            $record['uuid'] !== user::current()->getUuid() ? markup::link( sprintf( $urls->delete, $id ), \de\toxa\txf\_L('delete') ) : '',
                        ) ) );
-			} );
+			} )
+			->setPagerVolatility( 'none' );
 	}
 
 	/**
