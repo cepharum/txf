@@ -284,16 +284,21 @@ class model
 	 * Formats label using provided values of labelling properties.
 	 *
 	 * @param array $values map of labelling properties into an item's related values
-	 * @return string label/title of single item
+	 * @param bool $requireAllProperties set true to format label unless missing some labelling property
+	 * @return string|false label/title of single item, false if missing required labelling properties
 	 */
 
-	public static function formatLabel( $values )
+	public static function formatLabel( $values, $requireAllProperties = false )
 	{
-		$index = array_flip( static::$label );
+		if ( $requireAllProperties ) {
+			foreach ( static::$label as $labelProperty ) {
+				if ( !array_key_exists( $labelProperty, $values ) ) {
+					return false;
+				}
+			}
+		}
 
-		uksort( $values, function( $left, $right ) use( $index ) {
-			return @$index[$left] - @$index[$right];
-		} );
+		data::rearrangeArray( $values, static::$label );
 
 		return implode( static::$label_glue, $values );
 	}
@@ -551,6 +556,10 @@ class model
 	{
 		$record = $this->published();
 
+		$label = static::formatLabel( $record, true );
+		if ( $label )
+			return $label;
+
 		if ( array_key_exists( 'label', $record ) )
 			return $record['label'];
 
@@ -587,7 +596,7 @@ class model
 		if ( array_key_exists( $name, $record ) )
 			return $record[$name];
 
-		throw new \InvalidArgumentException( "unknown property: " . static::set() . ".$name" );
+		throw new \InvalidArgumentException( 'unknown property: ' . static::set() . ".$name" );
 	}
 
 	public function __set( $name, $value )
