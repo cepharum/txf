@@ -38,10 +38,18 @@ use \de\toxa\txf\txf as txf;
  *
  *     <?php namespace de\toxa\txf;
  *
- *     $widget = page\widget_editor::create()->processInput();
+ *     namespace de\toxa\txf;
  *
- *     view::title( $widget->getPage()->title );
- *     view::main( $widget->getCode() );
+ *     $selectors = application::current()->selectors;
+ *
+ *     $page = page\widget_editor::create( $selectors[0] )
+ *                 ->setMayEdit( user::current()->isAuthenticated() )
+ *                 ->setWantEdit( $selectors[1] === 'edit'  )
+ *                 ->setEditorUrl( context::selfURL( false, '%s', 'edit' ) )
+ *                 ->processInput();
+ *
+ *     view::title( $page->getPage()->title );
+ *     view::main( $page->getCode() );
  *
  * @package de\toxa\txf\page
  */
