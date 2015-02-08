@@ -750,6 +750,13 @@ class model
 			if ( !$source->createDataset( $dataSet, static::getSchema(), static::$id ) )
 				throw new datasource_exception( $source, 'updating schema failed' );
 		}
+
+		foreach ( static::$relations as $name => $definition ) {
+			$nextModel = static::relation( $name )->nodeAtIndex( 1 )->getModel();
+			if ( $nextModel->isVirtual() ) {
+				$nextModel->declareInDatasource( $source );
+			}
+		}
 	}
 
 	/**
@@ -1419,8 +1426,8 @@ class model
 				$nextDefinition     = $nextModel->getDefinition();
 
 				// get properties in either neighbouring model to refer to in virtual
-				$previousNames = array_values( (array) @$referenceToAppend['on'] );
-				$nextNames     = array_values( (array) @$succeedingReference['on'] );
+				$previousNames = array_values( (array) _1( @$referenceToAppend['on'], 'id' ) );
+				$nextNames     = array_values( (array) _1( @$succeedingReference['on'], 'id' ) );
 
 				if ( !count( $previousNames ) || !count( $nextNames ) )
 					throw new \InvalidArgumentException( 'missing names of properties virtual node is referencing on' );

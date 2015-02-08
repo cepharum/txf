@@ -184,6 +184,7 @@ class model_relation_model
 	 *
 	 * @throws datasource_exception on failing to declare model's data set
 	 * @param datasource\connection $source
+	 * @return model_relation_model current instance
 	 */
 
 	public function declareInDatasource( datasource\connection $source )
@@ -195,7 +196,7 @@ class model_relation_model
 		if ( array_key_exists( $setName, self::$declaredCached ) )
 			foreach ( self::$declaredCached[$setName] as $s )
 				if ( $s === $source )
-					return;
+					return $this;
 
 
 		if ( $this->isVirtual() ) {
@@ -211,6 +212,8 @@ class model_relation_model
 		// add mark to runtime cache on having declared model's data set in
 		// provided data source
 		self::$declaredCached[$setName] = array_merge( (array) self::$declaredCached[$setName], array( $source ) );
+
+		return $this;
 	}
 
 	/**
