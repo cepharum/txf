@@ -26,8 +26,13 @@
  * @author: Thomas Urban
  */
 
-namespace de\toxa\txf;
+namespace de\toxa\txf\model;
 
+use \de\toxa\txf\datasource\connection;
+use \de\toxa\txf\datasource\query;
+use \de\toxa\txf\data;
+use \de\toxa\txf\variable_space;
+use \de\toxa\txf\view;
 
 /**
  * Model relation processor.
@@ -57,7 +62,7 @@ class model_relation
 
 	/**
 	 * link to datasource
-	 * @var datasource\connection
+	 * @var connection
 	 */
 
 	protected $datasource = null;
@@ -204,11 +209,11 @@ class model_relation
 	/**
 	 * Assigns data source to use on processing relation.
 	 *
-	 * @param datasource\connection $datasource
+	 * @param connection $datasource
 	 * @return $this
 	 */
 
-	public function setDatasource( datasource\connection $datasource )
+	public function setDatasource( connection $datasource )
 	{
 		$this->datasource = $datasource;
 
@@ -218,7 +223,7 @@ class model_relation
 	/**
 	 * Retrieves datasource relation is operating on.
 	 *
-	 * @return datasource\connection datasource associated with relation
+	 * @return connection datasource associated with relation
 	 */
 
 	public function getDatasource()
@@ -614,7 +619,7 @@ class model_relation
 	 *
 	 * @param bool $bound true to apply
 	 * @param bool $reverse true to start describing query at end point of relation
-	 * @return datasource\query
+	 * @return query
 	 */
 
 	public function createQuery( $bound = true, $reverse = false ) {
@@ -772,7 +777,7 @@ class model_relation
 	 * filtering according to current binding of relation.
 	 *
 	 * @param bool $blnBind true to add filter according to relation's binding
-	 * @return datasource\query compiled query
+	 * @return query compiled query
 	 */
 
 	public function query( $blnBind = true )
@@ -784,7 +789,7 @@ class model_relation
 			throw new \RuntimeException( 'relation is not configured to use datasource, yet' );
 
 
-		/** @var datasource\query $query */
+		/** @var query $query */
 		$source = $this->datasource;
 		$query  = null;
 
@@ -864,7 +869,7 @@ class model_relation
 			$labels = $model->getLabelProperties();
 			foreach ( $labels as $index => $property )
 				$query->addProperty( $set . '.' . $source->quoteName( $property ), "l$index" );
-		}
+		} else $labels = array();   // for statisfying code inspection, only
 
 
 		/*

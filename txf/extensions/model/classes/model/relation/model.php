@@ -26,10 +26,10 @@
  * @author: Thomas Urban
  */
 
-namespace de\toxa\txf;
+namespace de\toxa\txf\model;
 
-
-use de\toxa\txf\datasource\datasource_exception;
+use \de\toxa\txf\datasource\connection;
+use \de\toxa\txf\datasource\datasource_exception;
 
 /**
  * Wraps access on model of a relation's node to transparently support nodes
@@ -98,7 +98,7 @@ class model_relation_model
 
 	public static function createOnModel( \ReflectionClass $model )
 	{
-		if ( !$model->isSubclassOf( 'de\toxa\txf\model' ) )
+		if ( !$model->isSubclassOf( 'de\toxa\txf\model\model' ) )
 			throw new \InvalidArgumentException( 'not a model: ' . $model->getName() );
 
 		$result = new static();
@@ -183,11 +183,11 @@ class model_relation_model
 	 * Declares data set of model in provided data source.
 	 *
 	 * @throws datasource_exception on failing to declare model's data set
-	 * @param datasource\connection $source
+	 * @param connection $source
 	 * @return model_relation_model current instance
 	 */
 
-	public function declareInDatasource( datasource\connection $source )
+	public function declareInDatasource( connection $source )
 	{
 		$setName = $this->getSetName();
 
@@ -239,15 +239,15 @@ class model_relation_model
 	 *
 	 * @see model::listItemLabels()
 	 *
-	 * @param datasource\connection $source data source to search in
+	 * @param connection $source data source to search in
 	 * @param array $properties additional properties to fetch per matching record
 	 * @param array $filterProperties properties of items to test for matching
 	 * @param array $filterValues values of properties per item to test for matching
 	 * @return array @see model::listItemLabels()
-	 * @throws datasource\datasource_exception
+	 * @throws datasource_exception
 	 */
 
-	public function listItems( datasource\connection $source, $properties = null, $filterProperties = null, $filterValues = array() )
+	public function listItems( connection $source, $properties = null, $filterProperties = null, $filterValues = array() )
 	{
 		if ( !$this->isVirtual() )
 			return $this->reflection->getMethod( 'listItemLabels' )->invoke( null, null, $source, $properties, $filterProperties, $filterValues );
@@ -345,12 +345,12 @@ class model_relation_model
 	/**
 	 * Selects instance of model using its ID.
 	 *
-	 * @param datasource\connection $source data source containing records on items of model
+	 * @param connection $source data source containing records on items of model
 	 * @param array|scalar $id ID of item to select
 	 * @return model
 	 */
 
-	public function selectInstance( datasource\connection $source, $id )
+	public function selectInstance( connection $source, $id )
 	{
 		if ( $this->isVirtual() )
 			throw new \RuntimeException( 'cannot select instances of virtual model' );

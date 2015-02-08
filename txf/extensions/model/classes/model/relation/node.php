@@ -26,8 +26,9 @@
  * @author: Thomas Urban
  */
 
-namespace de\toxa\txf;
+namespace de\toxa\txf\model;
 
+use \de\toxa\txf\datasource\connection;
 
 /**
  * Implements single node in a relation of models.
@@ -294,11 +295,11 @@ class model_relation_node {
 	 * quoted according to qualification rules of connected datasource.
 	 *
 	 * @param bool $ignoreAlias set true to force retrieval of model's set name
-	 * @param datasource\connection $datasource connected datasource used for optionally qualifying set's name
+	 * @param connection $datasource connected datasource used for optionally qualifying set's name
 	 * @return string name to use on addressing this node's data set
 	 */
 
-	public function getName( $ignoreAlias = false, datasource\connection $datasource = null )
+	public function getName( $ignoreAlias = false, connection $datasource = null )
 	{
 		if ( $this->alias && !$ignoreAlias ) {
 			return $this->alias;
@@ -316,11 +317,11 @@ class model_relation_node {
 	 * quoted (and qualified) according to quoting and qualification rules of
 	 * connected datasource.
 	 *
-	 * @param datasource\connection $db
+	 * @param connection $db
 	 * @return string
 	 */
 
-	public function getFullName( datasource\connection $db = null )
+	public function getFullName( connection $db = null )
 	{
 		$name  = $this->getName( true );
 		$alias = $this->alias ? $this->alias : null;
@@ -420,12 +421,12 @@ class model_relation_node {
 	 * qualified implicitly according to quoting and qualification rules of
 	 * linked datasource.
 	 *
-	 * @param datasource\connection $context
+	 * @param connection $context
 	 * @param bool $qualifyNames true to have all names prefixed with name or alias of node's data set
 	 * @return array
 	 */
 
-	public function getPredecessorNames( datasource\connection $context = null, $qualifyNames = false )
+	public function getPredecessorNames( connection $context = null, $qualifyNames = false )
 	{
 		return $this->_qualifyNames( $this->backwardNames, $context, $qualifyNames );
 	}
@@ -438,12 +439,12 @@ class model_relation_node {
 	 * declared. On providing datasource connection all names are quoted
 	 * implicitly according to quoting rules of linked datasource.
 	 *
-	 * @param datasource\connection $context
+	 * @param connection $context
 	 * @param bool $qualifyNames true to have all names prefixed with name or alias of node's data set
 	 * @return array
 	 */
 
-	public function getSuccessorNames( datasource\connection $context = null, $qualifyNames = false )
+	public function getSuccessorNames( connection $context = null, $qualifyNames = false )
 	{
 		return $this->_qualifyNames( $this->forwardNames, $context, $qualifyNames );
 	}
@@ -658,12 +659,12 @@ class model_relation_node {
 	 * quoted according to quoting rules of that datasource.
 	 *
 	 * @param array $names set of property names to qualify
-	 * @param datasource\connection $context
+	 * @param connection $context
 	 * @param bool $qualifyActually true to prefix all names with set's name
 	 * @return array set of qualified (and optionally quoted) names of properties
 	 */
 
-	protected function _qualifyNames( $names, datasource\connection $context = null, $qualifyActually = false )
+	protected function _qualifyNames( $names, connection $context = null, $qualifyActually = false )
 	{
 		if ( is_null( $names ) )
 			return array();

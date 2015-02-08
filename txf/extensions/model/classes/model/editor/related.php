@@ -26,9 +26,13 @@
  * @author: Thomas Urban
  */
 
-namespace de\toxa\txf;
+namespace de\toxa\txf\model;
 
-use de\toxa\txf\datasource\datasource_exception;
+use \de\toxa\txf\datasource\connection;
+use \de\toxa\txf\datasource\datasource_exception;
+use \de\toxa\txf\markup;
+use \de\toxa\txf\html_form;
+use \de\toxa\txf\data;
 
 class model_editor_related extends model_editor_abstract
 {
@@ -274,7 +278,7 @@ class model_editor_related extends model_editor_abstract
 	{
 		$min = max( $this->isMandatory ? 1 : 0, $this->minCount );
 		if ( count( $input ) < $min )
-			throw new \InvalidArgumentException( $min > 1 ? _L('This information is required multiple times.') : _L('This information is required.') );
+			throw new \InvalidArgumentException( $min > 1 ? \de\toxa\txf\_L('This information is required multiple times.') : \de\toxa\txf\_L('This information is required.') );
 
 		$available = $this->getSelectableOptions();
 
@@ -305,7 +309,7 @@ class model_editor_related extends model_editor_abstract
 
 	public function render( html_form $form, $name, $input, $label, model_editor $editor, model_editor_field $field )
 	{
-		$available = array_merge( array( '0' => _L('-') ), $this->getSelectableOptions() );
+		$available = array_merge( array( '0' => \de\toxa\txf\_L('-') ), $this->getSelectableOptions() );
 
 		$values = array_pad( $input, $this->selectorCount, null );
 
@@ -318,7 +322,7 @@ class model_editor_related extends model_editor_abstract
 		$form->setRow( $name, $label, implode( "<br />\n", $selectors ), $this->isMandatory, null, null, $classes );
 
 		if ( count( $selectors ) < $this->maxCount )
-			$form->setRowCode( $name, markup::paragraph( markup::button( $name . '_add', _L('Add Entry') ), 'actionPanel' ) );
+			$form->setRowCode( $name, markup::paragraph( markup::button( $name . '_add', \de\toxa\txf\_L('Add Entry') ), 'actionPanel' ) );
 
 		return $this;
 	}
@@ -517,12 +521,12 @@ class model_editor_related extends model_editor_abstract
 	 * Retrieves set of available bindings (e.g. for stuffing selectors in editor).
 	 *
 	 * @see model::listItemLabels()
-	 * @param datasource\connection|null $source data source to fetch items from,
+	 * @param connection|null $source data source to fetch items from,
 	 *        null to use default of model mentioned in selector
 	 * @return array see extended result form of model::listItemLabels()
 	 */
 
-	protected function _selectAvailable( datasource\connection $source )
+	protected function _selectAvailable( connection $source )
 	{
 		return $this->_select( $source, $this->_getSelectorOfAvailable() );
 	}
@@ -531,12 +535,12 @@ class model_editor_related extends model_editor_abstract
 	 * Retrieves set of editable bindings actually existing in datasource.
 	 *
 	 * @see model::listItemLabels()
-	 * @param datasource\connection|null $source data source to fetch items from,
+	 * @param connection|null $source data source to fetch items from,
 	 *        null to use default of model mentioned in selector
 	 * @return array see extended result form of model::listItemLabels()
 	 */
 
-	protected function _selectExisting( datasource\connection $source )
+	protected function _selectExisting( connection $source )
 	{
 		return $this->_select( $source, $this->_getSelectorOfExisting() );
 	}
@@ -544,14 +548,14 @@ class model_editor_related extends model_editor_abstract
 	/**
 	 * Retrieves items matching selector from datasource.
 	 *
-	 * @param datasource\connection|null $source data source to fetch items from,
+	 * @param connection|null $source data source to fetch items from,
 	 *        null to use default of model mentioned in selector
 	 * @param array $selector selector retrieved from _getSelectorOfAvailable()
 	 *        or _getSelectorOfExisting()
 	 * @return array
 	 */
 
-	protected function _select( datasource\connection $source = null, $selector )
+	protected function _select( connection $source = null, $selector )
 	{
 		// get list of items
 		/** @var model_relation_model $model */
@@ -574,13 +578,13 @@ class model_editor_related extends model_editor_abstract
 	 * Resulting term is using parameter markers for values of those properties
 	 * to be matched. These values have to be given on querying data source.
 	 *
-	 * @param datasource\connection $source data source to use for quoting names
+	 * @param connection $source data source to use for quoting names
 	 *        of filtering properties
 	 * @param array $filter set of "properties" and "values"
 	 * @return string SQL-term
 	 */
 
-	protected function _compileFilterTerm( datasource\connection $source, $filter )
+	protected function _compileFilterTerm( connection $source, $filter )
 	{
 		return implode( ' AND ', array_map( function( $n ) use ( $source ) {
 			return $source->quoteName( $n ) . '=?';
@@ -593,12 +597,12 @@ class model_editor_related extends model_editor_abstract
 	 * The name is optionally qualified and quoted on providing data source
 	 * considered to contain data set.
 	 *
-	 * @param datasource\connection $source data source to use for quoting name
+	 * @param connection $source data source to use for quoting name
 	 * @param model_relation_model $model description of a model
 	 * @return string optionally quoted name of set associated with described model
 	 */
 
-	protected function _setNameOfModel( datasource\connection $source = null, model_relation_model $model )
+	protected function _setNameOfModel( connection $source = null, model_relation_model $model )
 	{
 		$set = $model->getSetName();
 
@@ -616,12 +620,12 @@ class model_editor_related extends model_editor_abstract
 	 * only, this method is considered to use in conjunction with selector
 	 * returned from model_editor_related::_getSelectorOfExisting().
 	 *
-	 * @param datasource\connection $source connection data source
+	 * @param connection $source connection data source
 	 * @param array $selector selector describing bindings to release
-	 * @throws datasource\datasource_exception on failing to adjust data source
+	 * @throws datasource_exception on failing to adjust data source
 	 */
 
-	protected function _unbindSelected( datasource\connection $source, $selector )
+	protected function _unbindSelected( connection $source, $selector )
 	{
 		if ( array_key_exists( 'null', $selector ) ) {
 			// Selector is configured to keep existing instances of mutable node
@@ -693,7 +697,7 @@ class model_editor_related extends model_editor_abstract
 		}
 	}
 
-	protected function _rebind( datasource\connection $source, $selector, $binding )
+	protected function _rebind( connection $source, $selector, $binding )
 	{
 		// ensure to have related data set
 		$selector['model']->declareInDatasource( $source );

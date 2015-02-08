@@ -26,7 +26,10 @@
  * @author: Thomas Urban
  */
 
-namespace de\toxa\txf;
+namespace de\toxa\txf\model;
+
+use \de\toxa\txf\html_form;
+use \de\toxa\txf\markup;
 
 class model_editor_texteditor extends model_editor_text
 {

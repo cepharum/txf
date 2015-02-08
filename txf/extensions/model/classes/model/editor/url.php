@@ -26,7 +26,10 @@
  * @author: Thomas Urban
  */
 
-namespace de\toxa\txf;
+namespace de\toxa\txf\model;
+
+use \de\toxa\txf\markup;
+use \de\toxa\txf\url;
 
 class model_editor_url extends model_editor_text
 {
@@ -39,10 +42,10 @@ class model_editor_url extends model_editor_text
 		if ( $input != '' )
 		{
 			if ( !url::isFile( $input ) )
-				throw new \InvalidArgumentException( _L('This is not a valid URL.') );
+				throw new \InvalidArgumentException( \de\toxa\txf\_L('This is not a valid URL.') );
 
 			if ( $this->absolute && url::isRelative( $input ) )
-				throw new \InvalidArgumentException( _L('This URL must be absolute. Include scheme e.g. http://www.example.com/!') );
+				throw new \InvalidArgumentException( \de\toxa\txf\_L('This URL must be absolute. Include scheme e.g. http://www.example.com/!') );
 		}
 
 		return true;

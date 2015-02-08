@@ -26,7 +26,7 @@
  * @author: Thomas Urban
  */
 
-namespace de\toxa\txf;
+namespace de\toxa\txf\model;
 
 
 class model_exception extends \Exception

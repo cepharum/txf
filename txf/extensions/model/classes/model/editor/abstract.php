@@ -26,7 +26,7 @@
  * @author: Thomas Urban
  */
 
-namespace de\toxa\txf;
+namespace de\toxa\txf\model;
 
 
 abstract class model_editor_abstract implements model_editor_element
@@ -95,7 +95,7 @@ abstract class model_editor_abstract implements model_editor_element
 		if ( $input === null )
 		{
 			if ( $this->isMandatory )
-				throw new \InvalidArgumentException( _L('This information is required.') );
+				throw new \InvalidArgumentException(  \de\toxa\txf\_L('This information is required.') );
 		}
 
 		return true;
