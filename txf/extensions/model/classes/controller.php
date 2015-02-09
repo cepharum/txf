@@ -269,7 +269,7 @@ class controller implements widget {
 
 			$this->action = strtolower( trim( $this->action ) );
 
-			if ( preg_match( '/^(\.+)\.([a-z]+)$/', $this->action, $matches ) ) {
+			if ( preg_match( '/^(.+)\.([a-z]+)$/', $this->action, $matches ) ) {
 				$this->format = strtolower( $matches[2] );
 				$this->action = trim( $matches[1] );
 			}
