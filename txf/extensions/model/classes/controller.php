@@ -33,6 +33,7 @@ use \de\toxa\txf\html;
 use \de\toxa\txf\txf;
 use \de\toxa\txf\view;
 use \de\toxa\txf\data;
+use \de\toxa\txf\input;
 
 
 /**
@@ -133,6 +134,15 @@ class controller implements widget {
 	 */
 
 	protected $panelSorting = null;
+
+	/**
+	 * Describes selected format to use in processing request and creating
+	 * response.
+	 *
+	 * @var string
+	 */
+
+	protected $format = null;
 
 
 
@@ -258,9 +268,62 @@ class controller implements widget {
 			}
 
 			$this->action = strtolower( trim( $this->action ) );
+
+			if ( preg_match( '/^(\.+)\.([a-z]+)$/', $this->action, $matches ) ) {
+				$this->format = strtolower( $matches[2] );
+				$this->action = trim( $matches[1] );
+			}
 		}
 
 		return $this->action;
+	}
+
+	/**
+	 * Retrieves format to use on processing request and creating response.
+	 *
+	 * @return string
+	 */
+
+	public function getFormat() {
+		if ( $this->format === null ) {
+			$this->getAction();
+
+			$this->format = input::vget( 'format', \de\toxa\txf\_1( $this->format, 'html' ) );
+		}
+
+		return $this->format;
+	}
+
+	/**
+	 * Detects if request for processing HTML input for creating HTML response.
+	 *
+	 * This is the normal/default case.
+	 *
+	 * @return bool
+	 */
+
+	public function isHtmlRequest() {
+		return $this->getFormat() === 'html';
+	}
+
+	/**
+	 * Detects if request for processing JSON input for creating JSON response.
+	 *
+	 * @return bool
+	 */
+
+	public function isJsonRequest() {
+		return $this->getFormat() === 'json';
+	}
+
+	/**
+	 * Detects if request for processing XML input for creating XML response.
+	 *
+	 * @return bool
+	 */
+
+	public function isXmlRequest() {
+		return $this->getFormat() === 'xml';
 	}
 
 	public function setActionHandler( $action, $handler = null ) {
