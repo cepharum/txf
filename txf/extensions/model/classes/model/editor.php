@@ -805,7 +805,14 @@ class model_editor
 
 						if ( is_callable( $validatorCallback ) )
 						{
-							$localErrors = call_user_func( $validatorCallback, $properties, $errors );
+							// provide opportunity to qualify properties for validation
+							$qualified = $properties;
+							foreach ( $fields as $field )
+								/** @var model_editor_field $field */
+								$qualified = $field->type()->beforeValidating( $ctx, $item, $qualified, $field );
+
+							// invoke custom callback given those qualified copy of properties for validating
+							$localErrors = call_user_func( $validatorCallback, $qualified, $errors, $item ? $item->id() : null );
 							if ( $localErrors === false || is_string( $localErrors ) || ( is_array( $localErrors ) && count( $localErrors ) ) )
 							{
 								if ( is_array( $localErrors ) )

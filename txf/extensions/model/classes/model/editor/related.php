@@ -908,6 +908,25 @@ class model_editor_related extends model_editor_abstract
 
 	private $__savedBindings = null;
 
+	public function beforeValidating( model_editor $editor, model $item = null, $itemProperties, model_editor_field $field )
+	{
+		if ( array_key_exists( $this->relationName, $itemProperties ) )
+		{
+			// Editor is including information on bindings of this element's
+			// relation.
+			// -> For this element is using local IDs for addressing selected
+			//    relations these local IDs need to be mapped to bindable
+			//    addresses for validation.
+			$element = $this;
+
+			$itemProperties[$this->relationName] = array_map( function( $local ) use ( $element ) {
+				return $element->localIdToBinding( $local );
+			}, (array) $itemProperties[$this->relationName] );
+		}
+
+		return $itemProperties;
+	}
+
 	public function beforeStoring( model_editor $editor, model $item = null, $itemProperties, model_editor_field $field )
 	{
 		if ( array_key_exists( $this->relationName, $itemProperties ) )
