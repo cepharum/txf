@@ -28,6 +28,8 @@
 
 namespace de\toxa\txf\model;
 
+use \de\toxa\txf\html_form;
+
 class model_editor_date extends model_editor_abstract
 {
 	protected $notBefore = null;
