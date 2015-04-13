@@ -144,7 +144,7 @@ class uuid
 	 * @return bool true if both UUIDs have identical value, false otherwise (e.g. if either UUID is invalid)
 	 */
 
-	function areEqual( $a, $b ) {
+	public static function areEqual( $a, $b ) {
 		if ( static::isValid( $a ) && static::isValid( $b ) ) {
 			return !strcasecmp( $a, $b );
 		}
