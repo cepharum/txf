@@ -132,4 +132,23 @@ class uuid
 
 		return static::isValidHex( $uuid );
 	}
+
+	/**
+	 * Detects if two provided UUIDs are equal or not.
+	 * 
+	 * This method is normalizing either UUID prior to comparing, thus you might give
+	 * a mix of binary and hex-encoded UUIDs.
+	 * 
+	 * @param $a string first UUID to compare with second
+	 * @param $b string second UUID to compare with first
+	 * @return bool true if both UUIDs have identical value, false otherwise (e.g. if either UUID is invalid)
+	 */
+
+	function areEqual( $a, $b ) {
+		if ( static::isValid( $a ) && static::isValid( $b ) ) {
+			return !strcasecmp( $a, $b );
+		}
+
+		return false;
+	}
 }
