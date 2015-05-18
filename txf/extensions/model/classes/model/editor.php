@@ -26,7 +26,17 @@
  * @author: Thomas Urban
  */
 
-namespace de\toxa\txf;
+namespace de\toxa\txf\model;
+
+use \de\toxa\txf\datasource\connection;
+use \de\toxa\txf\html_form;
+use \de\toxa\txf\datasource;
+use \de\toxa\txf\user;
+use \de\toxa\txf\input;
+use \de\toxa\txf\view;
+use \de\toxa\txf\http_exception;
+use \de\toxa\txf\data;
+use \de\toxa\txf\html;
 
 /**
  * Wraps description of single field of editor.
@@ -120,7 +130,7 @@ class model_editor
 	/**
 	 * link to datasource model is stored in
 	 *
-	 * @var datasource\connection
+	 * @var connection
 	 */
 
 	protected $datasource;
@@ -216,24 +226,24 @@ class model_editor
 
 
 
-	protected function __construct( datasource\connection $datasource = null, $formName = null )
+	protected function __construct( connection $datasource = null, $formName = null )
 	{
 		if ( $datasource === null )
 			$datasource = datasource::selectConfigured( 'default' );
 
 		$this->datasource = $datasource;
-		$this->formName   = _1($formName,'model_editor');
+		$this->formName   = \de\toxa\txf\_1($formName,'model_editor');
 	}
 
 	/**
 	 *
-	 * @param $datasource \de\toxa\txf\datasource\connection
+	 * @param $datasource connection
 	 * @param $model \ReflectionClass
 	 * @param $formName string
 	 * @return model_editor
 	 */
 
-	public static function createOnModel( datasource\connection $datasource = null, \ReflectionClass $model, $formName = null )
+	public static function createOnModel( connection $datasource = null, \ReflectionClass $model, $formName = null )
 	{
 		$editor = new static( $datasource, $formName, $model, null );
 
@@ -243,7 +253,7 @@ class model_editor
 		return $editor;
 	}
 
-	public static function createOnItem( datasource\connection $datasource = null, model $item, $formName = null )
+	public static function createOnItem( connection $datasource = null, model $item, $formName = null )
 	{
 		$model  = new \ReflectionClass( $item );
 		$editor = new static( $datasource, $formName, $model, $item );
@@ -254,13 +264,13 @@ class model_editor
 		return $editor;
 	}
 
-	public static function create( datasource\connection $datasource, \ReflectionClass $model, model $item = null, $formName = null )
+	public static function create( connection $datasource, \ReflectionClass $model, model $item = null, $formName = null )
 	{
 		if ( !$item )
 			return static::createOnModel( $datasource, $model, $formName );
 
 		if ( !$model->isInstance( $item ) )
-			throw new \InvalidArgumentException( _L('Selected item is not instance of requested model.') );
+			throw new \InvalidArgumentException( \de\toxa\txf\_L('Selected item is not instance of requested model.') );
 
 		return static::createOnItem( $datasource, $item, $formName );
 	}
@@ -279,7 +289,7 @@ class model_editor
 	 * retrieved. Otherwise this method is returning data source provided on
 	 * creating editor.
 	 *
-	 * @return datasource\connection
+	 * @return connection
 	 */
 
 	public function source()
@@ -741,7 +751,7 @@ class model_editor
 						return 'delete';
 					}
 
-					view::flash( _L('You must not delete this item.'), 'error' );
+					view::flash( \de\toxa\txf\_L('You must not delete this item.'), 'error' );
 					return false;
 
 				case 'save' :
@@ -758,7 +768,7 @@ class model_editor
 					$this->onCreating = !$this->hasItem();
 					if ( !$this->onCreating && !$this->may['edit'] )
 					{
-						view::flash( _L('You must not edit this item.'), 'error' );
+						view::flash( \de\toxa\txf\_L('You must not edit this item.'), 'error' );
 						return false;
 					}
 
@@ -782,7 +792,7 @@ class model_editor
 									if ( $success )
 										$properties[$property] = $input;
 									else
-										$errors[$property] = _L('Your input is invalid.');
+										$errors[$property] = \de\toxa\txf\_L('Your input is invalid.');
 								}
 								catch ( \Exception $e )
 								{
@@ -795,7 +805,14 @@ class model_editor
 
 						if ( is_callable( $validatorCallback ) )
 						{
-							$localErrors = call_user_func( $validatorCallback, $properties, $errors );
+							// provide opportunity to qualify properties for validation
+							$qualified = $properties;
+							foreach ( $fields as $field )
+								/** @var model_editor_field $field */
+								$qualified = $field->type()->beforeValidating( $ctx, $item, $qualified, $field );
+
+							// invoke custom callback given those qualified copy of properties for validating
+							$localErrors = call_user_func( $validatorCallback, $qualified, $errors, $item ? $item->id() : null );
 							if ( $localErrors === false || is_string( $localErrors ) || ( is_array( $localErrors ) && count( $localErrors ) ) )
 							{
 								if ( is_array( $localErrors ) )
@@ -859,11 +876,11 @@ class model_editor
 					if ( $success )
 					{
 						// permit closing editor after having saved all current input
-						view::flash( _L('Your changes have been saved.') );
+						view::flash( \de\toxa\txf\_L('Your changes have been saved.') );
 						return 'saved';
 					}
 
-					view::flash( _L('Failed to save your changes.'), 'error' );
+					view::flash( \de\toxa\txf\_L('Failed to save your changes.'), 'error' );
 			}
 		}
 
@@ -895,7 +912,7 @@ class model_editor
 	public function renderEditable()
 	{
 		if ( !$this->isEditable() )
-			throw new \LogicException( _L('Model editor is not enabled.') );
+			throw new \LogicException( \de\toxa\txf\_L('Model editor is not enabled.') );
 
 
 		$form = $this->form();
@@ -938,12 +955,12 @@ class model_editor
 
 		// compile buttons to show at end of editor
 		if ( !$this->item || $this->may['edit'] )
-			$form->setButtonRow( '_cmd', $this->item ? _L('Save') : _L('Create'), 'save' );
+			$form->setButtonRow( '_cmd', $this->item ? \de\toxa\txf\_L('Save') : \de\toxa\txf\_L('Create'), 'save' );
 
-		$form->setButtonRow( '_cmd', _L('Cancel'), 'cancel' );
+		$form->setButtonRow( '_cmd', \de\toxa\txf\_L('Cancel'), 'cancel' );
 
 		if ( $this->item && $this->may['delete'] )
-			$form->setButtonRow( '_cmd', _L('Delete'), 'delete' );
+			$form->setButtonRow( '_cmd', \de\toxa\txf\_L('Delete'), 'delete' );
 
 		if ( $this->sortingOrder )
 			$form->setSortingOrder( $this->sortingOrder );
@@ -988,7 +1005,7 @@ class model_editor
 	public function renderReadonly()
 	{
 		if ( !$this->item )
-			throw new http_exception( 400, _L('Your request is not including selection of item to be displayed.') );
+			throw new http_exception( 400, \de\toxa\txf\_L('Your request is not including selection of item to be displayed.') );
 
 		$fields = $this->fields;
 		$editor = $this;
@@ -1021,7 +1038,7 @@ class model_editor
 
 		return html::arrayToCard( $record,
 					strtolower( basename( strtr( $this->class->getName(), '\\', '/' ) ) ) . 'Details',
-					$cellFormatter, $labelFormatter, _L('-') );
+					$cellFormatter, $labelFormatter, \de\toxa\txf\_L('-') );
 	}
 
 	/**
@@ -1092,7 +1109,7 @@ class model_editor
 	public function selectItem( $id )
 	{
 		if ( $this->item )
-			throw new \LogicException( _L('Editor is already operating on model instance.') );
+			throw new \LogicException( \de\toxa\txf\_L('Editor is already operating on model instance.') );
 
 		if ( $id !== null )
 		{

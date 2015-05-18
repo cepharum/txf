@@ -26,7 +26,7 @@
  * @author: Thomas Urban
  */
 
-namespace de\toxa\txf;
+namespace de\toxa\txf\model;
 
 
 abstract class model_editor_abstract implements model_editor_element
@@ -95,7 +95,7 @@ abstract class model_editor_abstract implements model_editor_element
 		if ( $input === null )
 		{
 			if ( $this->isMandatory )
-				throw new \InvalidArgumentException( _L('This information is required.') );
+				throw new \InvalidArgumentException(  \de\toxa\txf\_L('This information is required.') );
 		}
 
 		return true;
@@ -185,18 +185,50 @@ abstract class model_editor_abstract implements model_editor_element
 	}
 
 	/**
+	 * Gets called before invoking optionally given custom validator for checking
+	 * properties of model item in editor instance.
+	 *
+	 * This method is working like a filter in that it might adjust properties
+	 * in $itemProperties to be stored and return that filtered set to be used
+	 * by editor instead of provided one.
+	 *
+	 * By intention implementations should not adjust existing values related
+	 * to different editor element, but remove its own values on demand or add
+	 * some more values qualifying current element's data to be validated.
+	 *
+	 * @note This method is called right before validating properties of edited
+	 *       item. It isn't designed to validate provided values itself!
+	 * @note This method is invoked on every field of editor, but don't rely on
+	 *       a particular order of invocations.
+	 * @note beforeValidating() is called as part of a transaction that might be
+	 *       rolled back by throwing exception.
+	 *
+	 * @param model_editor $editor editor instance going to store values of item
+	 * @param model $item|null item to be updated, null on creating item
+	 * @param array $itemProperties values of properties going to be stored by editor
+	 * @param model_editor_field $field currently processed field
+	 * @return array filtered/extended set of values
+	 */
+
+	public function beforeValidating( model_editor $editor, model $item = null, $itemProperties, model_editor_field $field )
+	{
+		// keep properties as-is by default
+		return $itemProperties;
+	}
+
+	/**
 	 * Gets called before storing properties of model item in editor instance.
 	 *
 	 * This method is working like a filter in that it might adjust properties
-	 * in $allData to be stored and return that filtered set to be used by
-	 * editor instead of provided one.
+	 * in $itemProperties to be stored and return that filtered set to be used
+	 * by editor instead of provided one.
 	 *
 	 * By intention implementations should not adjust existing values related
 	 * to different editor element, but remove its own values on demand or add
 	 * some more values qualifying current element's data to be stored.
 	 *
-	 * @note This method is called right before saving properties to edited
-	 *       item. It isn't designed to store provided values itself!
+	 * @note This method is called right before permanently saving properties to
+	 *       edited item. It isn't designed to store provided values itself!
 	 * @note This method is invoked on every field of editor, but don't rely on
 	 *       a particular order of invocations.
 	 * @note beforeStoring() is called as part of a transaction that might be

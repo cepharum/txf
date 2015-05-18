@@ -263,9 +263,13 @@ class data
 				if ( $_internal > 10 ) {
 					$value = '*MAX-DEPTH*';
 				} else {
-					$out  = '';
-					foreach ( $value as $item ) {
+					$isRegular = static::isRegularArray( $value );
+
+					$out = '';
+					foreach ( $value as $key => $item ) {
 						$out .= ( $out !== '' ? ', ' : '[' );
+						if ( !$isRegular )
+							$out .= ( is_integer( $key ) ? $key : '"' . $key . '"' ) . ' => ';
 						$out .= static::describe( $item, $includeType, $fullSize, $_internal + 1 );
 					}
 					$value = $out . ']';
@@ -296,6 +300,29 @@ class data
 	}
 
 	/**
+	 * Detects if provided value is array of elements continuously indexed from
+	 * 0 to predecessor of number of elements.
+	 *
+	 * @param mixed $value some value to be tested
+	 * @return bool true if $value is "regular array", false if it's hash or non-array
+	 */
+
+	public static function isRegularArray( $value ) {
+		if ( is_array( $value ) ) {
+			$index = 0;
+			foreach ( $value as $key => $dummy ) {
+				if ( $key !== $index++ ) {
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
 	 * Converts provided value to best matching type according to actual value.
 	 *
 	 * This method is parsing a provided string for containing an integer,
@@ -304,7 +331,7 @@ class data
 	 *
 	 * @param mixed $value value to convert optionally
 	 * @param string $type name of type to prefer
-	 * @return provided or converted value
+	 * @return mixed provided or converted value
 	 */
 
 	public static function autoType( $value, $type = null )

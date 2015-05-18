@@ -20,7 +20,7 @@
 
 namespace de\toxa\txf\page;
 
-use \de\toxa\txf\model as model;
+use \de\toxa\txf\model\model;
 
 class model_page extends model {
 

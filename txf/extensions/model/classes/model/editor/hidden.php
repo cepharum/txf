@@ -26,7 +26,9 @@
  * @author: Thomas Urban
  */
 
-namespace de\toxa\txf;
+namespace de\toxa\txf\model;
+
+use \de\toxa\txf\html_form;
 
 /**
  * Implements model editor element to use with hidden properties.

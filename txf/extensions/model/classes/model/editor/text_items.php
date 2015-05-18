@@ -26,7 +26,7 @@
  * @author: Thomas Urban
  */
 
-namespace de\toxa\txf;
+namespace de\toxa\txf\model;
 
 class model_editor_text_items extends model_editor_text
 {
@@ -66,10 +66,10 @@ class model_editor_text_items extends model_editor_text
 		$items = preg_split( '/[' . preg_quote( $this->separator ) . ']/', $input );
 
 		if ( $this->minCount > 0 && $this->minCount > count( $items ) )
-			throw new \InvalidArgumentException( _L('Provide additional information here!') );
+			throw new \InvalidArgumentException( \de\toxa\txf\_L('Provide additional information here!') );
 
 		if ( $this->maxCount > 0 && $this->maxCount < count( $items ) )
-			throw new \InvalidArgumentException( _L('Provide less information here!') );
+			throw new \InvalidArgumentException( \de\toxa\txf\_L('Provide less information here!') );
 
 		return true;
 	}
@@ -112,7 +112,7 @@ class model_editor_text_items extends model_editor_text
 	 *       used on normalizing for joining split elements back into string.
 	 * @note Default separator is semicolon.
 	 *
-	 * @param string $separators string containing all supported separators
+	 * @param string $separator string containing all supported separators
 	 * @return $this
 	 */
 

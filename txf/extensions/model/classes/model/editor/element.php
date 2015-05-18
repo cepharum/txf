@@ -26,7 +26,9 @@
  * @author: Thomas Urban
  */
 
-namespace de\toxa\txf;
+namespace de\toxa\txf\model;
+
+use \de\toxa\txf\html_form;
 
 interface model_editor_element
 {
@@ -46,6 +48,7 @@ interface model_editor_element
 
 	public function onSelectingItem( model_editor $editor, model $item, model_editor_field $field );
 	public function onLoading( model_editor $editor, model $item = null, $propertyName, model_editor_field $field );
+	public function beforeValidating( model_editor $editor, model $item = null, $itemProperties, model_editor_field $field );
 	public function beforeStoring( model_editor $editor, model $item = null, $itemProperties, model_editor_field $field );
 	public function afterStoring( model_editor $editor, model $item, $itemProperties, model_editor_field $field );
 	public function onDeleting( model_editor $editor, model $item, model_editor_field $field );

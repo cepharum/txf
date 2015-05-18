@@ -26,8 +26,10 @@
  * @author: Thomas Urban
  */
 
-namespace de\toxa\txf;
+namespace de\toxa\txf\model;
 
+use \de\toxa\txf\datasource\connection;
+use \de\toxa\txf\data;
 
 class model_relation_reference
 {
@@ -213,12 +215,12 @@ class model_relation_reference
 	 * turn.
 	 *
 	 * @param model_relation_node $node either end of current reference
-	 * @param datasource\connection $source optional connection to data source
+	 * @param connection $source optional connection to data source
 	 *        used to implicitly qualify returned properties
 	 * @return array property names of selected node's model
 	 */
 
-	public function getOppositePropertiesOf( model_relation_node $node, datasource\connection $source = null )
+	public function getOppositePropertiesOf( model_relation_node $node, connection $source = null )
 	{
 		if ( $node != $this->predecessorEnd && $node != $this->successorEnd )
 			throw new \InvalidArgumentException( 'foreign node rejected' );
@@ -264,11 +266,11 @@ class model_relation_reference
 	 * Values of returned properties MUST be adjusted on managing relation!
 	 *
 	 * @param bool $qualify true to prepend all properties' names by name of set
-	 * @param datasource\connection $source optionally used to quote names for use in querying connected data source
+	 * @param connection $source optionally used to quote names for use in querying connected data source
 	 * @return array set of property names, optionally qualified and/or quoted
 	 */
 
-	public function getReferencingPropertyNames( $qualify = false, datasource\connection $source = null )
+	public function getReferencingPropertyNames( $qualify = false, connection $source = null )
 	{
 		list( $names, $set ) = $this->_getNames( $this->referencingLeftToRight, $qualify );
 
@@ -285,11 +287,11 @@ class model_relation_reference
 	 * Values of returned properties MUST NOT be adjusted on managing relation!
 	 *
 	 * @param bool $qualify true to prepend all properties' names by name of set
-	 * @param datasource\connection $source optionally used to quote names for use in querying connected data source
+	 * @param connection $source optionally used to quote names for use in querying connected data source
 	 * @return array set of property names, optionally qualified and/or quoted
 	 */
 
-	public function getReferencedPropertyNames( $qualify = false, datasource\connection $source = null )
+	public function getReferencedPropertyNames( $qualify = false, connection $source = null )
 	{
 		list( $names, $set ) = $this->_getNames( !$this->referencingLeftToRight, $qualify );
 
@@ -439,11 +441,11 @@ class model_relation_reference
 	 *
 	 * @param array $arrNames set of property names to process
 	 * @param string|null $strSetOrAlias name/alias of data set, provide for qualified names, omit for unqualified names
-	 * @param datasource\connection $source used optionally to quote names for use in querying connected data source
+	 * @param connection $source used optionally to quote names for use in querying connected data source
 	 * @return array set of qualified and/or quoted names of properties
 	 */
 
-	protected function _qualifyNames( $arrNames, $strSetOrAlias = null, datasource\connection $source = null )
+	protected function _qualifyNames( $arrNames, $strSetOrAlias = null, connection $source = null )
 	{
 		$parts = array();
 

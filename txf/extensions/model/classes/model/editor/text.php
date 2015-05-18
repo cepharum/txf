@@ -26,7 +26,10 @@
  * @author: Thomas Urban
  */
 
-namespace de\toxa\txf;
+namespace de\toxa\txf\model;
+
+use \de\toxa\txf\html_form;
+use \de\toxa\txf\markup;
 
 /**
  * Implements model editor element providing single line text input.
@@ -65,23 +68,23 @@ class model_editor_text extends model_editor_abstract
 		if ( $input === null )
 		{
 			if ( $this->isMandatory )
-				throw new \InvalidArgumentException( _L('This information is required.') );
+				throw new \InvalidArgumentException( \de\toxa\txf\_L('This information is required.') );
 		}
 		else
 		{
 			$text = $this->limitWithoutHtml ? preg_replace( '/\s+/', '', strip_tags( $input ) ) : $input;
 
 			if ( $this->minLength > 0 && mb_strlen( $text ) < $this->minLength )
-				throw new \InvalidArgumentException( _L('Your input is too short.') );
+				throw new \InvalidArgumentException( \de\toxa\txf\_L('Your input is too short.') );
 
 			if ( $this->maxLength > 0 && mb_strlen( $text ) > $this->maxLength )
-				throw new \InvalidArgumentException( _L('Your input is too long.') );
+				throw new \InvalidArgumentException( \de\toxa\txf\_L('Your input is too long.') );
 
 			if ( $this->pattern && $input !== null && !preg_match( $this->pattern[0], $this->pattern[1] ? preg_replace( '/\s+/', '', $input ) : $input ) )
-				throw new \InvalidArgumentException( _L('Your input is invalid.') );
+				throw new \InvalidArgumentException( \de\toxa\txf\_L('Your input is invalid.') );
 
 			if ( preg_match( '#<(script|object|iframe|style|link)[\s/>]#i', $input ) )
-				throw new \InvalidArgumentException( _L('This input contains invalid HTML code.') );
+				throw new \InvalidArgumentException( \de\toxa\txf\_L('This input contains invalid HTML code.') );
 		}
 
 		return true;

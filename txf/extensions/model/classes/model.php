@@ -26,16 +26,20 @@
  * @author: Thomas Urban
  */
 
-namespace de\toxa\txf;
+namespace de\toxa\txf\model;
 
+use \de\toxa\txf\datasource;
+use \de\toxa\txf\datasource\connection;
+use \de\toxa\txf\datasource\query;
 use \de\toxa\txf\datasource\datasource_exception;
+use \de\toxa\txf\data;
 
 
 class model
 {
 	/**
 	 *
-	 * @var datasource\connection
+	 * @var connection
 	 */
 
 	protected $_source;
@@ -125,7 +129,7 @@ class model
 
 
 
-	protected function __construct( datasource\connection $source = null, $itemId )
+	protected function __construct( connection $source = null, $itemId )
 	{
 		if ( $source === null )
 			$source = datasource::selectConfigured( 'default' );
@@ -138,14 +142,14 @@ class model
 	/**
 	 * Provides model instances prepared for accessing item by ID.
 	 *
-	 * @param datasource\connection $source link to datasource to use instead of current one
+	 * @param connection $source link to datasource to use instead of current one
 	 * @param array|integer $itemId ID of item to be managed by instance
 	 * @return model instance of model prepared to manage selected item
 	 * @throws \InvalidArgumentException on providing invalid item ID
 	 * @throws datasource_exception on missing selected item in datasource
 	 */
 
-	public static function select( datasource\connection $source = null, $itemId )
+	public static function select( connection $source = null, $itemId )
 	{
 		if ( !is_array( $itemId ) && !$itemId )
 			throw new \InvalidArgumentException( 'invalid item ID' );
@@ -158,13 +162,13 @@ class model
 	 *
 	 * If multiple items are matching the first of them is retrieved, only.
 	 *
-	 * @param datasource\connection $source data source to look for matching item in
+	 * @param connection $source data source to look for matching item in
 	 * @param array $properties set of model's properties mapping into values to match
 	 * @return model|null matching model item, null on mismatch
 	 * @throws \InvalidArgumentException
 	 */
 
-	public static function find( datasource\connection $source = null, $properties )
+	public static function find( connection $source = null, $properties )
 	{
 		if ( !is_array( $properties ) || !count( $properties ) )
 			throw new \InvalidArgumentException( 'invalid set of properties to find' );
@@ -206,12 +210,12 @@ class model
 	 * Using this method is deprecated in favour of using model::getReflection()
 	 * instead.
 	 *
-	 * @param datasource\connection $source link to datasource to use instead of default
+	 * @param connection $source link to datasource to use instead of default
 	 * @return model
 	 * @deprecated
 	 */
 
-	public static function proxy( datasource\connection $source = null )
+	public static function proxy( connection $source = null )
 	{
 		return new static( $source, 0 );
 	}
@@ -243,10 +247,10 @@ class model
 			return static::$id;
 
 		if ( $maxDimension > count( static::$id ) )
-			throw new \LogicException( _L('Model isn\'t supporting IDs with requested dimensionality.') );
+			throw new \LogicException( \de\toxa\txf\_L('Model isn\'t supporting IDs with requested dimensionality.') );
 
 		if ( !( $dimension >= 0 ) || $dimension >= count( static::$id ) )
-			throw new \OutOfRangeException( _L('Model\'s ID is missing requested dimension.') );
+			throw new \OutOfRangeException( \de\toxa\txf\_L('Model\'s ID is missing requested dimension.') );
 
 		return static::$id[intval( $dimension )];
 	}
@@ -275,7 +279,7 @@ class model
 			return $label;
 
 		if ( !( $dimension >= 0 ) || $dimension > count( $label ) )
-			throw new \OutOfRangeException( _L('Model\'s label is missing requested dimension.') );
+			throw new \OutOfRangeException( \de\toxa\txf\_L('Model\'s label is missing requested dimension.') );
 
 		return $label[intval( $dimension )];
 	}
@@ -284,16 +288,21 @@ class model
 	 * Formats label using provided values of labelling properties.
 	 *
 	 * @param array $values map of labelling properties into an item's related values
-	 * @return string label/title of single item
+	 * @param bool $requireAllProperties set true to format label unless missing some labelling property
+	 * @return string|false label/title of single item, false if missing required labelling properties
 	 */
 
-	public static function formatLabel( $values )
+	public static function formatLabel( $values, $requireAllProperties = false )
 	{
-		$index = array_flip( static::$label );
+		if ( $requireAllProperties ) {
+			foreach ( static::$label as $labelProperty ) {
+				if ( !array_key_exists( $labelProperty, $values ) ) {
+					return false;
+				}
+			}
+		}
 
-		uksort( $values, function( $left, $right ) use( $index ) {
-			return @$index[$left] - @$index[$right];
-		} );
+		data::rearrangeArray( $values, static::$label );
 
 		return implode( static::$label_glue, $values );
 	}
@@ -342,7 +351,7 @@ class model
 
 	public static function getterUrl( $itemId = null, $parameters = array() )
 	{
-		throw new \BadMethodCallException( _L('Generic model isn\'t providing getter URL.') );
+		throw new \BadMethodCallException( \de\toxa\txf\_L('Generic model isn\'t providing getter URL.') );
 	}
 
 	/**
@@ -355,7 +364,7 @@ class model
 
 	public static function listerUrl( $parameters = array() )
 	{
-		throw new \BadMethodCallException( _L('Generic model isn\'t providing lister URL.') );
+		throw new \BadMethodCallException( \de\toxa\txf\_L('Generic model isn\'t providing lister URL.') );
 	}
 
 	/**
@@ -372,7 +381,7 @@ class model
 
 	public static function label( $itemCount = 1 )
 	{
-		throw new \BadMethodCallException( _L('Generic model isn\'t providing localized label.') );
+		throw new \BadMethodCallException( \de\toxa\txf\_L('Generic model isn\'t providing localized label.') );
 	}
 
 	/**
@@ -442,7 +451,7 @@ class model
 	 *
 	 * @param int|string|float|array $itemId set of identifying properties and values or single identifying property's value
 	 * @param boolean $ignoreNonIdProperties true to prevent exceptions on providing full record of model for binding
-	 * @return \de\toxa\txf\model current instance
+	 * @return \de\toxa\txf\model\model current instance
 	 * @throws \LogicException
 	 * @throws \InvalidArgumentException
 	 */
@@ -551,6 +560,10 @@ class model
 	{
 		$record = $this->published();
 
+		$label = static::formatLabel( $record, true );
+		if ( $label )
+			return $label;
+
 		if ( array_key_exists( 'label', $record ) )
 			return $record['label'];
 
@@ -559,15 +572,15 @@ class model
 
 		$idName = static::idName();
 		if ( array_key_exists( $idName, $record ) )
-			return sprintf( _L('#%d of model %s'), $record[$idName], get_class( $this ) );
+			return sprintf( \de\toxa\txf\_L('#%d of model %s'), $record[$idName], get_class( $this ) );
 
-		return sprintf( _L('instance of model %s'), get_class( $this ) );
+		return sprintf( \de\toxa\txf\_L('instance of model %s'), get_class( $this ) );
 	}
 
 	/**
 	 * Fetches properties of previously selected item.
 	 *
-	 * @throws datasource\datasource_exception
+	 * @throws datasource_exception
 	 * @throws \RuntimeException on trying to fetch property without selecting item first
 	 * @throws \InvalidArgumentException on trying to fetch unknown property
 	 * @param string $name name of property to fetch
@@ -587,7 +600,7 @@ class model
 		if ( array_key_exists( $name, $record ) )
 			return $record[$name];
 
-		throw new \InvalidArgumentException( "unknown property: " . static::set() . ".$name" );
+		throw new \InvalidArgumentException( 'unknown property: ' . static::set() . ".$name" );
 	}
 
 	public function __set( $name, $value )
@@ -647,7 +660,7 @@ class model
 
 	public static function define()
 	{
-		throw new \RuntimeException( _L('Generic model does not have defined structure for being abstract.') );
+		throw new \RuntimeException( \de\toxa\txf\_L('Generic model does not have defined structure for being abstract.') );
 	}
 
 	/**
@@ -666,14 +679,14 @@ class model
 	 * Creates new instance of current model described by provided properties
 	 * to be managed in selected (or default) datasource.
 	 *
-	 * @param datasource\connection $source datasource for managing model instance
+	 * @param connection $source datasource for managing model instance
 	 * @param array $properties set of model-specific properties
 	 * @return model
 	 * @throws \InvalidArgumentException
 	 * @throws datasource_exception
 	 */
 
-	public static function create( datasource\connection $source, $properties = array() )
+	public static function create( connection $source, $properties = array() )
 	{
 		static::validateIdsOnCreate( $properties );
 
@@ -713,7 +726,7 @@ class model
 			if ( !array_key_exists( $property, $definition ) ) {
 				if ( $property === 'id' )
 					// apply property "id" implicitly here
-					// (don't rely on datasource\connection adding implicitly
+					// (don't rely on connection adding implicitly
 					//  here for keeping this code independent from that code)
 					$definition['id'] = 'INTEGER NOT NULL';
 				else
@@ -727,12 +740,12 @@ class model
 	 * Updates schema of selected data source to contain definition for current
 	 * model's set.
 	 *
-	 * @param datasource\connection $source data source to use
+	 * @param connection $source data source to use
 	 * @throws datasource_exception on updating schema failed
 	 * @throws model_exception on incomplete/invalid schema definition
 	 */
 
-	public static function updateSchema( datasource\connection $source )
+	public static function updateSchema( connection $source )
 	{
 		$dataSet = static::$set_prefix . static::$set;
 
@@ -740,6 +753,13 @@ class model
 		{
 			if ( !$source->createDataset( $dataSet, static::getSchema(), static::$id ) )
 				throw new datasource_exception( $source, 'updating schema failed' );
+		}
+
+		foreach ( static::$relations as $name => $definition ) {
+			$nextModel = static::relation( $name )->nodeAtIndex( 1 )->getModel();
+			if ( $nextModel->isVirtual() ) {
+				$nextModel->declareInDatasource( $source );
+			}
 		}
 	}
 
@@ -787,14 +807,14 @@ class model
 	 * The method must be defined public for internal use in a closure. By design
 	 * it should be considered protected.
 	 *
-	 * @param datasource\connection $link link to datasource
+	 * @param connection $link link to datasource
 	 * @param array $arrProperties properties of new instance to write into datasource
 	 * @return array ID-components of created instance (to be used on loading this instance by model::select())
 	 * @throws datasource_exception
 	 * @throws model_exception on missing parts of multidimensional ID
 	 */
 
-	public static function _onCreate( datasource\connection $link, $arrProperties )
+	public static function _onCreate( connection $link, $arrProperties )
 	{
 		$set = static::$set_prefix . static::$set;
 
@@ -876,7 +896,7 @@ class model
 		$relations = static::$relations;
 		$class     = get_called_class();
 
-		if ( !$this->_source->transaction()->wrap( function( datasource\connection $connection ) use ( $item, $set, $relations, $class )
+		if ( !$this->_source->transaction()->wrap( function( connection $connection ) use ( $item, $set, $relations, $class )
 		{
 			// cache information on item to delete
 			$idValues = array_values( $item->id() );
@@ -1028,7 +1048,7 @@ class model
 
 	public static function formatCell( $value, $name, $record, $id )
 	{
-		return $value !== null ? $value : _L('-');
+		return $value !== null ? $value : \de\toxa\txf\_L('-');
 	}
 
 	public static function formatHeader( $name )
@@ -1044,7 +1064,7 @@ class model
 	/**
 	 * Retrieves connection to data source used by model currently.
 	 *
-	 * @return datasource\connection
+	 * @return connection
 	 */
 
 	public function source()
@@ -1057,7 +1077,7 @@ class model
 	 * model's data set.
 	 *
 	 * @param string $alias optional alias of model's data set in query
-	 * @return datasource\query customizable query on current model
+	 * @return query customizable query on current model
 	 */
 
 	public function query( $alias = null )
@@ -1092,7 +1112,7 @@ class model
 			$model = trim( $model );
 
 			if ( $model[0] != '\\' )
-				$model = __NAMESPACE__ . '\\' . $model;
+				$model = '\\de\\toxa\\txf\\' . $model;
 
 			$model = new \ReflectionClass( $model );
 		}
@@ -1410,8 +1430,8 @@ class model
 				$nextDefinition     = $nextModel->getDefinition();
 
 				// get properties in either neighbouring model to refer to in virtual
-				$previousNames = array_values( (array) @$referenceToAppend['on'] );
-				$nextNames     = array_values( (array) @$succeedingReference['on'] );
+				$previousNames = array_values( (array) \de\toxa\txf\_1( @$referenceToAppend['on'], 'id' ) );
+				$nextNames     = array_values( (array) \de\toxa\txf\_1( @$succeedingReference['on'], 'id' ) );
 
 				if ( !count( $previousNames ) || !count( $nextNames ) )
 					throw new \InvalidArgumentException( 'missing names of properties virtual node is referencing on' );
@@ -1526,17 +1546,17 @@ class model
 	/**
 	 * Creates query for browsing model's items stored in provided datasource.
 	 *
-	 * @param datasource\connection $source datasource containing model's items, omit for using default datasource
-	 * @return datasource\query query for listing items of current model
+	 * @param connection $source datasource containing model's items, omit for using default datasource
+	 * @return query query for listing items of current model
 	 */
 
-	public static function browse( datasource\connection $source = null )
+	public static function browse( connection $source = null )
 	{
 		if ( $source === null )
 			$source = datasource::getDefault();
 
-		if ( !( $source instanceof datasource\connection ) )
-			throw new \InvalidArgumentException( _L('missing link to datasource') );
+		if ( !( $source instanceof connection ) )
+			throw new \InvalidArgumentException( \de\toxa\txf\_L('missing link to datasource') );
 
 		static::updateSchema( $source );
 
@@ -1614,16 +1634,16 @@ class model
 	 * is fetching property "id" as "id", concatenation of properties "lastName"
 	 * and "firstName" as "fullName" and property "type" as "category".
 	 *
-	 * @param datasource\query $query query to use instead of model's default query
-	 * @param datasource\connection $source datasource to use on implicitly
+	 * @param query $query query to use instead of model's default query
+	 * @param connection $source datasource to use on implicitly
 	 *        calling model::browse() if $query is omitted
 	 * @param array|null|false $properties set of (unqualified|unquoted) property
 	 *        names to fetch per item, null fetch all properties of model's items
 	 *        and false to skip declaring properties to fetch
-	 * @return datasource\query
+	 * @return query
 	 */
 
-	public static function listItemProperties( datasource\query $query = null, datasource\connection $source = null, $properties = null )
+	public static function listItemProperties( query $query = null, connection $source = null, $properties = null )
 	{
 		if ( $query !== null ) {
 			// clone provided query for starting vanilla set of properties to fetch
@@ -1691,8 +1711,8 @@ class model
 	 *       *You can't fetch actual properties of a model here in case of those
 	 *       properties are matching this naming for aliases.*
 	 *
-	 * @param datasource\query $query query to use instead of model's default query
-	 * @param datasource\connection $source datasource to use on implicitly
+	 * @param query $query query to use instead of model's default query
+	 * @param connection $source datasource to use on implicitly
 	 *        calling model::browse() if $query is omitted
 	 * @param array|null $properties optional set of properties' names to fetch
 	 *        additionally, provide empty array to get empty set of "data" per
@@ -1702,7 +1722,7 @@ class model
 	 * @return array set of entries mapping items' serialized ID into their label
 	 */
 
-	public static function listItemLabels( datasource\query $query = null, datasource\connection $source = null, $properties = null, $filterTerm = null, $filterValues = array() )
+	public static function listItemLabels( query $query = null, connection $source = null, $properties = null, $filterTerm = null, $filterValues = array() )
 	{
 		// compile aliased sets of properties required to identify and label items
 		$idProperties = $labelProperties = array();
@@ -1778,13 +1798,13 @@ class model
 	 * Retrieves selector element for use in a model editor for choosing instance
 	 * of current model.
 	 *
-	 * @param datasource\query $query
-	 * @param datasource\connection $source datasource to use on implicitly calling model::browse() if $query is omitted
+	 * @param query $query
+	 * @param connection $source datasource to use on implicitly calling model::browse() if $query is omitted
 	 * @param \ReflectionClass $elementClass class of model_editor_element to return
 	 * @return model_editor_selector
 	 */
 
-	public static function selector( datasource\query $query = null, datasource\connection $source = null, \ReflectionClass $elementClass = null )
+	public static function selector( query $query = null, connection $source = null, \ReflectionClass $elementClass = null )
 	{
 		$options = static::listItemLabels( $query, $source );
 

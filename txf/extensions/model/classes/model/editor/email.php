@@ -26,7 +26,10 @@
  * @author: Thomas Urban
  */
 
-namespace de\toxa\txf;
+namespace de\toxa\txf\model;
+
+use \de\toxa\txf\mail;
+use \de\toxa\txf\markup;
 
 class model_editor_email extends model_editor_text
 {
@@ -36,7 +39,7 @@ class model_editor_email extends model_editor_text
 
 		if ( $input != '' ) {
 			if ( !mail::isValidAddress( $input ) )
-				throw new \InvalidArgumentException( _L('This is not a valid e-mail address.') );
+				throw new \InvalidArgumentException( \de\toxa\txf\_L('This is not a valid e-mail address.') );
 		}
 
 		return true;

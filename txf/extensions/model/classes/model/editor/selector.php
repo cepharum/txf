@@ -26,7 +26,10 @@
  * @author: Thomas Urban
  */
 
-namespace de\toxa\txf;
+namespace de\toxa\txf\model;
+
+use \de\toxa\txf\dictionary;
+use \de\toxa\txf\html_form;
 
 class model_editor_selector extends model_editor_text
 {
@@ -83,7 +86,7 @@ class model_editor_selector extends model_editor_text
 		if ( $this->isMandatory && $this->options->exists( $input ) )
 			$this->options->remove( '' );
 		else if ( !$this->options->exists( '' ) )
-			$this->options->insertAtIndex( '', _L('-'), 0 );
+			$this->options->insertAtIndex( '', \de\toxa\txf\_L('-'), 0 );
 
 		$classes = implode( ' ', array_filter( array( $this->class, 'selector' ) ) );
 
@@ -94,6 +97,6 @@ class model_editor_selector extends model_editor_text
 
 	public function formatValue( $name, $value, model_editor $editor, model_editor_field $field )
 	{
-		return $this->options->exists( $value ) ? $this->options->value( $value ) : _L('-');
+		return $this->options->exists( $value ) ? $this->options->value( $value ) : \de\toxa\txf\_L('-');
 	}
 }

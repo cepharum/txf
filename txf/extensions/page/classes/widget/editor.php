@@ -20,15 +20,15 @@
 
 namespace de\toxa\txf\page;
 
-use \de\toxa\txf\widget as widget;
-use \de\toxa\txf\datasource\connection as connection;
-use \de\toxa\txf\model_editor as model_editor;
-use \de\toxa\txf\model_editor_static as model_editor_static;
-use \de\toxa\txf\model_editor_text as model_editor_text;
-use \de\toxa\txf\model_editor_texteditor as model_editor_texteditor;
-use \de\toxa\txf\http_exception as http_exception;
-use \de\toxa\txf\markup as markup;
-use \de\toxa\txf\txf as txf;
+use \de\toxa\txf\widget;
+use \de\toxa\txf\datasource\connection;
+use \de\toxa\txf\model\model_editor;
+use \de\toxa\txf\model\model_editor_static;
+use \de\toxa\txf\model\model_editor_text;
+use \de\toxa\txf\model\model_editor_texteditor;
+use \de\toxa\txf\http_exception;
+use \de\toxa\txf\markup;
+use \de\toxa\txf\txf;
 
 
 /**
@@ -38,10 +38,18 @@ use \de\toxa\txf\txf as txf;
  *
  *     <?php namespace de\toxa\txf;
  *
- *     $widget = page\widget_editor::create()->processInput();
+ *     namespace de\toxa\txf;
  *
- *     view::title( $widget->getPage()->title );
- *     view::main( $widget->getCode() );
+ *     $selectors = application::current()->selectors;
+ *
+ *     $page = page\widget_editor::create( $selectors[0] )
+ *                 ->setMayEdit( user::current()->isAuthenticated() )
+ *                 ->setWantEdit( $selectors[1] === 'edit'  )
+ *                 ->setEditorUrl( context::selfURL( false, '%s', 'edit' ) )
+ *                 ->processInput();
+ *
+ *     view::title( $page->getPage()->title );
+ *     view::main( $page->getCode() );
  *
  * @package de\toxa\txf\page
  */
