@@ -209,7 +209,7 @@ class pager implements widget
 					'offsetName'  => $this->offsetName,
 					'itemCount'   => $this->itemCount,
 					'pageOffsets' => array(),
-					'sizes'       => config::getList( 'pager.sizeOption', array( 10, 20, 50, 100 ) ),
+					'sizes'       => config::getList( 'pager.size.option', array( 10, 20, 50, 100 ) ),
 					'size'        => $size,
 					'offset'      => $offset,
 					'useButtons'  => $this->useButtons,
