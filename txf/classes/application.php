@@ -49,6 +49,14 @@ namespace de\toxa\txf;
 class application
 {
 	/**
+	 * Stores reference on instance describing current application.
+	 *
+	 * @var application
+	 */
+
+	private static $current = null;
+
+	/**
 	 * Provides name of application.
 	 *
 	 * @var string
@@ -139,6 +147,11 @@ class application
 
 	public static function current( context $context = null )
 	{
+		if ( self::$current && ( !$context || $context === self::$current->context ) ) {
+			return self::$current;
+		}
+
+
 		if ( is_null( $context ) )
 			$context = new context();
 
@@ -216,6 +229,11 @@ class application
 			$application->url = $context->url;
 		} else {
 			$application->url = path::glue( $context->url, $application->name );
+		}
+
+
+		if ( !self::$current ) {
+			self::$current = $application;
 		}
 
 
