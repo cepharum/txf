@@ -124,7 +124,80 @@ class application
 
 
 
-	protected function __construct() {}
+	protected function __construct( context $context ) {
+		$this->context = $context;
+
+		$envApplicationName = getenv( 'TXF_APPLICATION' );
+
+		$this->gotNameFromEnvironment = !!$envApplicationName;
+
+
+		/*
+		 * extract selected application and source
+		 */
+
+		// choose source of application/script selector
+		$frames = $context->getRequestedScriptUri( $this->usedProxy );
+		if ( empty( $frames ) )
+			throw new http_exception( 400, 'Request missing application. Check your setup!' );
+
+		// extract information on application folder and name
+		if ( $this->gotNameFromEnvironment ) {
+			$this->name = $envApplicationName;
+		} else {
+			$this->name = array_shift( $frames );
+		}
+
+		if ( $this->name == 'txf' )
+			throw new http_exception( 404, 'Requested application doesn\'t exist.' );
+
+		// add some derived properties for conveniently addressing application
+		$this->pathname = path::glue(
+			$context->installationPathname,
+			$this->name
+		);
+
+		// find selected script's pathname and name
+		if ( empty( $frames ) )
+			$this->script = 'index.php';
+		else
+		{
+			$script = array();
+
+			while ( count( $frames ) )
+			{
+				$script[] = array_shift( $frames );
+				$pathname = path::glue( $this->pathname, implode( '/', $script ) );
+				if ( is_file( $pathname ) )
+					break;
+
+				if ( is_file( "$pathname.php" ) )
+				{
+					$script[] = array_pop( $script ) . '.php';
+					break;
+				}
+			}
+
+			$this->script = implode( '/', $script );
+		}
+
+
+		// extract additional selectors to be available in script
+		if ( txf::getContextMode() == txf::CTXMODE_REWRITTEN )
+			$this->selectors = $frames;
+		else
+			$this->selectors = explode( '/', $_SERVER['PATH_INFO'] );
+
+		$this->selectors = array_map( function ( $a ) { return data::autoType( trim( $a ) ); }, $this->selectors );
+
+
+		// prepare application's base URL
+		if ( $this->gotNameFromEnvironment ) {
+			$this->url = $context->url;
+		} else {
+			$this->url = path::glue( $context->url, $this->name );
+		}
+	}
 
 	/**
 	 * Detects if current application instance is valid.
@@ -156,82 +229,7 @@ class application
 			$context = new context();
 
 
-		$application = new static;
-
-		$application->context = $context;
-
-		$envApplicationName = getenv( 'TXF_APPLICATION' );
-
-		$application->gotNameFromEnvironment = !!$envApplicationName;
-
-
-		/*
-		 * extract selected application and source
-		 */
-
-		// choose source of application/script selector
-		$frames = $context->getRequestedScriptUri( $application->usedProxy );
-		if ( empty( $frames ) )
-			throw new http_exception( 400, 'Request missing application. Check your setup!' );
-
-		// extract information on application folder and name
-		if ( $application->gotNameFromEnvironment ) {
-			$application->name = $envApplicationName;
-		} else {
-			$application->name = array_shift( $frames );
-		}
-
-		if ( $application->name == 'txf' )
-			throw new http_exception( 404, 'Requested application doesn\'t exist.' );
-
-		// add some derived properties for conveniently addressing application
-		$application->pathname = path::glue(
-										$context->installationPathname,
-										$application->name
-									);
-
-		// find selected script's pathname and name
-		if ( empty( $frames ) )
-			$application->script = 'index.php';
-		else
-		{
-			$script = array();
-
-			while ( count( $frames ) )
-			{
-				$script[] = array_shift( $frames );
-				$pathname = path::glue( $application->pathname, implode( '/', $script ) );
-				if ( is_file( $pathname ) )
-					break;
-
-				if ( is_file( "$pathname.php" ) )
-				{
-					$script[] = array_pop( $script ) . '.php';
-					break;
-				}
-			}
-
-			$application->script = implode( '/', $script );
-		}
-
-
-		// extract additional selectors to be available in script
-		if ( txf::getContextMode() == txf::CTXMODE_REWRITTEN )
-			$application->selectors = $frames;
-		else
-			$application->selectors = explode( '/', $_SERVER['PATH_INFO'] );
-
-		$application->selectors = array_map( function ( $a ) { return data::autoType( trim( $a ) ); }, $application->selectors );
-
-
-		// prepare application's base URL
-		if ( $application->gotNameFromEnvironment ) {
-			$application->url = $context->url;
-		} else {
-			$application->url = path::glue( $context->url, $application->name );
-		}
-
-
+		$application = new static( $context );
 		if ( !self::$current ) {
 			self::$current = $application;
 		}
