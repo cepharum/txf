@@ -1,29 +1,30 @@
 <?php
 
-
 /**
- * Copyright 2012 Thomas Urban, toxA IT-Dienstleistungen
+ * The MIT License (MIT)
  *
- * This file is part of TXF, toxA's web application framework.
+ * Copyright (c) 2014 cepharum GmbH, Berlin, http://cepharum.de
  *
- * TXF is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  *
- * TXF is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
- * You should have received a copy of the GNU General Public License along with
- * TXF. If not, see http://www.gnu.org/licenses/.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  *
- * @copyright 2012, Thomas Urban, toxA IT-Dienstleistungen, www.toxa.de
- * @license GNU GPLv3+
- * @version: $Id$
- *
+ * @author: Thomas Urban
  */
-
 
 namespace de\toxa\txf;
 
@@ -33,6 +34,8 @@ namespace de\toxa\txf;
  *
  * @author Thomas Urban <thomas.urban@toxa.de>
  * @version 1.0
+ *
+ * @method static input current()
  */
 
 
@@ -62,7 +65,14 @@ class input extends singleton
 
 
 
+	/**
+	 * Lists registered and optionally enabled input sources.
+	 *
+	 * @var array
+	 */
+
 	protected $sources = array();
+
 
 
 	public function __construct()
@@ -118,7 +128,7 @@ class input extends singleton
 
 	public function sourceIsEnabled( $source )
 	{
-		return $this->hasSource( $source ) && $this->sources[$sources]['enabled'];
+		return $this->hasSource( $source ) && $this->sources[$source]['enabled'];
 	}
 
 	/**
@@ -162,6 +172,7 @@ class input extends singleton
 	 *
 	 * Omit $manager to move any existing manager selected by name in $source.
 	 *
+	 * @throws \Exception
 	 * @param string $source name of source, must be keyword
 	 * @param input_source $manager input source manager to insert/move
 	 * @param array $providing names of sources becoming successors of $manager
@@ -179,6 +190,8 @@ class input extends singleton
 
 		try
 		{
+			$existingSourcesInOrder = array_keys( $this->sources );
+
 			/*
 			 * support moving existing manager
 			 */
@@ -204,20 +217,18 @@ class input extends singleton
 			 * find index of requested location for inserting new source
 			 */
 
-			$existingSourcesInOrder = array_keys( $this->sources );
-
 			$providing = data::asArray( $providing );
 			$depends   = data::asArray( $depends );
 
 			if ( empty( $providing ) )
 				$providingIndex = count( $this->sources );
 			else
-				$providingIndex = min( array_map( function( $a ) { return array_search( $a, $existingSourcesInOrder ); }, $providing ) );
+				$providingIndex = min( array_map( function( $a ) use ( $existingSourcesInOrder ) { return array_search( $a, $existingSourcesInOrder ); }, $providing ) );
 
 			if ( empty( $depends ) )
 				$dependsIndex = -1;
 			else
-				$dependsIndex = max( array_map( function( $a ) { return array_search( $a, $existingSourcesInOrder ); }, $depends ) );
+				$dependsIndex = max( array_map( function( $a ) use ( $existingSourcesInOrder ) { return array_search( $a, $existingSourcesInOrder ); }, $depends ) );
 
 			if ( $providingIndex <= $dependsIndex )
 				throw new \InvalidArgumentException( 'cannot insert manager at requested location' );
@@ -240,7 +251,7 @@ class input extends singleton
 
 			return $this;
 		}
-		catch ( Exception $e )
+		catch ( \Exception $e )
 		{
 			$this->sources = $queueBackup;
 
@@ -269,6 +280,7 @@ class input extends singleton
 	 * @param string $name name of value to read
 	 * @param mixed $default default to use
 	 * @param mixed $format expected format's definition
+	 * @param boolean $optional set true to suppress exception on missing valid input from any enabled source
 	 * @return mixed found value, processed according to format definition
 	 */
 
@@ -289,6 +301,7 @@ class input extends singleton
 	 * @param string $name name of value to read, must be keyword
 	 * @param mixed $default default to use
 	 * @param mixed $format format definition
+	 * @param boolean $optional set true to suppress exception on missing valid input from any enabled source
 	 * @return mixed validated and normalized value
 	 */
 
@@ -350,7 +363,7 @@ class input extends singleton
 		if ( !$name )
 			throw new \InvalidArgumentException( 'invalid name' );
 
-		static::current()->persistValue( $name, $value );
+		static::current()->dropValue( $name );
 	}
 
 	/**
@@ -376,7 +389,7 @@ class input extends singleton
 
 	final public static function normalize( $value, $format = null )
 	{
-		return static::current()->fixValue( $value, $format );
+		return static::current()->convertValue( $value, $format );
 	}
 
 	/**
@@ -392,6 +405,17 @@ class input extends singleton
 	}
 
 	/**
+	 * Fetches list of names of all properties currently available as input.
+	 *
+	 * @param bool $includePersistents true to include persistent parameters on listing
+	 * @return string[] list of (volatile or all) parameters' names currently available
+	 */
+
+	final public static function listNames( $includePersistents = false ) {
+		return static::current()->listAvailableNames( $includePersistents );
+	}
+
+	/**
 	 * Reads named input variable.
 	 *
 	 * Support for $default requires related source manager to be included in
@@ -401,6 +425,7 @@ class input extends singleton
 	 * @param mixed $default value to return by default
 	 * @param boolean $checkPersistents if true, check persistent sources as well
 	 * @param mixed $format format definition used to filter values
+	 * @param boolean $optional set true to suppress exception on missing valid input from any enabled source
 	 * @return mixed|null available input value, null on missing any
 	 */
 
@@ -450,6 +475,28 @@ class input extends singleton
 		// according to provided format definition
 		if ( !$optional && !$this->valueIsValid( null, $format ) )
 			throw new \RuntimeException( 'invalid input' );
+
+		return null;
+	}
+
+	/**
+	 * Fetches list of names of all properties currently available as input.
+	 *
+	 * @param bool $includePersistents true to include persistent parameters on listing
+	 * @return string[] list of (volatile or all) parameters' names currently available
+	 */
+
+	final protected function listAvailableNames( $includePersistents = false ) {
+		$names = array();
+
+		foreach ( $this->sources as $source )
+			if ( $source['enabled'] )
+				if ( $includePersistents || $source['volatile'] )
+					foreach ( $source['manager']->listNames() as $name ) {
+						$names[$name] = true;
+					}
+
+		return array_keys( $names );
 	}
 
 	/**
@@ -472,35 +519,35 @@ class input extends singleton
 			{
 				case self::FORMAT_STRING :
 					return array(
-								'valid'   => function( $value, $format ) { return !preg_match( '/<\s*script\W/i', $value ); },
-								'convert' => function( $value, $format ) { return strval( $value ); },
+								'valid'   => function( $value/*, $format*/ ) { return !preg_match( '/<\s*script\W/i', $value ); },
+								'convert' => function( $value/*, $format*/ ) { return strval( $value ); },
 								);
 
 				case self::FORMAT_KEYWORD :
 					return array(
-								'prepare' => function( $value, $format ) { return trim( $value ); },
+								'prepare' => function( $value/*, $format*/ ) { return trim( $value ); },
 								'valid'   => '/^[_a-z]+[_a-z0-9]*$/i',
 								);
 
 				case self::FORMAT_INTEGER :
 					return array(
-								'prepare' => function( $value, $format ) { return trim( $value ); },
+								'prepare' => function( $value/*, $format*/ ) { return trim( $value ); },
 								'valid'   => '/^[+-]?\d+$/',
-								'convert' => function( $value, $format ) { return intval( $value ); },
+								'convert' => function( $value/*, $format*/ ) { return intval( $value ); },
 								);
 
 				case self::FORMAT_BOOL :
 					return array(
-								'prepare' => function( $value, $format ) { if ( is_string( $value ) ) return trim( $value ); else return !!$value ? 'y' : 'n'; },
+								'prepare' => function( $value/*, $format*/ ) { if ( is_string( $value ) ) return trim( $value ); else return !!$value ? 'y' : 'n'; },
 								'valid'   => '/^(on|off|y(es)?|no?|true|false|0|1)$/i',
-								'convert' => function( $value, $format ) { return in_array( strtolower( $value ), array( 'y', 'yes', 'on', 'true', '1' ) ); }
+								'convert' => function( $value/*, $format*/ ) { return in_array( strtolower( $value ), array( 'y', 'yes', 'on', 'true', '1' ) ); }
 								);
 
 				case self::FORMAT_GUID :
 					return array(
-								'prepare' => function( $value, $format ) { return trim( $value ); },
+								'prepare' => function( $value/*, $format*/ ) { return trim( $value ); },
 								'valid'   => '/^[\da-f]{8}(-[\da-f]{4}){3}-[\da-f]{12}$/i',
-								'convert' => function( $value, $format ) { return strtolower( $value ); }
+								'convert' => function( $value/*, $format*/ ) { return strtolower( $value ); }
 								);
 
 				default :
@@ -603,8 +650,7 @@ class input extends singleton
 	 * Persists value in all enabled input sources.
 	 *
 	 * @param string $name name of value to persist
-	 * @param mixed $value value to persist
-	 * @return mixed provided value
+	 * @return $this
 	 */
 
 	final protected function dropValue( $name )
@@ -613,7 +659,7 @@ class input extends singleton
 			if ( $source['enabled'] )
 				$source['manager']->dropValue( $name );
 
-		return $value;
+		return $this;
 	}
 }
 

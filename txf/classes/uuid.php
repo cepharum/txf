@@ -1,29 +1,30 @@
 <?php
 
-
 /**
- * Copyright 2012 Thomas Urban, toxA IT-Dienstleistungen
+ * The MIT License (MIT)
  *
- * This file is part of TXF, toxA's web application framework.
+ * Copyright (c) 2014 cepharum GmbH, Berlin, http://cepharum.de
  *
- * TXF is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  *
- * TXF is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
- * You should have received a copy of the GNU General Public License along with
- * TXF. If not, see http://www.gnu.org/licenses/.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  *
- * @copyright 2012, Thomas Urban, toxA IT-Dienstleistungen, www.toxa.de
- * @license GNU GPLv3+
- * @version: $Id$
- *
+ * @author: Thomas Urban
  */
-
 
 namespace de\toxa\txf;
 
@@ -130,5 +131,24 @@ class uuid
 		}
 
 		return static::isValidHex( $uuid );
+	}
+
+	/**
+	 * Detects if two provided UUIDs are equal or not.
+	 * 
+	 * This method is normalizing either UUID prior to comparing, thus you might give
+	 * a mix of binary and hex-encoded UUIDs.
+	 * 
+	 * @param $a string first UUID to compare with second
+	 * @param $b string second UUID to compare with first
+	 * @return bool true if both UUIDs have identical value, false otherwise (e.g. if either UUID is invalid)
+	 */
+
+	public static function areEqual( $a, $b ) {
+		if ( static::isValid( $a ) && static::isValid( $b ) ) {
+			return !strcasecmp( $a, $b );
+		}
+
+		return false;
 	}
 }

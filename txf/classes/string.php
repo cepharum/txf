@@ -1,29 +1,30 @@
 <?php
 
-
 /**
- * Copyright 2012 Thomas Urban, toxA IT-Dienstleistungen
+ * The MIT License (MIT)
  *
- * This file is part of TXF, toxA's web application framework.
+ * Copyright (c) 2014 cepharum GmbH, Berlin, http://cepharum.de
  *
- * TXF is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  *
- * TXF is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
- * You should have received a copy of the GNU General Public License along with
- * TXF. If not, see http://www.gnu.org/licenses/.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  *
- * @copyright 2012, Thomas Urban, toxA IT-Dienstleistungen, www.toxa.de
- * @license GNU GPLv3+
- * @version: $Id$
- *
+ * @author: Thomas Urban
  */
-
 
 namespace de\toxa\txf;
 
@@ -203,7 +204,7 @@ class string
 	 *
 	 * @param string $string native or managed string to wrap/clone
 	 * @param string $encoding encoding of provided string, ignored on cloning
-	 * @return string managed string instance
+	 * @return \de\toxa\txf\string managed string instance
 	 */
 
 	public static function wrap( $string, $encoding = null, $useIfNotAString = null )
@@ -327,7 +328,7 @@ class string
 	 * Converts internal string to desired encoding.
 	 *
 	 * @param string $encoding desired encoding of string
-	 * @return string
+	 * @return \de\toxa\txf\string
 	 */
 
 	public function convertTo( $encoding )
@@ -375,7 +376,7 @@ class string
 	 *
 	 * @param integer $offset
 	 * @param integer $length
-	 * @return string
+	 * @return \de\toxa\txf\string
 	 */
 
 	public function substr( $offset, $length = null )
@@ -395,7 +396,7 @@ class string
 	 *
 	 * @param string $pattern pattern to search
 	 * @param integer $offset number of characters to skip before searching
-	 * @return string|false
+	 * @return int|false
 	 */
 
 	public function indexOf( string $pattern, $offset = null )
@@ -416,7 +417,7 @@ class string
 	 *
 	 * @param string $pattern pattern to search
 	 * @param integer $offset number of characters to skip before searching
-	 * @return string|false
+	 * @return int|false
 	 */
 
 	public function indexOfNoCase( string $pattern, $offset = null )
@@ -470,7 +471,7 @@ class string
 	 *
 	 * @param string $pattern pattern to search
 	 * @param integer $offset number of characters to skip before searching
-	 * @return string|false
+	 * @return int|false
 	 */
 
 	public function lastIndexOf( string $pattern, $offset = null )
@@ -487,7 +488,7 @@ class string
 	 *
 	 * @param string $pattern pattern to search
 	 * @param integer $offset number of characters to skip before searching
-	 * @return string|false
+	 * @return int|false
 	 */
 
 	public function lastIndexOfNoCase( string $pattern, $offset = null )
@@ -516,7 +517,7 @@ class string
 	 *
 	 * This method is returning another instance of class string.
 	 *
-	 * @return string converted string
+	 * @return \de\toxa\txf\string converted string
 	 */
 
 	public function toLower()
@@ -530,7 +531,7 @@ class string
 	 *
 	 * This method is returning another instance of class string.
 	 *
-	 * @return string converted string
+	 * @return \de\toxa\txf\string converted string
 	 */
 
 	public function toUpper()
@@ -543,7 +544,7 @@ class string
 	 * Trims string on either end.
 	 *
 	 * @param string $chars set of characters to remove at both ends of string
-	 * @return string trimmed string
+	 * @return \de\toxa\txf\string trimmed string
 	 */
 
 	public function trim( string $chars = null )
@@ -556,7 +557,7 @@ class string
 	 * Trims string at its beginning.
 	 *
 	 * @param string $chars set of characters to remove at beginning of string
-	 * @return string trimmed string
+	 * @return \de\toxa\txf\string trimmed string
 	 */
 
 	public function ltrim( string $chars = null )
@@ -569,7 +570,7 @@ class string
 	 * Trims string at its end.
 	 *
 	 * @param string $chars set of characters to remove at end of string
-	 * @return string trimmed string
+	 * @return \de\toxa\txf\string trimmed string
 	 */
 
 	public function rtrim( string $chars = null )
@@ -584,7 +585,7 @@ class string
 	 * @param integer $count maximum number of characters
 	 * @param string $ellipsis indicator string used at end of string on
 	 *                          cropping off some data
-	 * @return string
+	 * @return \de\toxa\txf\string
 	 */
 
 	public function limit( $count, string $ellipsis = null )
@@ -637,7 +638,7 @@ class string
 	 * @param string|array $pattern single (or set of) substring(s) to replace
 	 * @param string|array $replacement single (or set of) substring(s)
 	 *                      replacing related substring(s) in $pattern
-	 * @return string string with replacements applied
+	 * @return \de\toxa\txf\string string with replacements applied
 	 */
 
 	public function replace( $pattern, $replacement = null )
@@ -698,7 +699,7 @@ class string
 	 *
 	 * @param string|array $original original entities to translate
 	 * @param string $translated translated entities
-	 * @return string managed string with content adjusted
+	 * @return \de\toxa\txf\string managed string with content adjusted
 	 */
 
 	public function translate( $original, $translated = null )

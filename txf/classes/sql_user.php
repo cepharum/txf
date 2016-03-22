@@ -1,32 +1,35 @@
 <?php
 
-
 /**
- * Copyright 2012 Thomas Urban, toxA IT-Dienstleistungen
+ * The MIT License (MIT)
  *
- * This file is part of TXF, toxA's web application framework.
+ * Copyright (c) 2014 cepharum GmbH, Berlin, http://cepharum.de
  *
- * TXF is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  *
- * TXF is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
- * You should have received a copy of the GNU General Public License along with
- * TXF. If not, see http://www.gnu.org/licenses/.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  *
- * @copyright 2012, Thomas Urban, toxA IT-Dienstleistungen, www.toxa.de
- * @license GNU GPLv3+
- * @version: $Id$
- *
+ * @author: Thomas Urban
  */
-
 
 namespace de\toxa\txf;
 
+
+use de\toxa\txf\datasource\datasource_exception;
 
 class sql_user extends user
 {
@@ -91,12 +94,59 @@ class sql_user extends user
 	public function __construct() {}
 
 	/**
+	 * Retrieves name of set of users in datasource.
+	 *
+	 * @return string
+	 */
+
+	public function datasourceSet() {
+		if ( !is_array( $this->configuration ) )
+			throw new \RuntimeException( _L('Missing user source configuration.') );
+
+		$conf = $this->configuration;
+
+		return $conf['set'];
+	}
+
+	/**
+	 * Retrieves names of properties to use on accessing datasource.
+	 *
+	 * Retrieving names this way obeys any configured mapping to fit special
+	 * datasource.
+	 *
+	 * You might provide additional property names to look up in further
+	 * arguments to this method. Method is returning map of internal names into
+	 * mapped ones then.
+	 *
+	 * @param string $internalName
+	 * @return string|array mapped name of single given property, map of mapped property names on providing multiple
+	 */
+
+	public function datasourcePropertyName( $internalName ) {
+		$names = array_unique( func_get_args() );
+		$names = array_combine( $names, $names );
+		$names = name_mapping::map( $names, 'txf.sql_user' );
+
+		$names = array_flip( $names );
+
+		switch ( count( $names ) ) {
+			case 0 :
+				return null;
+			case 1 :
+				return array_shift( $names );
+			default :
+				return $names;
+		}
+	}
+
+	/**
 	 * Retrieves connection to configured datasource containing users database.
 	 *
+	 * @throws \Exception
 	 * @return datasource\connection connection to datasource
 	 */
 
-	protected function datasource()
+	public function datasource()
 	{
 		if ( !is_array( $this->configuration ) )
 			throw new \RuntimeException( _L('Missing user source configuration.') );
@@ -127,12 +177,12 @@ class sql_user extends user
 
 			$mappedDefinition = name_mapping::map( $definition, 'txf.sql_user' );
 
-			// create dataset in datasource on demand
+			// create data set in datasource on demand
 			if ( !$ds->createDataset( $conf['set'], $mappedDefinition ) )
 				throw $ds->exception( _L('failed to create dataset for managing users') );
 
 			// ensure to have a single user at least by default
-			if ( !$ds->createQuery( $conf['set'] )->count() )
+			if ( !intval( $ds->createQuery( $conf['set'] )->execute( true )->cell() ) )
 			{
 				$record = name_mapping::map( array(
 					'uuid'      => uuid::createRandom(),
@@ -143,21 +193,28 @@ class sql_user extends user
 					'email'     => '',
 				), 'txf.sql_user' );
 
-				$ds->transaction()->wrap( function( datasource\connection $conn ) use ( $record, $conf )
+				$currentUser = $this;
+
+				$ds->transaction()->wrap( function( datasource\connection $conn ) use ( $record, $conf, $currentUser )
 				{
 					$names   = array_map( function( $n ) use ( $conn ) { return $conn->quoteName( $n ); }, array_keys( $record ) );
 					$markers = array_map( function() { return '?'; }, $record );
 
+					$newUserID = $conn->nextID( $conf['set'] );
+
 					$values = array_values( $record );
-					array_unshift( $values, $conn->nextID( $conf['set'] ) );
+					array_unshift( $values, $newUserID );
 
 					$sql = sprintf( 'INSERT INTO %s (id,%s) VALUES (?,%s)',
-									$conn->quoteName( $conf['set'] ),
+									$conn->qualifyDatasetName( $conf['set'] ),
 									implode( ',', $names ),
 									implode( ',', $markers ) );
 
 					if ( !$conn->test( $sql, $values ) )
 						throw $conn->exception( _L('failed to create default user') );
+
+					// load created user for adopting administrator role
+					sql_role::select( $conn, 'administrator' )->makeAdoptedBy( user::load( $newUserID ) );
 
 					return true;
 				} );
@@ -170,8 +227,110 @@ class sql_user extends user
 	}
 
 	/**
+	 * Creates new user record.
+	 *
+	 * @param string[] $properties set of properties (incl. loginname, password, name, email, lock)
+	 * @return int|null created user's ID or null on unexpected error
+	 * @throws \InvalidArgumentException on missing selected required properties (loginname, password)
+	 * @throws datasource_exception on user existing in datasource already or on failing to add new record
+	 */
+
+	public function create( $properties ) {
+
+		// prepare properties to be written on creating new record in datasource
+		$record  = array();
+		$mapping = $this->datasourcePropertyName( 'uuid', 'loginname', 'password', 'name', 'lock', 'email' );
+
+		foreach ( $mapping as $old => $new ) {
+			switch ( $old ) {
+				case 'uuid' :
+					$record[$new] = uuid::createRandom();
+					break;
+				case 'password' :
+					$record[$new] = ssha::get( $properties[$old] );
+					break;
+				case 'loginname' :
+					$record[$new] = substr( trim( $properties[$old] ), 0, 64 );
+					break;
+				default :
+					$record[$new] = substr( trim( $properties[$old] ), 0, 128 );
+					break;
+			}
+		}
+
+		// validate normalized properties
+		if ( !$record['loginname'] )
+			throw new \InvalidArgumentException( _L('Creating user without login name rejected.') );
+
+		if ( trim( $properties['password'] ) === '' )
+			throw new \InvalidArgumentException( _L('Creating user without password rejected.') );
+
+
+		// create new record unless found record matching login name (thus using transaction)
+		$conf      = $this->configuration;
+		$newUserID = null;
+
+		return $this->datasource()->transaction()->wrap( function( datasource\connection $conn ) use ( $record, $conf, $mapping, &$newUserID ) {
+
+			$dataSet = $conn->qualifyDatasetName( $conf['set'] );
+
+
+			// test if user with same login name exists or not
+			$sql = sprintf( 'SELECT id FROM %s WHERE %s=?', $dataSet,
+			                $conn->quoteName( $mapping['loginname'] ) );
+
+			if ( $conn->cell( $sql, $record['loginname'] ) )
+				throw $conn->exception( _L( 'Selected user exists already.' ) );
+
+
+			// create new record using provided properties
+			$names   = array_map( function ( $n ) use ( $conn ) { return $conn->quoteName( $n ); }, array_keys( $record ) );
+			$markers = array_map( function () { return '?'; }, $record );
+
+			$newUserID = $conn->nextID( $conf['set'] );
+
+			$values = array_values( $record );
+			array_unshift( $values, $newUserID );
+
+			$sql = sprintf( 'INSERT INTO %s (id,%s) VALUES (?,%s)', $dataSet,
+			                implode( ',', $names ),
+			                implode( ',', $markers ) );
+
+			if ( !$conn->test( $sql, $values ) )
+				throw $conn->exception( _L( 'Creating new user in datasource failed.' ) );
+
+
+			return true;
+		} ) ? $this->search( $newUserID ) : null;
+	}
+
+	/**
+	 * Deletes user from datasource.
+	 *
+	 * @throws datasource_exception on failed deleting user
+	 */
+
+	public function delete() {
+		assert( '$this->rowID' );
+
+		$conn = $this->datasource();
+		$conf = $this->configuration;
+
+		if ( !$conn->test( sprintf( 'DELETE FROM %s WHERE %s=?',
+		                      $conn->qualifyDatasetName( $conf['set'] ),
+		                      $conn->quoteName( name_mapping::mapSingle( 'id', 'txf.sql_user' ) ) ),
+		             $this->rowID ) )
+			throw new datasource_exception( $conn, _L('Deleting user in datasource failed.') );
+
+
+		$this->rowID = null;
+		$this->record = null;
+	}
+
+	/**
 	 * Retrieves record of user selected by ID unless cached before.
 	 *
+	 * @throws unauthorized_exception on having lost user's record (e.g. due to externally modified datasource)
 	 * @return array record describing single user
 	 */
 
@@ -188,6 +347,10 @@ class sql_user extends user
 			$record = $ds->createQuery( $this->configuration['set'] )
 						->addCondition( 'id=?', true, $this->rowID )
 						->execute()->row();
+
+			if ( !is_array( $record ) || !count( $record ) ) {
+				throw new unauthorized_exception( 'lost user in data source' );
+			}
 
 			// translate property names according to configuration
 			$this->record = name_mapping::mapReversely( $record, 'txf.sql_user' );
@@ -302,7 +465,7 @@ class sql_user extends user
 				if ( !is_null( $propertyName ) )
 				{
 					$sql = sprintf( 'UPDATE %s SET %s=? WHERE id=?',
-								$ds->quoteName( $this->configuration['set'] ),
+								$ds->qualifyDatasetName( $this->configuration['set'] ),
 								$ds->quoteName( $propertyName ) );
 
 					if ( !$ds->test( $sql, $propertyValue, $this->rowID ) )
@@ -450,7 +613,7 @@ class sql_user extends user
 		$conf = $this->configuration;
 
 		$sql  = sprintf( 'UPDATE %s SET %s=? WHERE %s=?',
-					$db->quoteName( $conf['set'] ),
+					$db->qualifyDatasetName( $conf['set'] ),
 					$db->quoteName( name_mapping::mapSingle( 'password', 'txf.sql_user' ) ),
 					$db->quoteName( name_mapping::mapSingle( 'id', 'txf.sql_user' ) )
 					);
@@ -499,7 +662,7 @@ class sql_user extends user
 		if ( is_array( $configuration ) && count( $configuration ) && !is_array( $this->configuration ) )
 		{
 			if ( !array_key_exists( 'set', $configuration ) )
-				$configuration['set'] = 'users';
+				$configuration['set'] = 'user';
 
 			if ( !array_key_exists( 'datasource', $configuration ) )
 				$configuration['datasource'] = 'users';
@@ -518,7 +681,7 @@ class sql_user extends user
 	 *
 	 * @param string $userIdOrLoginName ID or name of user to load
 	 * @return \de\toxa\txf\user
-	 * @throws \OutOfBoundsException when uniquely selecting user failed
+	 * @throws unauthorized_exception
 	 */
 
 	protected function search( $userIdOrLoginName )
@@ -535,7 +698,7 @@ class sql_user extends user
 		switch ( $matches->count() )
 		{
 			case 0 :
-				throw new unauthorized_exception( 'ambigious user selection', unauthorized_exception::USER_NOT_FOUND );
+				throw new unauthorized_exception( 'ambiguous user selection', unauthorized_exception::USER_NOT_FOUND );
 			case 1 :
 				$this->rowID = intval( $matches->cell() );
 				return $this;

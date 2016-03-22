@@ -1,0 +1,62 @@
+RewriteEngine On
+
+RewriteBase /
+
+# select some default application
+#RewriteRule ^$ application/action [R,L]
+
+# all requests for unknown resources are processed using global script
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule .* run.php [L]
+
+# Multiviews interfere with rewrite rule above, so disable here
+Options -MultiViews
+
+
+#
+# Notes on lighttpd:
+#
+# Follow these steps to use TXF with lighttpd:
+#
+#  1) enable modules mod_rewrite and mod_redirect
+#  2) add these rules to your configuration
+#
+#     url.rewrite-if-not-file = ( "^/.+$"     => "/run.php" )
+#     url.rewrite-once        = ( "^/txf/.*$" => "/run.php" )
+#     url.redirect            = ( "^/?$"      => "/application/action" )
+#
+
+#
+# Notes on nginx
+#
+# For running TXF with nginx you need to update your configuration like this:
+#
+#  1) insert this location stanza before all other location stanzas for denying
+#     web access on resource files and all sensitive data:
+#
+#     location ~ ^/txf|/config/|/classes/|^/skins/ {
+#         deny all;
+#     }
+#
+#  2) optional: disable use of PHP on accessing any asset file
+#
+#     location ~ /assets/ {
+#         try_files $uri =404;
+#     }
+#
+#  2) in your site's location stanza: add/replace try_files rule for rewriting requests:
+#
+#     try_files $uri /run.php?$args;
+#
+#  3) add location stanza for managing site's default:
+#
+#     location = / {
+#         rewrite / /application/action permanent;
+#     }
+#
+#     if your site is located in a subfolder, the stanza has to look like this:
+#
+#     location = /website/ {
+#         rewrite /website /website/application/action permanent;
+#     }
+#

@@ -1,29 +1,30 @@
 <?php
 
-
 /**
- * Copyright 2012 Thomas Urban, toxA IT-Dienstleistungen
+ * The MIT License (MIT)
  *
- * This file is part of TXF, toxA's web application framework.
+ * Copyright (c) 2014 cepharum GmbH, Berlin, http://cepharum.de
  *
- * TXF is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  *
- * TXF is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
- * You should have received a copy of the GNU General Public License along with
- * TXF. If not, see http://www.gnu.org/licenses/.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  *
- * @copyright 2012, Thomas Urban, toxA IT-Dienstleistungen, www.toxa.de
- * @license GNU GPLv3+
- * @version: $Id:$
- *
+ * @author: Thomas Urban
  */
-
 
 namespace de\toxa\txf;
 
@@ -33,6 +34,15 @@ namespace de\toxa\txf;
  *
  * This class provides API for basically building HTML-based forms.
  *
+ * @method html_form setStaticRow( string $name, string $label, string $value ) adds/updates single-line with static code to form
+ * @method html_form setTexteditRow( string $name, string $label, string $value = null ) adds/updates single-line text edit control to form
+ * @method html_form setPasswordRow( string $name, string $label ) adds/updates single-line password edit control to form
+ * @method html_form setButtonRow( string $name, string $label, string $value = null ) adds/updates single button control to form
+ * @method html_form setSelectorRow( string $name, string $label, array $options, string $value = null ) adds/updates drop down list control to form
+ * @method html_form setMultiSelectorRow( string $name, string $label, array $options, string $value = null ) adds/updates multi-selectable list control to form
+ * @method html_form setTextareaRow( string $name, string $label, string $value = null, int $rows, int $columns ) adds/updates multiline text edit control to form
+ * @method html_form setFileRow( string $name, string $label ) adds/updates file upload control to form
+ * @method html_form setCheckboxRow( string $name, string $label, string $value = null ) adds/updates single checkbox control to form
  */
 
 class html_form implements widget
@@ -166,6 +176,7 @@ class html_form implements widget
 			switch ( $type )
 			{
 				case 'selector' :
+				case 'multiselector' :
 					list( $name, $label, $options, $value ) = array_splice( $arguments, 0, 4 );
 					break;
 				case 'textarea' :
@@ -185,11 +196,17 @@ class html_form implements widget
 				case 'selector' :
 					$args = array( $name, $options, $value );
 					break;
+				case 'multiselector' :
+					$type = 'selector';
+					$args = array( $name, $options, $value, null, true );
+					break;
 				case 'button' :
 					$args = array( $name, $value, $label );
 					$label = null;
 					break;
 				case 'file' :
+					$type = 'upload';
+				case 'upload' :
 					$args = array( $name, $label );
 					break;
 				case 'password' :
@@ -197,6 +214,10 @@ class html_form implements widget
 					break;
 				case 'textarea' :
 					$args = array( $name, $value, '', $rows, $columns );
+					break;
+				case 'static' :
+					$type = 'inline';
+					$args = array( $value );
 					break;
 				default :
 					$args = array( $name, $value );
@@ -278,28 +299,44 @@ class html_form implements widget
 	}
 
 	/**
-	 * Detects if current input is considered containing input for current form.
+	 * Stores result of previously detecting if form is having input actually.
 	 *
+	 * @var boolean
+	 */
+
+	private $_hasInput = null;
+
+	/**
+	 * Detects if current input of script is considered containing input for
+	 * current form.
+	 *
+	 * @param boolean $keepFormIdInInput set true to keep any valid ID of form in input of current script
 	 * @return boolean true if form has actual input, false otherwise
 	 */
 
-	public function hasInput()
+	public function hasInput( $keepFormIdInInput = false )
 	{
-		try
-		{
-			$source = input::source( $this->usePost ? input::SOURCE_ACTUAL_POST : input::SOURCE_ACTUAL_GET );
-			if ( $source->hasValue( $this->idName() ) )
-			{
-				$value = $source->getValue( $this->idName() );
+		if ( $this->_hasInput === null ) {
+			$this->_hasInput = false;
 
-				return ( $value == $this->idValue() );
-			}
-		}
-		catch ( \InvalidArgumentException $e )
-		{
+			try {
+				$idName = $this->idName();
+
+				$source = input::source( $this->usePost ? input::SOURCE_ACTUAL_POST : input::SOURCE_ACTUAL_GET );
+				if ( $source->hasValue( $idName ) ) {
+					$value = $source->getValue( $idName );
+
+					if ( $value == $this->idValue() ) {
+						if ( !$keepFormIdInInput )
+							$source->dropValue( $idName );
+
+						$this->_hasInput = true;
+					}
+				}
+			} catch ( \InvalidArgumentException $e ) {}
 		}
 
-		return false;
+		return $this->_hasInput;
 	}
 
 	/**
@@ -495,6 +532,17 @@ class html_form implements widget
 
 
 		return $this;
+	}
+
+	/**
+	 * Detects if selected row exists in current form.
+	 *
+	 * @param string $name name of row to check
+	 * @return boolean true if row exists, false otherwise
+	 */
+
+	public function hasRow( $name ) {
+		return array_key_exists( $name, $this->rows );
 	}
 
 	/**

@@ -1,35 +1,36 @@
 <?php
 
-
 /**
- * Copyright 2012 Thomas Urban, toxA IT-Dienstleistungen
+ * The MIT License (MIT)
  *
- * This file is part of TXF, toxA's web application framework.
+ * Copyright (c) 2014 cepharum GmbH, Berlin, http://cepharum.de
  *
- * TXF is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  *
- * TXF is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
- * You should have received a copy of the GNU General Public License along with
- * TXF. If not, see http://www.gnu.org/licenses/.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  *
- * @copyright 2012, Thomas Urban, toxA IT-Dienstleistungen, www.toxa.de
- * @license GNU GPLv3+
- * @version: $Id$
- *
+ * @author: Thomas Urban
  */
-
 
 namespace de\toxa\txf;
 
 
 /**
- * Description of current script run's context.
+ * Implements API describing context of currently running script.
  *
  * @property-read boolean $isHTTPS
  * @property-read string $installationPathname
@@ -37,9 +38,10 @@ namespace de\toxa\txf;
  * @property-read string $prefixPathname
  * @property-read string $scriptPathname
  * @property-read string $applicationPathname
+ * @property-read string $applicationScriptPathname
  * @property-read string $url
  * @property-read string $hostname
- * @property-read string $application
+ * @property-read application $application
  *
  * @package de\toxa\txf
  */
@@ -125,7 +127,7 @@ class context
 	/**
 	 * detected name of current application
 	 *
-	 * @var string
+	 * @var application
 	 */
 
 	private $application;
@@ -233,7 +235,7 @@ class context
 	 *
 	 *       myapp/myscript/par1-of-script/par2-of-script
 	 *
-	 * @param $detectedProxy name of detected proxy script
+	 * @param string $detectedProxy name of detected proxy script
 	 * @return array sequence of filenames contained in requested URI for selecting script
 	 */
 
@@ -297,7 +299,7 @@ class context
 	 * Simplifies retrieval of compiled URLs to a current script.
 	 *
 	 * @param array|false $parameters set of parameters to include in reference
-	 * @param string $selector one of several selectors to include in reference
+	 * @param string $selectors... one of several selectors to include in reference
 	 * @return string URL referring to currently running script
 	 */
 

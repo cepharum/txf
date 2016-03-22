@@ -1,54 +1,56 @@
 <?php
 
-
 /**
- * Copyright 2012 Thomas Urban, toxA IT-Dienstleistungen
- * 
- * This file is part of TXF, toxA's web application framework.
- * 
- * TXF is free software: you can redistribute it and/or modify it under the 
- * terms of the GNU General Public License as published by the Free Software 
- * Foundation, either version 3 of the License, or (at your option) any later 
- * version.
- * 
- * TXF is distributed in the hope that it will be useful, but WITHOUT ANY 
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR 
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License along with 
- * TXF. If not, see http://www.gnu.org/licenses/.
+ * The MIT License (MIT)
  *
- * @copyright 2012, Thomas Urban, toxA IT-Dienstleistungen, www.toxa.de
- * @license GNU GPLv3+
- * 
+ * Copyright (c) 2014 cepharum GmbH, Berlin, http://cepharum.de
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ *
+ * @author: Thomas Urban
  */
-
 
 namespace de\toxa\txf;
 
 
 /**
  * Structured data entity manager
- * 
+ *
  * This API offers opportunity to organize data in hierarchical structure quite
  * simply. Hierarchies are created by addressing them:
- * 
+ *
  * @example
  * $data = new de\toxa\txf\thread();
  * $data->support->may2011->tickets->addItem( new message( "my message" ) )->setRecipient();
  * $data->support->departments->berlin->moderators->thomas_urban->name->label = "Name";
  * $data->support->departments->berlin->moderators->thomas_urban->name->value = "Thomas Urban";
- * 
- * 
+ *
+ *
  * @author Thomas Urban <thomas.urban@toxa.de>
- * 
+ *
  */
 
 class thread
 {
 	/**
 	 * label on a leaf entity's value
-	 * 
+	 *
 	 * @var string
 	 */
 
@@ -56,16 +58,16 @@ class thread
 
 	/**
 	 * value of a leaf entity
-	 * 
+	 *
 	 * @var mixed
 	 */
 
 	protected $___value = null;
 
 	/**
-	 * special value available to describe case of having no regular value in a 
+	 * special value available to describe case of having no regular value in a
 	 * leaf entity
-	 * 
+	 *
 	 * @var mixed
 	 */
 
@@ -73,7 +75,7 @@ class thread
 
 	/**
 	 * set of subordinated entities in a container entity
-	 * 
+	 *
 	 * @var array[data]
 	 */
 
@@ -89,7 +91,7 @@ class thread
 
 	/**
 	 * public name of a node's property providing its value
-	 * 
+	 *
 	 * @var string
 	 */
 
@@ -97,7 +99,7 @@ class thread
 
 	/**
 	 * public name of node's property providing its special value
-	 * 
+	 *
 	 * @var string
 	 */
 
@@ -107,7 +109,7 @@ class thread
 
 	/**
 	 * Creates unfixed data entity.
-	 * 
+	 *
 	 * @param string $labelName public name of property providing a node's label
 	 * @param string $valueName public name of property providing a node's value
 	 * @param string $specialName public name of property providing a node's special value
@@ -126,7 +128,7 @@ class thread
 
 	/**
 	 * Detects if entity is a container for other entities.
-	 * 
+	 *
 	 */
 
 	public function isContainer()
@@ -136,7 +138,7 @@ class thread
 
 	/**
 	 * Detects if entity is a leaf for storing simple value.
-	 * 
+	 *
 	 */
 
 	public function isLeaf()
@@ -146,11 +148,11 @@ class thread
 
 	/**
 	 * Detects if type of entity is fixed, already.
-	 * 
+	 *
 	 * On creation entities aren't fixed to be either leaf or container. It gets
-	 * fixed implicitly by accessing value or subordinated entities or 
+	 * fixed implicitly by accessing value or subordinated entities or
 	 * explicitly by using one method of fixAsContainer() or fixAsLeaf().
-	 * 
+	 *
 	 */
 
 	public function isFixed()
@@ -161,7 +163,7 @@ class thread
 	/**
 	 * Fixes current entity as container to contain subordinated entities.
 	 *
-	 * @throws RuntimeException if entity is fixed as a leaf, already 
+	 * @throws RuntimeException if entity is fixed as a leaf, already
 	 */
 
 	public function fixAsContainer()
@@ -177,7 +179,7 @@ class thread
 	 * Fixes current entity as leaf to contain labelled value.
 	 *
 	 * @throws RuntimeException if entity is fixed as a container, already
-	 * @param string $label label of leaf's value to assign implicitly 
+	 * @param string $label label of leaf's value to assign implicitly
 	 */
 
 	public function fixAsLeaf( $label = '' )
@@ -193,7 +195,7 @@ class thread
 
 	/**
 	 * Detects if current data entity is actually set to some value.
-	 * 
+	 *
 	 * @return boolean
 	 */
 
@@ -209,19 +211,19 @@ class thread
 			case $this->___labelName :
 				if ( !$this->isLeaf() )
 					throw new \RuntimeException( 'cannot retrieve label on a container' );
-				
+
 				return $this->___label;
 
 			case $this->___valueName :
 				if ( !$this->isLeaf() )
 					throw new \RuntimeException( 'cannot retrieve value on a container' );
-				
+
 				return $this->___value;
 
 			case $this->___specialValueName :
 				if ( !$this->isLeaf() )
 					throw new \RuntimeException( 'cannot retrieve special value on a container' );
-				
+
 				return $this->___specialValue;
 
 			default :
@@ -245,7 +247,7 @@ class thread
 			case $this->___labelName :
 				if ( $this->isContainer() )
 					throw new \RuntimeException( 'request for label on a non-leaf' );
-				
+
 				$this->fixAsLeaf( $value );
 				break;
 
@@ -295,7 +297,7 @@ class thread
 			case $this->___labelName :
 				if ( $this->isContainer() )
 					throw new \RuntimeException( 'invalid request for unsetting label on a container' );
-				
+
 				$this->___label = null;
 				break;
 
@@ -323,15 +325,15 @@ class thread
 
 	/**
 	 * Extracts a set of subordinated data entities.
-	 * 
+	 *
 	 * The set of entities to extract is selected by $selector, which is either
 	 *  - a function getting name and value of sub to decide
 	 *  - an array of names of subentities to extract
 	 *  - a string to match the selector using PCRE pattern or
 	 *  - a boolean-evaluated value e.g. useful to get all subentities for iteration.
-	 * 
+	 *
 	 * Missing subentities aren't included with returned set.
-	 * 
+	 *
 	 * @param mixed $selector
 	 * @param boolean $invert if true, subs are extended if selector is NOT matching
 	 * @return array[data] set of extracted subentities
@@ -366,7 +368,7 @@ class thread
 
 	/**
 	 * Retrieves set of threads contained in current containing node.
-	 * 
+	 *
 	 * @return array[thread] set of threads contained in current node
 	 */
 
@@ -380,7 +382,7 @@ class thread
 
 	/**
 	 * Detects if current node is a non-empty container.
-	 * 
+	 *
 	 * @return integer number of thread contained in current node
 	 */
 
@@ -391,7 +393,7 @@ class thread
 
 	/**
 	 * Adds item to set collected in current leaf entity.
-	 * 
+	 *
 	 * @param mixed $value item to add
 	 * @return mixed added value
 	 */
@@ -433,7 +435,7 @@ class thread
 
 	/**
 	 * Retrieves all items in set collected in current leaf entity.
-	 * 
+	 *
 	 * @return array set of items
 	 */
 
@@ -447,7 +449,7 @@ class thread
 
 	/**
 	 * Retrieves cardinality of set collected in current leaf entity.
-	 * 
+	 *
 	 * @throws RuntimeException when used on a non-set leaf
 	 * @return integer cardinality of set
 	 */
@@ -462,9 +464,9 @@ class thread
 
 	/**
 	 * Indicates whether current leaf is a set for collecting data items or not.
-	 * 
+	 *
 	 * This method is returning true for previously uninitialized leafs, too.
-	 * 
+	 *
 	 * @return boolean true on leaf available for collecting items, false otherwise
 	 */
 
@@ -478,7 +480,7 @@ class thread
 
 	/**
 	 * Extends current thread by provided XML.
-	 * 
+	 *
 	 * @param SimpleXMLElement|string $xml XML document used to extend current thread
 	 * @return thread current instance
 	 */
@@ -514,10 +516,10 @@ class thread
 
 	/**
 	 * Serializes current thread to XML.
-	 * 
+	 *
 	 * The resulting XML is designed to be reversible thus may be used for
 	 * serializing this thread.
-	 * 
+	 *
 	 * @param string $rootName element name of root whole thread is wrapped in
 	 * @param string $namespace namespace to use on elements of whole thread
 	 * @param integer $indent initial indentation depth
@@ -537,10 +539,10 @@ class thread
 
 	/**
 	 * Recursively serializes current node.
-	 * 
+	 *
 	 * This method is used internally to implement conversion of a thread to
 	 * XML code.
-	 * 
+	 *
 	 * @param string $rootName element name of root whole thread is wrapped in
 	 * @param string $namespace namespace to use on elements of whole thread
 	 * @param integer $depth initial indentation depth

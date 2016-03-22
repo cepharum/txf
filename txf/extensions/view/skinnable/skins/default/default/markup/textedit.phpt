@@ -1,4 +1,4 @@
-<?php namespace de\toxa\txf; list( $name, $value, $label ) = $arguments ?>
+<?php namespace de\toxa\txf; list( $name, $value, $label, $placeholder, $class ) = $arguments ?>
 <?php
 
 if ( count( $arguments ) == 1 ) {
@@ -16,7 +16,15 @@ echo view::wrapNotEmpty( $label, "<label for=\"$name\">|:</label>" );
 if ( $value !== null )
 	$value = ' value="' . html::inAttribute( $value ) . '"';
 
+if ( $placeholder ) {
+	$placeholder = ' placeholder="' . html::inAttribute( $placeholder ) . '"';
+}
+
+if ( $class ) {
+	$class = ' class="' . html::inAttribute( $class ) . '"';
+}
+
 ?>
-<span>
- <input type="text" class="text" name="<?php echo $name ?>"<?php echo $value ?>/>
+<span<?php echo $class ?>>
+ <input type="text" class="text" name="<?php echo $name ?>"<?php echo $value . $placeholder ?>/>
 </span>

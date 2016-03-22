@@ -1,29 +1,30 @@
 <?php
 
-
 /**
- * Copyright 2012 Thomas Urban, toxA IT-Dienstleistungen
+ * The MIT License (MIT)
  *
- * This file is part of TXF, toxA's web application framework.
+ * Copyright (c) 2014 cepharum GmbH, Berlin, http://cepharum.de
  *
- * TXF is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  *
- * TXF is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
- * You should have received a copy of the GNU General Public License along with
- * TXF. If not, see http://www.gnu.org/licenses/.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  *
- * @copyright 2012, Thomas Urban, toxA IT-Dienstleistungen, www.toxa.de
- * @license GNU GPLv3+
- * @version: $Id$
- *
+ * @author: Thomas Urban
  */
-
 
 namespace de\toxa\txf\datasource;
 
@@ -155,6 +156,8 @@ interface connection
 	 * Retrieves new instance for programmatically compiling query for fetching
 	 * data from datasource.
 	 *
+	 * @note Provided dataset name must not be qualified and/or quoted!
+	 *
 	 * @param string $dataset name of main dataset (table) query is associated with
 	 * @return query
 	 */
@@ -203,13 +206,23 @@ interface connection
 	 * @note Don't use this method for "neutralizing" values to be embedded in a
 	 *       query while datasource is featuring parameter binding as this is
 	 *       bad-practice and subject to frequent security vulnerabilities.
-	 *       This whole API is designed to advise use of parameter binding.
+	 *       **This whole API is designed to advise use of parameter binding.**
 	 *
 	 * @param string $name name to quote for using it literally in queries on datasource
 	 * @return string
 	 */
 
 	public function quoteName( $name );
+
+	/**
+	 * Qualifies provided name of a data set.
+	 *
+	 * @param string $name name of data set to be qualified
+	 * @param bool $quoted true to additionally quote qualified data set name
+	 * @return string
+	 */
+
+	public function qualifyDatasetName( $name, $quoted = true );
 
 	/**
 	 * Qualifies one or more property names of an additionally named data set
@@ -224,16 +237,17 @@ interface connection
 	 * @note Don't use this method for "neutralizing" values to be embedded in a
 	 *       query while datasource is featuring parameter binding as this is
 	 *       bad-practice and subject to frequent security vulnerabilities.
-	 *       This whole API is designed to advise use of parameter binding.
+	 *       **This whole API is designed to advise use of parameter binding.**
 	 *
-	 * @param string $setOrAlias name or alias of set property belongs to
-	 * @param string|array $property first name of several property names to
-	 *        wrap, or all names in single array
-	 * @return string|array single quoted property name on providing single string
-	 *         in $property, set of quoted property names otherwise
+	 * @param string $qualifiedSetOrAlias qualified name of set or its alias
+	 * @param string|array $property first out of several names of properties
+	 *        contained in set or all names in single array
+	 * @return string|array single qualified and quoted property name on
+	 *         providing single string in $property, set of qualified and quoted
+	 *         property names otherwise
 	 */
 
-	public function quotePropertyNames( $setOrAlias, $property );
+	public function qualifyPropertyNames( $qualifiedSetOrAlias, $property, $quoted = true );
 
 	/**
 	 * Retrieves new exception instance linked with current connection,

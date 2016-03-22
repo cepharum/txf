@@ -1,29 +1,30 @@
 <?php
 
-
 /**
- * Copyright 2012 Thomas Urban, toxA IT-Dienstleistungen
+ * The MIT License (MIT)
  *
- * This file is part of TXF, toxA's web application framework.
+ * Copyright (c) 2014 cepharum GmbH, Berlin, http://cepharum.de
  *
- * TXF is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  *
- * TXF is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
- * You should have received a copy of the GNU General Public License along with
- * TXF. If not, see http://www.gnu.org/licenses/.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  *
- * @copyright 2012, Thomas Urban, toxA IT-Dienstleistungen, www.toxa.de
- * @license GNU GPLv3+
- * @version: $Id$
- *
+ * @author: Thomas Urban
  */
-
 
 namespace de\toxa\txf;
 
@@ -33,23 +34,40 @@ include_once( 'shortcuts.php' );
 include_once( 'extension.php' );
 
 
+/**
+ * Implements most generic code establishing TXF framework.
+ *
+ * @method static txf current()
+ * @method static context getContext()
+ * @property-read context $context
+ * @property-read session $session
+ * @property-read array $classRedirectionMap
+ * @property-read string $contextMode
+ *
+ * @package de\toxa\txf
+ */
+
 class txf extends singleton
 {
-
 	/**
 	 * instance of class context describing current context
 	 *
-	 * @var \de\toxa\txf\context
+	 * @var context
 	 */
 
 	private $context;
 
+	/**
+	 * @var session
+	 */
 
 	private $session;
 
+	/**
+	 * @var array
+	 */
 
-	protected $classRedirectionMap = array();
-
+	protected $classRedirectionMap;
 
 	/**
 	 * One of the txf::CTXMODE_* constants' value selecting one of several
@@ -58,7 +76,7 @@ class txf extends singleton
 	 * The context mode is used to separate different ways of executing a
 	 * script in TXF from each other resulting in different behaviours each.
 	 *
-	 * @var enum
+	 * @var string
 	 */
 
 	private static $contextMode = null;
@@ -118,7 +136,7 @@ class txf extends singleton
 	 *        $scriptSession =& txf::session()
 	 *
 	 * @see session::access()
-	 * @param enum $scope valid combination of session::SCOPE_* constants
+	 * @param int $scope valid combination of session::SCOPE_* constants
 	 * @param string $parameter additional parameter used depending on $scope
 	 * @return array-ref reference on session-based space
 	 */
@@ -137,7 +155,7 @@ class txf extends singleton
 	public function onLoad()
 	{
 		// install class autoloader
-		spl_autoload_register( array( self, 'classAutoloader' ) );
+		spl_autoload_register( array( get_class( $this ), 'classAutoloader' ) );
 
 		// analyse pathnames and prepare context for addressing related resources
 		$this->context = new context;
@@ -191,72 +209,95 @@ class txf extends singleton
 		 * check for matching namespace
 		 */
 
-		$nsLength = strlen( __NAMESPACE__ );
+		$namespace = __NAMESPACE__ . '\\';
+		$nsLength  = strlen( $namespace );
 
-		if ( !strncmp( $className, __NAMESPACE__ . '\\', $nsLength + 1 ) )
+		if ( !strncmp( $className, $namespace, $nsLength ) )
 		{
-
-			// extract qualified class name relative to current namespace
-			$relativeClassName = substr( $className, $nsLength + 1 );
+			// extract namespace-local name of class
+			$className = substr( $className, $nsLength );
 
 
 			// optionally support class redirection
 			if ( self::hasCurrent() )
 			{
-				$map = self::current()->getClassRedirectionMap();
+				$map = self::current()->classRedirectionMap;
 
-				if ( \array_key_exists( $relativeClassName, $map ) )
-					$relativeClassName = $map[$relativeClassName];
+				if ( \array_key_exists( $className, $map ) )
+					$className = $map[$className];
 
-				if ( !$relativeClassName )
-					// loader disabled by class redirection
-					return;
+				if ( !$className )
+					// auto-loader disabled by class redirection
+					return null;
 			}
 
 
-			// detect subnamespaces selecting class of extension
-			if ( strpos( $relativeClassName, '\\' ) )
+			// detect subordinated namespace selecting class of extension
+			if ( strpos( $className, '\\' ) )
 			{
-				$relativeClassName = strtr( $relativeClassName, '\\', '/' );
-				$classPathname = '/extensions/' . dirname( $relativeClassName ) . '/classes/' . basename( $relativeClassName );
+				$temp      = strtr( $className, '\\', '/' );
+				$subNS     = dirname( $temp );
+				$className = basename( $temp );
+
+				$pathname  = '/extensions/' . $subNS . '/classes/';
 			}
 			else
-				$classPathname = '/classes/' . $relativeClassName;
+				$pathname  = '/classes/';
 
 
-			// prefer to load class file shipped with current application
+			// select repositories to check for class files
+			// - always try TXF core
+			$locations = array( dirname( dirname( __FILE__ ) ) . $pathname );
+
+			// - prefer current application's repository if available
 			if ( defined( 'TXF_APPLICATION_PATH' ) )
 			{
-				$classFile = TXF_APPLICATION_PATH . $classPathname . '.php';
-				if ( is_file( $classFile ) /*&& path::isInWebfolder( $classFile )*/ )
-				{
-					include_once( $classFile );
-					return true;
+				array_unshift( $locations, TXF_APPLICATION_PATH . $pathname );
+			}
+
+
+			// derive set of relative path names to test for matching class file
+			$names = array(
+				strtr( $className, '_', '/' )       // try deeply-structured files first
+			);
+
+			if ( $names[0] !== $className ) {
+				array_push( $names, $className );   // try surface-structured files then
+			}
+
+
+			/*
+			 * iterate over all prepared repositories in proper fall-back order
+			 * for detecting file implementing selected class
+			 */
+
+			foreach ( $locations as $location ) {
+				foreach ( $names as $name ) {
+					$classFilePrefix = $location . $name;
+
+					/*
+					 * Always try file used in current installation for
+					 * overloading some externally managed file, e.g. core file
+					 * of TXF to be replaced probably on updating TXF.
+					 */
+
+					$fileName = $classFilePrefix . '.overload.php';
+					if ( is_file( $fileName ) ) {
+						include_once( $fileName );
+						return true;
+					}
+
+					// try non-overloading file next
+					$fileName = $classFilePrefix . '.php';
+					if ( is_file( $fileName ) ) {
+						include_once( $fileName );
+						return true;
+					}
 				}
 			}
-
-
-			// look for selected class in context of framework
-			$classFile = dirname( dirname( __FILE__ ) ) . $classPathname;
-
-			if ( is_file( $classFile . '.overload.php' ) )
-			{
-				// Overload-class files are considered to replace existing
-				// txf-internal classes without utilizing complex extension.
-				// Overloads are good for collections of applications that
-				// share special behaviour not found in distributed TXF core.
-				// They are never upgraded and thus survive upgrading core
-				// though they might break upgraded API ...
-				include_once( $classFile . '.overload.php' );
-				return true;
-			}
-
-			if ( is_file( $classFile . '.php' ) )
-			{
-				include_once( $classFile . '.php' );
-				return true;
-			}
 		}
+
+		return null;
 	}
 
 	/**
@@ -311,14 +352,14 @@ class txf extends singleton
 
 		if ( $this->context )
 		{
-			if ( $this->context->application() )
+			if ( $this->context->application )
 			{
-				$pathname = path::glue( $this->context->applicationPathname(), $resourcePathname );
+				$pathname = path::glue( $this->context->applicationPathname, $resourcePathname );
 				if ( is_dir( $pathname ) )
 					return $pathname;
 			}
 
-			$pathname = path::glue( $this->context->frameworkPathname(), $resourcePathname );
+			$pathname = path::glue( $this->context->frameworkPathname, $resourcePathname );
 			if ( is_dir( $pathname ) )
 				return $pathname;
 		}
@@ -359,7 +400,7 @@ class txf extends singleton
 	/**
 	 * Sets context mode to use in processing current request.
 	 *
-	 * @param enum $contextMode on of txf::CTXMODE_* constants
+	 * @param string $contextMode one of txf::CTXMODE_* constants
 	 */
 
 	public static function setContextMode( $contextMode )
@@ -380,7 +421,7 @@ class txf extends singleton
 	/**
 	 * Retrieves current context mode.
 	 *
-	 * @return enum one of the txf::CTXMODE_* constants' value
+	 * @return string one of the txf::CTXMODE_* constants' value
 	 */
 
 	public static function getContextMode()

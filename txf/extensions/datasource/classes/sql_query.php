@@ -1,33 +1,35 @@
 <?php
 
-
 /**
- * Copyright 2012 Thomas Urban, toxA IT-Dienstleistungen
+ * The MIT License (MIT)
  *
- * This file is part of TXF, toxA's web application framework.
+ * Copyright (c) 2014 cepharum GmbH, Berlin, http://cepharum.de
  *
- * TXF is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  *
- * TXF is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
- * You should have received a copy of the GNU General Public License along with
- * TXF. If not, see http://www.gnu.org/licenses/.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  *
- * @copyright 2012, Thomas Urban, toxA IT-Dienstleistungen, www.toxa.de
- * @license GNU GPLv3+
- * @version: $Id$
- *
+ * @author: Thomas Urban
  */
-
 
 namespace de\toxa\txf\datasource;
 
 use de\toxa\txf\string as string;
+use de\toxa\txf\browseable as browseable;
 
 
 /**
@@ -101,7 +103,7 @@ use de\toxa\txf\string as string;
  */
 
 
-class sql_query implements query, \de\toxa\txf\browseable
+class sql_query implements query, browseable
 {
 
 	/**
@@ -210,11 +212,10 @@ class sql_query implements query, \de\toxa\txf\browseable
 	{
 		$this->reconnectDatasource( $connection );
 
-		$table = \de\toxa\txf\_S($table,null,'')->trim();
-		if ( $table->isEmpty )
+		if ( !is_string( $table ) || trim( $table ) === '' )
 			throw new \InvalidArgumentException( 'bad table name' );
 
-		$this->tables[$table->asUtf8] = false;
+		$this->tables[$connection->qualifyDatasetName(trim( $table ))] = false;
 	}
 
 	/**
@@ -270,7 +271,19 @@ class sql_query implements query, \de\toxa\txf\browseable
 	}
 
 	/**
-	 * @inheritdoc
+	 * Joins selected data set to include (some of) its columns.
+	 *
+	 * @example $query->addDataset( 'salary s', 's.employee=em.id AND tax=?', 'full' );
+	 *
+	 * On providing another instance of query in $dataset it's considered a
+	 * subselect and gets instantly compiled prior to joining here.
+	 *
+	 * The number of parameters must match number of markers in term.
+	 *
+	 * @param string|query $dataset name and optionally appended alias of data set to join
+	 * @param string $condition condition for selecting columns of joined table
+	 * @param mixed $parameters array of parameters or first of additional arguments providing one parameter each
+	 * @return $this
 	 */
 
 	public function addDataset( $dataset, $condition, $parameters = null )
@@ -316,7 +329,7 @@ class sql_query implements query, \de\toxa\txf\browseable
 			if ( $dataset->isEmpty )
 				throw new \InvalidArgumentException( 'bad table name' );
 
-			$dataset = $dataset->asUtf8;
+			$dataset = $this->connection->qualifyDatasetName( $dataset->asUtf8 );
 
 			if ( $this->tables[$dataset] === false )
 				throw new \InvalidArgumentException( 'cannot rejoin base table' );

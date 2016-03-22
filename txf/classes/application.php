@@ -1,35 +1,38 @@
 <?php
 
-
 /**
- * Copyright 2012 Thomas Urban, toxA IT-Dienstleistungen
+ * The MIT License (MIT)
  *
- * This file is part of TXF, toxA's web application framework.
+ * Copyright (c) 2014 cepharum GmbH, Berlin, http://cepharum.de
  *
- * TXF is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  *
- * TXF is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
- * You should have received a copy of the GNU General Public License along with
- * TXF. If not, see http://www.gnu.org/licenses/.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  *
- * @copyright 2012, Thomas Urban, toxA IT-Dienstleistungen, www.toxa.de
- * @license GNU GPLv3+
- * @version: $Id$
- *
+ * @author: Thomas Urban
  */
-
 
 namespace de\toxa\txf;
 
 
 /**
- * Describes basic information on application current script belongs to.
+ * Manages application.
+ *
+ * @package de\toxa\txf
  *
  * @property-read string $name
  * @property-read string $pathname
@@ -46,7 +49,15 @@ namespace de\toxa\txf;
 class application
 {
 	/**
-	 * name of application
+	 * Stores reference on instance describing current application.
+	 *
+	 * @var application
+	 */
+
+	private static $current = null;
+
+	/**
+	 * Provides name of application.
 	 *
 	 * @var string
 	 */
@@ -54,7 +65,7 @@ class application
 	protected $name;
 
 	/**
-	 * pathname of application's folder
+	 * Provides pathname of application's folder.
 	 *
 	 * @var string
 	 */
@@ -62,7 +73,8 @@ class application
 	protected $pathname;
 
 	/**
-	 * pathname of current script, set on managing current application, only
+	 * Provides pathname of current script, set on managing current application,
+	 * only.
 	 *
 	 * @var string
 	 */
@@ -70,7 +82,7 @@ class application
 	protected $script;
 
 	/**
-	 * additional resource selectors provided in request
+	 * Provides additional resource selectors provided in request.
 	 *
 	 * @var array
 	 */
@@ -78,7 +90,8 @@ class application
 	protected $selectors;
 
 	/**
-	 * public URL of application, e.g. for addressing related images and files
+	 * Provides public URL of application, e.g. for addressing related images
+	 * and files.
 	 *
 	 * @var string
 	 */
@@ -86,7 +99,7 @@ class application
 	protected $url;
 
 	/**
-	 * used proxy script or true on detecting use of rewrite engine
+	 * Provides used proxy script or true on detecting use of rewrite engine.
 	 *
 	 * @var string|boolean
 	 */
@@ -94,7 +107,7 @@ class application
 	protected $usedProxy;
 
 	/**
-	 * Context of current application.
+	 * Provides context of current application.
 	 *
 	 * @var context
 	 */
@@ -111,9 +124,7 @@ class application
 
 
 
-	protected function __construct()
-	{
-	}
+	protected function __construct() {}
 
 	/**
 	 * Detects if current application instance is valid.
@@ -136,6 +147,11 @@ class application
 
 	public static function current( context $context = null )
 	{
+		if ( self::$current && ( !$context || $context === self::$current->context ) ) {
+			return self::$current;
+		}
+
+
 		if ( is_null( $context ) )
 			$context = new context();
 
@@ -216,6 +232,11 @@ class application
 		}
 
 
+		if ( !self::$current ) {
+			self::$current = $application;
+		}
+
+
 		return $application;
 	}
 
@@ -284,6 +305,7 @@ class application
 		switch ( txf::getContextMode() )
 		{
 			case txf::CTXMODE_NORMAL :
+			default :
 				$url = path::glue( $this->url, $scriptName, $selectors );
 				break;
 
@@ -327,14 +349,16 @@ class application
 		else
 		{
 			// find all non-persistent input parameters of current script
-			$currentParameters = input::source( input::SOURCE_ACTUAL_GET )->getAllValues();
-			foreach ( $currentParameters as $name => $value )
-				if ( !data::isKeyword( $name ) || input::isPersistent( $name ) )
-					unset( $currentParameters[$name] );
+			$currentVolatileParameters = array();
+
+			$get = input::source( input::SOURCE_ACTUAL_GET );
+			foreach ( $get->listNames() as $name )
+				if ( data::isKeyword( $name ) && !input::isPersistent( $name ) )
+					$currentVolatileParameters[$name] = $get->getValue( $name );
 
 			// merge volatile input with given parameters, but drop all those
 			// finally set NULL (to support removal per $parameters)
-			$parameters = array_filter( array_merge( $currentParameters, $parameters ), function( $item ) { return $item !== null; } );
+			$parameters = array_filter( array_merge( $currentVolatileParameters, $parameters ), function( $item ) { return $item !== null; } );
 		}
 
 

@@ -1,29 +1,30 @@
 <?php
 
-
 /**
- * Copyright 2012 Thomas Urban, toxA IT-Dienstleistungen
+ * The MIT License (MIT)
  *
- * This file is part of TXF, toxA's web application framework.
+ * Copyright (c) 2014 cepharum GmbH, Berlin, http://cepharum.de
  *
- * TXF is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  *
- * TXF is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
- * You should have received a copy of the GNU General Public License along with
- * TXF. If not, see http://www.gnu.org/licenses/.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  *
- * @copyright 2012, Thomas Urban, toxA IT-Dienstleistungen, www.toxa.de
- * @license GNU GPLv3+
- * @version: $Id$
- *
+ * @author: Thomas Urban
  */
-
 
 namespace de\toxa\txf;
 
@@ -187,9 +188,10 @@ class data
 	 *
 	 * @param array $array hash of elements to rearrange/sort, !!pass-by-reference!!
 	 * @param array $manualOrder properly sorted list of names of elements in $array
-	 * @param bool $keepOnMissing set true to append elements not mentioned in
-	 *                            $manualOrder in undefined sorting order,
-	 *                            otherwise those elements are removed from $array
+	 * @param bool|callable $keepOnMissing set true to append elements not
+	 *                      mentioned in $manualOrder to resulting array instead
+	 *                      of removing them, provide callback for sorting those
+	 *                      elements using external function
 	 * @return array sorted array
 	 */
 
@@ -202,18 +204,24 @@ class data
 				if ( !array_key_exists( $key, $manualOrder ) )
 					unset( $array[$key] );
 
-		uksort( $array, function( $left, $right ) use ( $manualOrder ) {
-			$left  = @$manualOrder[$left];
-			$right = @$manualOrder[$right];
+		uksort( $array, function( $left, $right ) use ( $manualOrder, $array, $keepOnMissing ) {
+			$leftValue  = @$manualOrder[$left];
+			$rightValue = @$manualOrder[$right];
 
-			if ( is_null( $right ) )
-				return is_null( $left ) ? 0 : -1;
+			if ( is_null( $leftValue ) || is_null( $rightValue ) ) {
+				if ( is_callable( $keepOnMissing ) ) {
+					return call_user_func( $keepOnMissing, $left, $right, $array, $leftValue, $rightValue );
+				} else {
+					if ( is_null( $rightValue ) )
+						return is_null( $leftValue ) ? 0 : -1;
 
-			if ( is_null( $left ) )
-				return 1;
+					return 1;
+				}
+			}
 
-			return $left - $right;
+			return $leftValue - $rightValue;
 		} );
+
 
 		return $array;
 	}
@@ -255,9 +263,13 @@ class data
 				if ( $_internal > 10 ) {
 					$value = '*MAX-DEPTH*';
 				} else {
-					$out  = '';
-					foreach ( $value as $item ) {
+					$isRegular = static::isRegularArray( $value );
+
+					$out = '';
+					foreach ( $value as $key => $item ) {
 						$out .= ( $out !== '' ? ', ' : '[' );
+						if ( !$isRegular )
+							$out .= ( is_integer( $key ) ? $key : '"' . $key . '"' ) . ' => ';
 						$out .= static::describe( $item, $includeType, $fullSize, $_internal + 1 );
 					}
 					$value = $out . ']';
@@ -288,6 +300,29 @@ class data
 	}
 
 	/**
+	 * Detects if provided value is array of elements continuously indexed from
+	 * 0 to predecessor of number of elements.
+	 *
+	 * @param mixed $value some value to be tested
+	 * @return bool true if $value is "regular array", false if it's hash or non-array
+	 */
+
+	public static function isRegularArray( $value ) {
+		if ( is_array( $value ) ) {
+			$index = 0;
+			foreach ( $value as $key => $dummy ) {
+				if ( $key !== $index++ ) {
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
 	 * Converts provided value to best matching type according to actual value.
 	 *
 	 * This method is parsing a provided string for containing an integer,
@@ -296,7 +331,7 @@ class data
 	 *
 	 * @param mixed $value value to convert optionally
 	 * @param string $type name of type to prefer
-	 * @return provided or converted value
+	 * @return mixed provided or converted value
 	 */
 
 	public static function autoType( $value, $type = null )

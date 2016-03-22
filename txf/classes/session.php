@@ -1,29 +1,30 @@
 <?php
 
-
 /**
- * Copyright 2012 Thomas Urban, toxA IT-Dienstleistungen
+ * The MIT License (MIT)
  *
- * This file is part of TXF, toxA's web application framework.
+ * Copyright (c) 2014 cepharum GmbH, Berlin, http://cepharum.de
  *
- * TXF is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  *
- * TXF is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
- * You should have received a copy of the GNU General Public License along with
- * TXF. If not, see http://www.gnu.org/licenses/.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  *
- * @copyright 2012, Thomas Urban, toxA IT-Dienstleistungen, www.toxa.de
- * @license GNU GPLv3+
- * @version: $Id$
- *
+ * @author: Thomas Urban
  */
-
 
 namespace de\toxa\txf;
 
@@ -127,6 +128,45 @@ class session	// don't derive from anything external here!!! That's breaking maj
 		$_SESSION[self::stubName] = $this;
 	}
 
+	final public static function getScopeParameter( &$domain, &$path ) {
+		// process focus selection
+		$focus = config::get( 'session.focus', 'application' );
+
+		switch ( $focus )
+		{
+			case 'domain' :
+				// valid for whole current domain
+				$domain = $_SERVER['HTTP_HOST'];
+				$path   = '/';
+				break;
+
+			case 'txf' :
+				// valid for all applications in current installation, only
+				$domain = $_SERVER['HTTP_HOST'];
+				$path   = '/' . txf::getContext()->prefixPathname;
+				break;
+
+			case 'application' :
+				// valid for current application, only
+				$domain = $_SERVER['HTTP_HOST'];
+				$path   = '/' . application::current()->prefixPathname;
+				break;
+
+			default :
+				// option is explicitly providing domain and path to focus
+				if ( strpos( $focus, '%' ) !== false )
+					$focus  = strtr( $focus, array(
+						'%H' => $_SERVER['HTTP_HOST'],
+						'%T' => '/' . txf::getContext()->prefixPathname,
+						'%A' => '/' . application::current()->prefixPathname,
+					) );
+
+				$temp   = explode( '/', $focus );
+				$domain = array_shift( $temp );
+				$path   = '/' . implode( '/', $temp );
+		}
+	}
+
 	/**
 	 * Retrieves current singleton session manager.
 	 *
@@ -140,42 +180,7 @@ class session	// don't derive from anything external here!!! That's breaking maj
 	{
 		if ( !( self::$current instanceof self ) )
 		{
-			// process focus selection
-			$focus = config::get( 'session.focus', 'application' );
-
-			switch ( $focus )
-			{
-				case 'domain' :
-					// valid for whole current domain
-					$domain = $_SERVER['HTTP_HOST'];
-					$path   = '/';
-					break;
-
-				case 'txf' :
-					// valid for all applications in current installation, only
-					$domain = $_SERVER['HTTP_HOST'];
-					$path   = '/' . txf::getContext()->prefixPathname;
-					break;
-
-				case 'application' :
-					// valid for current application, only
-					$domain = $_SERVER['HTTP_HOST'];
-					$path   = '/' . application::current()->prefixPathname;
-					break;
-
-				default :
-					// option is explicitly providing domain and path to focus
-					if ( strpos( $focus, '%' ) !== false )
-						$focus  = strtr( $focus, array(
-											'%H' => $_SERVER['HTTP_HOST'],
-											'%T' => '/' . txf::getContext()->prefixPathname,
-											'%A' => '/' . application::current()->prefixPathname,
-											) );
-
-					$temp   = explode( '/', $focus );
-					$domain = array_shift( $temp );
-					$path   = '/' . implode( '/', $temp );
-			}
+			self::getScopeParameter( $domain, $path );
 
 			\session_set_cookie_params( 0, path::addTrailingSlash( $path ), $domain );
 
@@ -272,7 +277,7 @@ class session	// don't derive from anything external here!!! That's breaking maj
 	 * @note Using global session space shared by several applications requires
 	 *       external setup to provide access on same PHP session.
 	 *
-	 * @param enum $scope one of the SCOPE_* constants
+	 * @param int $scope one of the SCOPE_* constants
 	 * @param string|bool $parameter additional selector used according to $scope
 	 * @return array-ref
 	 */
@@ -290,7 +295,7 @@ class session	// don't derive from anything external here!!! That's breaking maj
 		 */
 
 		// validate provided parameter
-		if ( $scope & SCOPE_CLASS )
+		if ( $scope & self::SCOPE_CLASS )
 			if ( !( $parameter = data::isNonEmptyString( $parameter ) ) )
 				throw new \InvalidArgumentException( 'invalid/missing class selector' );
 
