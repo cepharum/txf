@@ -1,0 +1,321 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: TXF 20140817\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-08-17 12:21+0000\n"
+"PO-Revision-Date: 2014-08-17 14:21+0100\n"
+"Last-Translator: Thomas Urban <thomas.urban@toxa.de>\n"
+"Language-Team: cepharum GmbH <info@cepharum.de>\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n == 1 ? 0 : 1;\n"
+"X-Generator: Poedit 1.5.4\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+
+#: txf/extensions/datasource/classes/pdo_statement.php:146
+msgid "statement execution missing or failed before"
+msgstr ""
+
+#: txf/extensions/view/skinnable/skins/default/default/error/404.phpt:3
+msgid "Page Not Found"
+msgstr "Seite nicht gefunden"
+
+#: txf/extensions/view/skinnable/skins/default/default/error/404.phpt:5
+msgid ""
+"You have requested a page that does not exist. Please use available "
+"navigation elements to search for the desired information!"
+msgstr ""
+"Sie haben eine Seite abgerufen, die nicht existiert. Bitte nutzen Sie die "
+"verfügbaren Navigationselemente, um nach den gewünschten Informationen zu "
+"suchen!"
+
+#: txf/extensions/view/skinnable/skins/default/default/error/500.phpt:3
+msgid "Internal Server Error"
+msgstr "Interner Serverfehler"
+
+#: txf/extensions/view/skinnable/skins/default/default/error/500.phpt:5
+msgid ""
+"This site has encountered internal server error. Please try to repeat your "
+"request later or ask site's administrator for support."
+msgstr ""
+"Diese Website hat einen internen Serverfehler festgestellt. Bitte versuchen "
+"Sie, Ihre Anfrage zu einem späteren Zeitpunkt zu wiederholen, oder "
+"kontaktieren Sie den Betreiber der Website zur Unterstützung!"
+
+#: txf/extensions/view/skinnable/skins/default/default/error/400.phpt:3
+msgid "Bad Request"
+msgstr "Ungültige Anfrage"
+
+#: txf/extensions/view/skinnable/skins/default/default/error/400.phpt:5
+msgid "Your request is not supported by this website."
+msgstr "Ihre Anfrage wird von dieser Website nicht unterstützt."
+
+#: txf/extensions/view/skinnable/skins/default/default/error/403.phpt:3
+msgid "Forbidden"
+msgstr "Zugriff verweigert"
+
+#: txf/extensions/view/skinnable/skins/default/default/error/403.phpt:5
+msgid "You are not authorized to see this page."
+msgstr "Sie sind nicht authorisiert, diese Seite zu sehen."
+
+#: txf/extensions/view/skinnable/skins/default/default/error/403.phpt:6
+msgid "Please log in!"
+msgstr "Bitte melden Sie sich an!"
+
+#: txf/extensions/view/skinnable/skins/default/default/error/generic.phpt:3
+msgid "Unspecified Error"
+msgstr "Unspezifischer Fehler"
+
+#: txf/extensions/view/skinnable/skins/default/default/error/generic.phpt:5
+msgid "This site encountered an unspecified error."
+msgstr "DIese Website hat einen unspezifischen Fehler festgestellt."
+
+#: txf/extensions/view/skinnable/skins/default/default/model/relation/generic.phpt:15
+msgid "Show"
+msgstr "Anzeigen"
+
+#: txf/extensions/view/skinnable/skins/default/default/model/relation/generic.phpt:17
+#: txf/classes/model_editor.php:806
+msgid "Delete"
+msgstr "Löschen"
+
+#: txf/extensions/view/skinnable/skins/default/default/model/relation/generic.phpt:25
+msgid "Add"
+msgstr "Hinzufügen"
+
+#: txf/classes/model_editor_text_items.php:44
+msgid "Provide additional information here!"
+msgstr "Bitte stellen Sie hier weitere Informationen bereit!"
+
+#: txf/classes/model_editor_text_items.php:47
+msgid "Provide less information here!"
+msgstr "Bitte stellen Sie hier weniger Informationen bereit!"
+
+#: txf/classes/model_editor_text.php:43
+#: txf/classes/model_editor_related.php:252
+#: txf/classes/model_editor_abstract.php:91
+#: txf/classes/model_editor_currency.php:59
+msgid "This information is required."
+msgstr "Diese Information ist erforderlich."
+
+#: txf/classes/model_editor_text.php:50
+msgid "Your input is too short."
+msgstr "Ihre Angabe ist zu kurz."
+
+#: txf/classes/model_editor_text.php:53
+msgid "Your input is too long."
+msgstr "Ihre Angabe ist zu lang."
+
+#: txf/classes/model_editor_text.php:56 txf/classes/model_editor.php:651
+#: txf/classes/model_editor_currency.php:70
+msgid "Your input is invalid."
+msgstr "Ihre Angabe ist nicht zulässig."
+
+#: txf/classes/model_editor_text.php:59
+msgid "This input contains invalid HTML code."
+msgstr "Diese Angabe beinhaltet unzulässigen HTML-Code."
+
+#: txf/classes/model_editor.php:209
+msgid "Selected item is not instance of requested model."
+msgstr ""
+
+#: txf/classes/model_editor.php:610
+msgid "You must not delete this item."
+msgstr "Sie dürfen dieses Element nicht löschen."
+
+#: txf/classes/model_editor.php:627
+msgid "You must not edit this item."
+msgstr "Sie dürfen dieses Element nicht bearbeiten."
+
+#: txf/classes/model_editor.php:722
+msgid "Your changes have been saved."
+msgstr "Ihre Änderungen wurden gespeichert."
+
+#: txf/classes/model_editor.php:726
+msgid "Failed to save your changes."
+msgstr "Ihre Änderungen konnten nicht gespeichert werden."
+
+#: txf/classes/model_editor.php:758
+msgid "Model editor is not enabled."
+msgstr ""
+
+#: txf/classes/model_editor.php:801
+msgid "Save"
+msgstr "Speichern"
+
+#: txf/classes/model_editor.php:801
+msgid "Create"
+msgstr "Erzeugen"
+
+#: txf/classes/model_editor.php:803
+msgid "Cancel"
+msgstr "Abbruch"
+
+#: txf/classes/model_editor.php:839
+msgid "Your request is not including selection of item to be displayed."
+msgstr "Ihre Anfrage wählt kein Element zur Anzeige aus."
+
+#: txf/classes/model_editor.php:870 txf/classes/databrowser.php:356
+#: txf/classes/model_editor_related.php:283
+#: txf/classes/model_editor_selector.php:61
+#: txf/classes/model_editor_selector.php:72 txf/classes/model.php:1003
+msgid "-"
+msgstr "-"
+
+#: txf/classes/model_editor.php:941
+msgid "Editor is already operating on model instance."
+msgstr ""
+
+#: txf/classes/databrowser.php:405
+msgid "Failed to query datasource for listing items."
+msgstr "Es trat ein Fehler beim Abruf der aufzulistenden Elemente auf."
+
+#: txf/classes/databrowser.php:434
+msgid "There is no data to be listed here ..."
+msgstr "Es sind keine Daten vorhanden ..."
+
+#: txf/classes/html.php:199 txf/classes/html.php:262
+msgid "There is no data to display here."
+msgid_plural ""
+msgstr[0] "Es sind keine Daten zur Anzeige vorhanden."
+msgstr[1] "Es sind keine Daten zur Anzeige vorhanden."
+
+#: txf/classes/model_editor_option.php:16
+msgid "You need to check this mandatory option."
+msgstr "Sie müssen diese erforderliche Markierung setzen!"
+
+#: txf/classes/model_editor_option.php:34
+msgid "yes"
+msgstr "ja"
+
+#: txf/classes/model_editor_option.php:34
+msgid "no"
+msgstr "nein"
+
+#: txf/classes/model_editor_date.php:84 txf/classes/model_editor_date.php:87
+msgid "Selected date is out of range."
+msgstr "Das gewählte Datum liegt außerhalb des zulässigen Bereichs."
+
+#: txf/classes/sql_user.php:102
+msgid "Missing user source configuration."
+msgstr "Es wurden keine Nutzerdatenbanken konfiguriert."
+
+#: txf/classes/sql_user.php:116
+msgid "Unsupported kind of datasource for managing users."
+msgstr ""
+
+#: txf/classes/sql_user.php:132
+msgid "failed to create dataset for managing users"
+msgstr ""
+"Die Nutzerverwaltung konnte in der Datenbank nicht initialisiert werden."
+
+#: txf/classes/sql_user.php:141
+msgid "Administrator"
+msgstr "Administrator"
+
+#: txf/classes/sql_user.php:160
+msgid "failed to create default user"
+msgstr "Es konnte kein Standardnutzer angelegt werden."
+
+#: txf/classes/sql_user.php:400
+msgid "account is locked"
+msgstr "Das Nutzerkonto ist gesperrt."
+
+#: txf/classes/sql_user.php:418
+msgid "invalid/missing password."
+msgstr "Das Passwort fehlt oder ist falsch."
+
+#: txf/classes/model_editor_related.php:252
+msgid "This information is required multiple times."
+msgstr "Die Information ist mehrfach erforderlich."
+
+#: txf/classes/model_editor_related.php:296
+msgid "Add Entry"
+msgstr "Eintrag hinzufügen"
+
+#: txf/classes/user.php:157
+msgid "Missing support for changing password of current user."
+msgstr "Das Ändern des Nutzerpassworts wird nicht unterstützt."
+
+#: txf/classes/user.php:231
+msgid ""
+"Failed to re-validate current user's authentication. Please login again!"
+msgstr ""
+"Die Authentifizierung des aktuellen Nutzers konnte nicht mehr überprüft "
+"werden. Bitte melden Sie sich erneut an!"
+
+#: txf/classes/user.php:442
+msgid "guest"
+msgstr "Gast"
+
+#: txf/classes/model_editor_currency.php:26
+msgid "€"
+msgstr "€"
+
+#: txf/classes/model_editor_email.php:14
+msgid "This is not a valid e-mail address."
+msgstr "Dies ist keine gültige E-Mail-Adresse."
+
+#: txf/classes/model_editor_url.php:17
+msgid "This is not a valid URL."
+msgstr "Dies ist keine gültige URL."
+
+#: txf/classes/model_editor_url.php:20
+msgid "This URL must be absolute. Include scheme e.g. http://www.example.com/!"
+msgstr ""
+"Die URL muss absolut angegeben werden. Ergänzen Sie das Schema der URL, z.B. "
+"http://www.beispiel.de/!"
+
+#: txf/classes/model.php:221
+msgid "Model isn't supporting IDs with requested dimensionality."
+msgstr ""
+"Die Komplexität Ihrer Anfrage wird vom Datenmodell nicht zur Auswahl von "
+"Elementen unterstützt."
+
+#: txf/classes/model.php:224
+msgid "Model's ID is missing requested dimension."
+msgstr ""
+
+#: txf/classes/model.php:253
+msgid "Model's label is missing requested dimension."
+msgstr ""
+
+#: txf/classes/model.php:320
+msgid "Generic model isn't providing getter URL."
+msgstr ""
+
+#: txf/classes/model.php:333
+msgid "Generic model isn't providing lister URL."
+msgstr ""
+
+#: txf/classes/model.php:350
+msgid "Generic model isn't providing localized label."
+msgstr ""
+
+#: txf/classes/model.php:537
+#, php-format
+msgid "#%d of model %s"
+msgstr "#%d des Datenmodells %s"
+
+#: txf/classes/model.php:539
+#, php-format
+msgid "instance of model %s"
+msgstr "Element des Datenmodells %s"
+
+#: txf/classes/model.php:624
+msgid "Generic model does not have defined structure for being abstract."
+msgstr ""
+
+#: txf/classes/model.php:1511
+msgid "missing link to datasource"
+msgstr "Es besteht keine Verbindung zur Datenquelle."
+
+#~ msgid "Your input is invalid!"
+#~ msgstr "Ihre Angabe ist ungültig!"

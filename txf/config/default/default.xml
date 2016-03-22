@@ -1,0 +1,143 @@
+<?xml version="1.0"?>
+<config>
+	<!-- declare some defaults here -->
+	<default>
+	</default>
+    <php>
+<!--
+        <display_errors>true</display_errors>
+-->
+    </php>
+	<view>
+		<!-- integrate CSS style definitions -->
+<!--
+		<asset>
+			<type>text/css</type>
+			<url>assets/style.css</url>
+		</asset>
+-->
+<!--
+		<asset>
+			<id>widget-pager</id>
+			<type>text/css</type>
+			<url>assets/pager.css</url>
+		</asset>
+-->
+		<!-- integrate jQuery -->
+<!--
+		<asset>
+			<type>text/javascript</type>
+			<url>assets/jquery.js</url>
+		</asset>
+-->
+		<!-- integrate JS file for UI FX -->
+<!--
+		<asset>
+			<type>text/javascript</type>
+			<url>assets/fx.js</url>
+		</asset>
+-->
+		<static>
+			<!-- declare title to show by default on every page -->
+<!--
+			<title><![CDATA[
+				<h1>My Brand</h1>
+			]]></title>
+-->
+			<!-- declare page footer to show by default on every page -->
+<!--
+			<footer><![CDATA[
+				&copy; <a href="http://www.example.com">example.com</a>
+			]]></footer>
+-->
+		</static>
+		<!-- declare page title to use in meta data of every page -->
+<!--
+		<variable>
+			<title>My Brand</title>
+		</variable>
+-->
+		<viewport>
+			<wrap>
+				<error><![CDATA[<div id="page-errors">|</div>]]></error>
+				<debug><![CDATA[<pre id="debug">|</pre>]]></debug>
+			</wrap>
+		</viewport>
+		<!-- move viewport "title" from region "main" to "header" -->
+<!--
+		<region>
+			<name>head</name>
+			<viewport>title</viewport>
+			<viewport>header</viewport>
+		</region>
+		<region>
+			<name>main</name>
+			<viewport>error</viewport>
+			<viewport>main</viewport>
+		</region>
+-->
+        <!-- use widgets for producing output in every rendered page -->
+        <!-- example 1: render primary menu in viewport header by invoking
+             navigator::select( 'primary' ) and converting its result to string -->
+<!--
+        <widget>
+            <viewport>header</viewport>
+            <provider>
+                <class>\de\toxa\txf\navigator</class>
+                <method>select</method>
+                <selector>primary</selector>
+            </provider>
+        </widget>
+-->
+	</view>
+<!--
+	<datasource>
+		<link>
+			<id>nameOfLink</id>
+			<dsn>driver=dsn:of=link</dsn>
+			<user>loginname</user>
+			<password>secret token to login</password>
+		</link>
+		<link>
+			<id>nameOfAnotherLink</id>
+			<dsn>driver=dsn:of=separateLink</dsn>
+			<user>loginname</user>
+			<password>secret token to login here</password>
+		</link>
+		<default>valueOfIdInLinkToUseByDefault</default>
+	</datasource>
+-->
+	<user>
+		<sources>
+			<setup>
+				<mycustomsetup>
+					<type>sql</type>
+					<!-- optional properties -->
+					<datasource>idOfParticularDatasourceToUseInsteadOfCurrentOne</datasource>
+					<set>myusertable</set>
+					<properties>
+						<id>different_name_of_id_column</id>
+						<uuid>different_name_of_uuid_column</uuid>
+						<loginname>different_name_of_loginname_column</loginname>
+						<name>different_name_of_name_column</name>
+						<password>different_name_of_password_column</password>
+					</properties>
+				</mycustomsetup>
+                <someldapusers>
+                    <type>ldap</type>
+                    <!-- optional properties -->
+                    <server>ldaps://ldap.example.com</server>
+                </someldapusers>
+			</setup>
+			<enabled>mycustomsetup</enabled>
+		</sources>
+	</user>
+    <!-- configure support for sending mails -->
+    <mail>
+        <sender>provide valid sender address here</sender>
+        <!-- providing reply-to address is optional -->
+<!--
+        <reply-to>reply-to@example.com</reply-to>
+-->
+    </mail>
+</config>
