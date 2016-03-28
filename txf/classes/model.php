@@ -129,20 +129,24 @@ class model
 	}
 
 	/**
-	 * Finds item of model matching provided properties' values.
+	 * Finds all or up to selected number of items of model matching provided
+	 * properties' values.
 	 *
-	 * If multiple items are matching the first of them is retrieved, only.
+	 * If $limit is omitted or 1, the result is a matching instance or null. In
+	 * all other cases a probably empty list of matches is returned.
 	 *
 	 * @param datasource\connection $source data source to look for matching item in
 	 * @param array $properties set of model's properties mapping into values to match
 	 * @return model|null matching model item, null on mismatch
 	 * @throws \InvalidArgumentException
 	 */
-
-	public static function find( datasource\connection $source = null, $properties )
+	public static function findAll( datasource\connection $source = null, $properties, $limit = 1 )
 	{
 		if ( !is_array( $properties ) || !count( $properties ) )
 			throw new \InvalidArgumentException( 'invalid set of properties to find' );
+
+		if ( !ctype_digit( strval( $limit ) ) || !$limit )
+			throw new \InvalidArgumentException( 'invalid limit on number of desired matches' );
 
 		if ( $source == null )
 			$source = datasource::selectConfigured( 'default' );
@@ -165,11 +169,53 @@ class model
 				throw new \InvalidArgumentException( 'undefined property' );
 
 
-		$id = $query->limit( 1 )->execute()->row();
-		if ( !$id )
-			return null;
+		$query = $query->limit( $limit )->execute();
 
-		return static::select( $source, $id );
+		$matches = array();
+		while ( $id = $query->row() ) {
+			$matches[] = static::select( $source, $id );
+			if ( count( $matches ) >= $limit ) {
+				$query->close();
+				break;
+			}
+		}
+
+		if ( $limit === 1 ) {
+			return count( $matches ) ? array_shift( $matches ) : null;
+		}
+
+		return $matches;
+	}
+
+	/**
+	 * Finds item of model matching provided properties' values.
+	 *
+	 * If multiple items are matching the first of them is retrieved, only.
+	 *
+	 * @param datasource\connection $source data source to look for matching item in
+	 * @param array $properties set of model's properties mapping into values to match
+	 * @return model|null matching model item, null on mismatch
+	 * @throws \InvalidArgumentException
+	 * @deprecated Use model::findOne() instead.
+	 */
+	public static function find( datasource\connection $source = null, $properties )
+	{
+		return static::findAll( $source, $properties, 1 );
+	}
+
+	/**
+	 * Finds one item of model matching provided properties' values.
+	 *
+	 * If multiple items are matching the first of them is retrieved, only.
+	 *
+	 * @param datasource\connection $source data source to look for matching item in
+	 * @param array $properties set of model's properties mapping into values to match
+	 * @return model|null matching model item, null on mismatch
+	 * @throws \InvalidArgumentException
+	 */
+	public static function findOne( datasource\connection $source = null, $properties )
+	{
+		return static::findAll( $source, $properties, 1 );
 	}
 
 	/**
