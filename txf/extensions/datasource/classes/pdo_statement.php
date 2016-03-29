@@ -91,7 +91,7 @@ class pdo_statement implements statement
 
 	public function execute()
 	{
-		if ( $this->executed === null )
+		if ( $this->executed !== false )
 		{
 			$arguments = func_get_args();
 
