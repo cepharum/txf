@@ -150,6 +150,7 @@ abstract class user
 	 * Changes current user's password.
 	 *
 	 * @param string $newToken new password of user
+	 * @return boolean true if changing password succeeded, false otherwise
 	 * @throws \RuntimeException
 	 */
 
