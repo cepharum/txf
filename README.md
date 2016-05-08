@@ -40,7 +40,7 @@ Furthermore scripts may use semantic description of output to be converted into
 HTML web pages using integrated template engine. This includes description of
 forms including support for preventing XSRF attacks.
 
-By using rewriting URLs of all scripts are pretty-printed and suitable for 
+Due to rewriting all requests URLs are always pretty-printed and suitable for 
 implementing REST-ful APIs on your own. Creating links to current or any other
 script of application is supported without knowing the actual context. On linking
 to current script embedding of current input parameters is optionally managed 
