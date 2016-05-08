@@ -402,13 +402,7 @@ class navigator implements widget
 					$selected = true;
 				}
 
-				if ( url::isRelative( $item['action'] ) )
-					$item['action'] = application::current()->relativePrefix( $item['action'] );
-				else if ( url::isAbsolute( $item['action'] ) ) {
-					$parameters = url::parseQuery( $item['action'] );
-					$action     = parse_url( $item['action'], PHP_URL_PATH );
-					$item['action'] = application::current()->scriptURL( $action, $parameters );
-				}
+				$item['action'] = application::current()->normalizeUrl( $item['action'] );
 
 				$out['items'][$name] = $item;
 			}

@@ -273,6 +273,39 @@ class application
 	}
 
 	/**
+	 * Normalizes given URL in context of current application.
+	 *
+	 * Provided URL may be relative, absolute but local or external. It may
+	 * contain query parameters and fragment.
+	 *
+	 * @note This method does not support multiple normalization in case of
+	 *       relative URLs, thus you shouldn't call it more than once per URL.
+	 *
+	 * @param string $url URL to be normalized
+	 * @return string normalized URL
+	 */
+	public function normalizeUrl( $url ) {
+		if ( url::isRelative( $url ) )
+			return $this->relativePrefix( $url );
+
+		if ( url::isAbsolute( $url ) ) {
+			$parameters = url::parseQuery( $url );
+			$action     = parse_url( $url, PHP_URL_PATH );
+			$fragment   = parse_url( $url, PHP_URL_FRAGMENT );
+
+			$url = $this->scriptURL( $action, $parameters );
+
+			if ( $fragment ) {
+				$url .= '#' . $fragment;
+			}
+
+			return $url;
+		}
+
+		return $url;
+	}
+
+	/**
 	 * Compiles URL addressing selected script of current application.
 	 *
 	 * @param string $scriptName pathname of script relative to application folder

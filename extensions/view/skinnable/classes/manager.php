@@ -495,7 +495,7 @@ EOT
 	{
 		return array_map( function( $asset )
 			{
-				return data::qualifyString( $asset['url'] );
+				return application::current()->normalizeUrl( data::qualifyString( $asset['url'] ) );
 			}, array_filter( static::current()->assets, function( $asset ) use ( $type )
 			{
 				return ( $type == @$asset['type'] );
