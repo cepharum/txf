@@ -130,4 +130,32 @@ class url {
 
 		return implode( '/', $out );
 	}
+
+	/**
+	 * Extracts query contained in given URL.
+	 *
+	 * @param string $url external/absolute/relative URL optionally containing parameters
+	 * @return array extracted set of query parameters
+	 */
+	public static function parseQuery( $url ) {
+		$query = array();
+
+		if ( preg_match( '/\?([^#]+)(#|$)/', $url, $matches ) ) {
+			foreach ( explode( '&', $matches[1] ) as $chunk ) {
+				$split = strpos( $chunk, '=' );
+				if ( $split === false ) {
+					$name  = urldecode( $chunk );
+					$value = null;
+				}
+				else {
+					$name  = urldecode( substr( $chunk, 0, $split ) );
+					$value = urldecode( substr( $chunk, $split + 1 ) );
+				}
+
+				$query[$name] = $value;
+			}
+		}
+
+		return $query;
+	}
 }
