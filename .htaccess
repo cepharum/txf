@@ -1,0 +1,8 @@
+#
+# TXF Security
+#
+# - Always reject any web access on files in sub folder txf.
+#
+
+Order Allow,Deny
+Deny from All

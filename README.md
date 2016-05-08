@@ -57,51 +57,55 @@ A single txf framework installation is suitable for running several applications
 
 # Installation
 
-Let's create a typical Hello-World-application ...
+## Primer
 
-## Prerequisites
+txf is a PHP framework for rapidly developing PHP-based web applications. 
+Previously it was designed to work out of the box by unzipping it into some
+folder accessible from the web and append one ore more web applications relying 
+on this single installation. This design, however, wasn't suitable for managing
+either application and framework in distinct projects to be versioned 
+separately. That's why the framework was refactored so all framework-specific 
+files can be put in a common subfolder of some project reyling on txf framework.
+However this refactored framework doesn't work out of the box anymore.
 
-### Choose Names
+## Find Root
 
-1. Choose a name for your application. In this example we call it `foobar`.
-2. Choose a name for your initial view. Let's call it `home`.
+This setup relies on at least two projects to be set up and used separately. One
+of these is TXF. Any web application will be another project. All these projects
+reside in a common folder which is considered to be your web root folder. You
+might use some subfolder of your web server's document root, of course. But even
+then TXF and any application are both contained as another subfolder in that
+common container.
 
-## Download TXF to your Web Space
+Lets consider this common container to be `/var/www/mycontainer`.
 
-1. Log in to your web server.
-2. Switch to your web space folder: `cd /var/www`
-3. Clone git repository: `git clone https://github.com/cepharum/txf.git`
+## Get TXF
 
-Now you have folder /var/www/txf/txf containing all files of framework.
+Clone TXF framework into folder `/var/www/mycontainer/txf`:
 
-## Create application folder
+    git clone https://github.com/cepharum/txf.git /var/www/mycontainer/txf
 
-First, create folder for your application next to the inner txf folder: 
+Folder `/var/www/mycontainer/txf` is now containing all files of framework.
 
-    mkdir /var/www/txf/foobar
+## Create Your Application
 
-Next create script for rendering initial view.
+Create folder for your application's individual files next to folder `txf`:
 
-    cat >/var/www/txf/foobar/home.php <<EOT
-    <?php
-    namespace de\toxa\txf;
+    mkdir /var/www/mycontainer/foobar
+
+Next write this simple script into file `/var/www/mycontainer/foobar/home.php`:
+
+    <?php namespace de\toxa\txf;
     view::main( "Hello World!" );
-    EOT
-
-This will write the script 
-
-    <?php
-    namespace de\toxa\txf;
-    view::main( "Hello World!" );
-
-to the file `/var/www/txf/foobar/home.php`.
 
 ## Set up Web Server Software
 
 Setting up server involves these tasks:
 
-1. Ensure requests are forwarded to capturing collector script of txf in `/var/www/txf/run.php`.
-2. Include rule for showing initial view of application unless user is explicitly requesting view.
+1. Ensure requests are forwarded to capturing collector script of txf in 
+   `/var/www/mycontainer/txf/run.php`.
+2. Include rule for showing initial view of application unless user is 
+   explicitly requesting view.
 
 ### Apache 2.2+
 
@@ -109,15 +113,15 @@ Setting up server involves these tasks:
 
     <VirtualHost *:80>
         ServerName foobar.example.com
-    
-        DocumentRoot /var/www/txf/foobar
 
-        SetEnv TXF_DOCUMENT_ROOT /var/www/txf
+        DocumentRoot /var/www/mycontainer/foobar
+
+        SetEnv TXF_DOCUMENT_ROOT /var/www/mycontainer
         SetEnv TXF_APPLICATION foobar
     
-        Alias /txf/run.php /var/www/txf/run.php
+        Alias /txf/run.php /var/www/mycontainer/txf/run.php
     
-        <Directory /var/www/txf/foobar>
+        <Directory /var/www/mycontainer/foobar>
             Options FollowSymLinks
             AllowOverride None
             Order allow,deny
@@ -135,16 +139,19 @@ Setting up server involves these tasks:
         </Directory>
     </VirtualHost>>
 
+> This example is configuring web server to show your application when using
+> separate domain name `foobar.example.com` without any URL prefix.
+
 #### Contained in Existing Virtual Host
 
-    Alias /foobar /var/www/txf/foobar
-    Alias /txf/run.php /var/www/txf/run.php
-
-    # provide pathname of folder containing txf and any installed application 
-    # unless document root of web server is pointing there already
-    SetEnv TXF_DOCUMENT_ROOT /var/www/txf
+    Alias /foobar /var/www/mycontainer/foobar
+    Alias /txf/run.php /var/www/mycontainer/txf/run.php
     
-    <Directory /var/www/txf/foobar>
+    <Directory /var/www/mycontainer/foobar>
+	    # provide pathname of folder containing txf and any installed application 
+	    # unless document root of web server is pointing there already
+	    SetEnv TXF_DOCUMENT_ROOT /var/www/mycontainer
+
         Options FollowSymLinks
         AllowOverride None
         Order allow,deny
@@ -162,6 +169,9 @@ Setting up server involves these tasks:
         RewriteRule .* /txf/run.php [L]
     </Directory>
 
+> This example is configuring web server to show your application when using URL 
+> prefix `/foobar`.
+
 ### nginx
 
 #### Using Separate Virtual Host
@@ -171,10 +181,10 @@ Setting up server involves these tasks:
 
             server_name foobar.example.com;
 
-            root /var/www/txf/foobar;
+            root /var/www/mycontainer/foobar;
 
             location = /run.php {
-                    alias /var/www/txf;
+                    alias /var/www/mycontainer/txf;
 
                     fastcgi_split_path_info ^(.+\.php)(/.+)$;
                     # NOTE: You should have "cgi.fix_pathinfo = 0;" in php.ini
@@ -184,7 +194,7 @@ Setting up server involves these tasks:
 
                     include fastcgi_params;
 
-                    fastcgi_param TXF_DOCUMENT_ROOT /var/www/txf;
+                    fastcgi_param TXF_DOCUMENT_ROOT /var/www/mycontainer;
                     fastcgi_param TXF_APPLICATION foobar;
 
                     # This might be contained in included fastcgi_params as well:
@@ -221,6 +231,9 @@ Setting up server involves these tasks:
                     deny all;
             }
     }
+
+> This example is configuring web server to show your application when using
+> separate domain name `foobar.example.com` without any URL prefix.
 
 ## Try it!
 
