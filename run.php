@@ -46,7 +46,7 @@ namespace de\toxa\txf;
 
 try
 {
-	include( 'txf/rewritten.php' );
+	include( 'rewritten.php' );
 
 	// get application actually requested
 	$application = txf::getContext()->application;
