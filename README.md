@@ -124,7 +124,7 @@ Setting up server involves these tasks:
         <Directory /var/www/mycontainer/foobar>
             Options FollowSymLinks
             AllowOverride None
-            Order allow,deny
+            Order deny,allow
             allow from all
     
             RewriteEngine On
@@ -137,6 +137,22 @@ Setting up server involves these tasks:
             RewriteCond %{REQUEST_FILENAME} !-f
             RewriteRule .* /txf/run.php [L]
         </Directory>
+    
+	    <Location ~ ^/(classes|config|skins)/>
+	        Order allow,deny
+	        deny from all
+	    </Location>
+
+        <Directory /var/www/mycontainer/txf>
+            Order allow,deny
+            deny from all
+        </Directory>
+
+        <Location /txf/run.php>
+            Order deny,allow
+            allow from all
+        </Directory>
+
     </VirtualHost>>
 
 > This example is configuring web server to show your application when using
@@ -147,11 +163,11 @@ Setting up server involves these tasks:
     Alias /foobar /var/www/mycontainer/foobar
     Alias /txf/run.php /var/www/mycontainer/txf/run.php
     
-    <Directory /var/www/mycontainer/foobar>
-	    # provide pathname of folder containing txf and any installed application 
-	    # unless document root of web server is pointing there already
-	    SetEnv TXF_DOCUMENT_ROOT /var/www/mycontainer
+    # provide pathname of folder containing txf and any installed application 
+    # unless document root of web server is pointing there already
+    SetEnv TXF_DOCUMENT_ROOT /var/www/mycontainer
 
+    <Directory /var/www/mycontainer/foobar>
         Options FollowSymLinks
         AllowOverride None
         Order allow,deny
@@ -167,6 +183,21 @@ Setting up server involves these tasks:
         # all requests for unknown resources are processed using global script
         RewriteCond %{REQUEST_FILENAME} !-f
         RewriteRule .* /txf/run.php [L]
+    </Directory>
+    
+    <Location ~ ^/foobar/(classes|config|skins)/>
+        Order allow,deny
+        deny from all
+    </Location>
+    
+    <Directory /var/www/mycontainer/txf>
+        Order allow,deny
+        deny from all
+    </Directory>
+
+    <Location /txf/run.php>
+        Order deny,allow
+        allow from all
     </Directory>
 
 > This example is configuring web server to show your application when using URL 
