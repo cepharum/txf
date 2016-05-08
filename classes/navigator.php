@@ -404,7 +404,8 @@ class navigator implements widget
 
 				if ( url::isRelative( $item['action'] ) )
 					$item['action'] = application::current()->relativePrefix( $item['action'] );
-
+				else if ( url::isAbsolute( $item['action'] ) )
+					$item['action'] = application::current()->scriptURL( $item['action'] );
 
 				$out['items'][$name] = $item;
 			}

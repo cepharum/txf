@@ -41,7 +41,31 @@ class url {
 	 */
 
 	public static function isRelative( $url ) {
-		return !preg_match( '#^\w+:|^/#', strval( $url ) );
+		return !preg_match( '#^[a-z0-9-]+:|^/#i', strval( $url ) );
+	}
+
+	/**
+	 * Detects whether provided URL is absolute but local or not.
+	 *
+	 * Absolute URLs are implicitly file-like URLs as well.
+	 *
+	 * @param string $url URL to test
+	 * @return bool true on $url containing absolute, but local URL, false otherwise
+	 */
+	public static function isAbsolute( $url ) {
+		return preg_match( '#^/#', strval( $url ) );
+	}
+
+	/**
+	 * Detects whether provided URL is external or not.
+	 *
+	 * External URLs ain't file-like URLs and include some URI scheme prefix.
+	 *
+	 * @param string $url URL to test
+	 * @return bool true on $url containing external URL, false otherwise
+	 */
+	public static function isExternal( $url ) {
+		return preg_match( '#^[a-z0-9-]+:#i', strval( $url ) );
 	}
 
 	/**
@@ -56,13 +80,13 @@ class url {
 	 */
 
 	public static function isFile( $url ) {
-		return static::isRelative( $url ) || preg_match( '#^\w+:/#', strval( $url ) );
+		return !static::isExternal( $url );
 	}
 
 	/**
 	 * Resolves concatenated parts of URL pathname as provided.
 	 *
-	 * @param $first first of multiple pathname fragments
+	 * @param string $first first of multiple pathname fragments
 	 * @return string URL pathname referring to
 	 */
 
