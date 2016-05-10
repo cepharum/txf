@@ -207,7 +207,7 @@ class html_form implements widget
 				case 'file' :
 					$type = 'upload';
 				case 'upload' :
-					$args = array( $name, $label );
+					$args = array( $name );
 					break;
 				case 'password' :
 					$args = array( $name );
