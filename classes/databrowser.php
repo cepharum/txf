@@ -292,6 +292,22 @@ class databrowser implements widget
 	}
 
 	/**
+	 * Changes empty text to display on empty list. Provided text is replacing
+	 * any previously set text (e.g. on creating databrowser).
+	 *
+	 * @param string $text
+	 * @return $this fluent interface
+	 */
+	public function setEmptyText( $text ) {
+		if ( !is_null( $text ) && !is_string( $text ) )
+			throw new \InvalidArgumentException( 'invalid text to display on empty list' );
+
+		$this->emptyText = $text;
+
+		return $this;
+	}
+
+	/**
 	 * Processes available input adjusting internal state of databrowser.
 	 *
 	 * @return \de\toxa\txf\databrowser current instance
