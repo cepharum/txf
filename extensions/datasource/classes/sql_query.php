@@ -358,9 +358,15 @@ class sql_query implements query, browseable
 		return $this;
 	}
 
-	public function dropProperties()
+	public function dropProperties( $keepPropertyByName = null )
 	{
-		$this->columns = array();
+		$keptProperties = func_get_args();
+
+		foreach ( $this->columns as $key => $spec ) {
+			if ( !in_array( $key, $keptProperties ) ) {
+				unset( $this->columns[$key] );
+			}
+		}
 
 		return $this;
 	}

@@ -116,10 +116,14 @@ interface query
 	 * This method might be used to restart selection of properties to fetch
 	 * from query.
 	 *
+	 * @note This method is variadic. Additional names of properties to be kept
+	 *       might be provided in further arguments.
+	 *
+	 * @param string $keepPropertyByName name of property (or its alias if used on declaring) to be kept
 	 * @return $this
 	 */
 
-	public function dropProperties();
+	public function dropProperties( $keepPropertyByName = null );
 
 	/**
 	 * Requests to fetch records matching provided conditional term, only.
