@@ -308,6 +308,15 @@ class databrowser implements widget
 	}
 
 	/**
+	 * Retrieves underlying datasource providing records to be listed.
+	 *
+	 * @return browseable
+	 */
+	public function getDatasource() {
+		return $this->datasource;
+	}
+
+	/**
 	 * Processes available input adjusting internal state of databrowser.
 	 *
 	 * @return \de\toxa\txf\databrowser current instance
