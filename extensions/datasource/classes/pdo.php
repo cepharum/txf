@@ -485,12 +485,26 @@ class pdo extends singleton implements connection
 	 *
 	 * @param string $datasetName name of data set to qualify
 	 * @param bool $quoted true for quoting qualified name in addition
+	 * @param bool $splitWords if true name is split on space boundaries into
+	 *        multiple words, each word is qualified and quoted separately then
 	 * @return string
 	 */
 
-	public function qualifyDatasetName( $datasetName, $quoted = true )
+	public function qualifyDatasetName( $datasetName, $quoted = true, $splitWords = false )
 	{
 		$qualified = $this->prefix . $datasetName;
+
+		if ( $splitWords ) {
+			$qualified = preg_split( '/\s+/', trim( $qualified ) );
+
+			if ( $quoted ) {
+				foreach ( $qualified as &$part ) {
+					$part = $this->quoteName( $part );
+				}
+			}
+
+			return implode( ' ', $qualified );
+		}
 
 		return $quoted ? $this->quoteName( $qualified ) : $qualified;
 	}

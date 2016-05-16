@@ -329,7 +329,7 @@ class sql_query implements query, browseable
 			if ( $dataset->isEmpty )
 				throw new \InvalidArgumentException( 'bad table name' );
 
-			$dataset = $this->connection->qualifyDatasetName( $dataset->asUtf8 );
+			$dataset = $this->connection->qualifyDatasetName( $dataset->asUtf8, true, true );
 
 			if ( $this->tables[$dataset] === false )
 				throw new \InvalidArgumentException( 'cannot rejoin base table' );
