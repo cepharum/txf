@@ -242,17 +242,27 @@ class html
 			$cell = is_callable( $cellFormat ) ? call_user_func( $cellFormat, $cell, $header, $arrData, null ) : htmlspecialchars( $cell );
 			if ( $cell !== null )
 			{
-				$rowClass = ( ( $rowIndex % 2 ) ? 'even' : 'odd' ) . ( $rowIndex ? '' : ' first' ) . ( ( ++$rowIndex == count( $arrData ) ) ? ' last' : '' );
-
-				$out .= "$basicIndent	<div class=\"$rowClass\">\n";
-
 				if ( trim( $cell ) === '' )
 					$cell = $empty;
 
 				$label = trim( is_callable( $headerFormat ) ? call_user_func( $headerFormat, $header ) : htmlspecialchars( "$header:" ) );
-				if ( $label[0] == '|' )
+				if ( $label[0] == '|' || trim( $label ) === ':' )
 					$label = '';
 
+				$rowClass = array(
+					( $rowIndex % 2 ) ? 'even' : 'odd'
+				);
+
+				if ( !$rowIndex )
+					$rowClass[] = 'first';
+				if ( ++$rowIndex == count( $arrData ) )
+					$rowClass[] = 'last';
+				if ( trim( $label ) === '' )
+					$rowClass[] = 'no-label';
+
+				$rowClass = implode( ' ', $rowClass );
+
+				$out .= "$basicIndent	<div class=\"$rowClass\">\n";
 				$out .= "$basicIndent		<label>$label</label>\n";
 				$out .= "$basicIndent		<div>$cell</div>\n";
 				$out .= "$basicIndent	</div>\n";
