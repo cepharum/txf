@@ -223,7 +223,7 @@ class manager extends \de\toxa\txf\singleton
 
 
 		// process global widget to include custom output in every view
-		$this->processConfiguredWidgets();
+		$this->processConfiguredWidgets( "load" );
 	}
 
 	/**
@@ -421,6 +421,9 @@ EOT
 
 	public static function variable( $name, $value = null )
 	{
+		if ( func_num_args() < 2 )
+			return static::current()->accessVariable( $name );
+
 		return static::current()->accessVariable( $name, $value );
 	}
 
@@ -515,12 +518,30 @@ EOT
 	/**
 	 * Embeds output of widgets in view as configured.
 	 *
+	 * @param string $stage marks stage of view manager when calling this function
 	 */
 
-	protected function processConfiguredWidgets()
+	protected function processConfiguredWidgets( $stage )
 	{
 		foreach ( config::getList( 'view.widget' ) as $spec )
 		{
+			// filter by stage
+			if ( array_key_exists( 'stage', $spec ) ) {
+				$stages = $spec['stage'];
+				if ( !is_array( $stages ) ) {
+					$stages = preg_split( '/[,\s]+/', $stages );
+				}
+
+				if ( !in_array( $stage, $stages ) )
+					continue;
+			} else
+				// provide backwards compatible behaviour
+				// -> w/o marking stage process on load-stage, only
+				if ( $stage !== "load" ) {
+					continue;
+				}
+
+
 			if ( array_key_exists( 'viewport', $spec ) )
 				$viewport = $spec['viewport'];
 			else
@@ -674,6 +695,7 @@ EOT
 
 		$this->renderedBefore = true;
 
+		$this->processConfiguredWidgets( "render" );
 
 		try
 		{
