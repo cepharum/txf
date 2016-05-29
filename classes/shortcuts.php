@@ -125,3 +125,26 @@ function _1()
 		if ( func_get_arg( $i ) )
 			return func_get_arg( $i );
 }
+
+/**
+ * Retrieves first provided argument evaluating as true.
+ *
+ * This method is useful for implicitly providing some default values.
+ *
+ * @note This method is different from _1() in that last provided argument is
+ *       returned as final fallback even though it's falsy. It's been added for
+ *       adjusting semantics of _1() might cause issues in other parts of code.
+ *
+ * @return mixed
+ */
+function _D() {
+	$argc = func_num_args();
+
+	if ( $argc > 0 ) {
+		for ( $i = 0; $i < $argc; $i++ )
+		if ( func_get_arg( $i ) )
+			return func_get_arg( $i );
+
+		return func_get_arg( $argc - 1 );
+	}
+}
