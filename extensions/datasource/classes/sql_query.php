@@ -215,7 +215,7 @@ class sql_query implements query, browseable
 		if ( !is_string( $table ) || trim( $table ) === '' )
 			throw new \InvalidArgumentException( 'bad table name' );
 
-		$this->tables[$connection->qualifyDatasetName(trim( $table ))] = false;
+		$this->tables[$connection->qualifyDatasetName( trim( $table ), true, true )] = false;
 	}
 
 	/**

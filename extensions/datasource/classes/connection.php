@@ -219,10 +219,12 @@ interface connection
 	 *
 	 * @param string $name name of data set to be qualified
 	 * @param bool $quoted true to additionally quote qualified data set name
+	 * @param bool $splitWords if true name is split on space boundaries into
+	 *        multiple words, each word is qualified and quoted separately then
 	 * @return string
 	 */
 
-	public function qualifyDatasetName( $name, $quoted = true );
+	public function qualifyDatasetName( $name, $quoted = true, $splitWords = true );
 
 	/**
 	 * Qualifies one or more property names of an additionally named data set
