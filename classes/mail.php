@@ -41,6 +41,8 @@ class mail {
 
 	protected $_bcc = array();
 
+	protected $_sender = null;
+
 	const PREG_ADDRESS = '/^(([^+@]+)(?:\+([^@]+))?)@((?:[^.]+\.)+[a-z][a-z]+)$/i';
 
 
@@ -118,6 +120,29 @@ class mail {
 	}
 
 	/**
+	 * Assigns custom sender to use.
+	 *
+	 * @note This method isn't doing anything if provided sender address is
+	 *       falsy. This is supported to simplify use of fluent interface.
+	 * @note Any truthy sender address is validated and rejected unless valid.
+	 *
+	 * @throws \InvalidArgumentException on providing truthy but invalid address
+	 * @param string $sender valid e-mail address to use as sender of mail
+	 * @return $this fluent interface
+	 */
+
+	public function setSender( $sender ) {
+		if ( $sender ) {
+			if ( !static::isValidAddress( $sender ) )
+				throw new \InvalidArgumentException( 'invalid sender address' );
+
+			$this->_sender = $sender;
+		}
+
+		return $this;
+	}
+
+	/**
 	 * Adds another single recipient.
 	 *
 	 * @param string $recipient mail address to add
@@ -162,7 +187,7 @@ class mail {
 
 	protected function getSender()
 	{
-		$sender = config::get( 'mail.sender' );
+		$sender = _1( $this->_sender, config::get( 'mail.sender' ) );
 
 		if ( !static::isValidAddress( $sender ) )
 			throw new \InvalidArgumentException( 'invalid/missing mail sender address' );
@@ -235,12 +260,14 @@ class mail {
 	{
 		$this->check();
 
+		$sender = $this->getSender();
+
 
 		/*
 		 * compile additional mail headers
 		 */
 
-		$headers  = 'From: ' . $this->getSender() . "\r\n";
+		$headers  = "From: $sender\r\n";
 		$headers .= "MIME-Version: 1.0\r\n";
 		$headers .= "Content-Type: {$this->_mime}\r\n";
 
@@ -267,7 +294,7 @@ class mail {
 		 * send mail
 		 */
 
-		return !!mail( $recipients, $subject, $content, $headers, '-f' . $this->getSender() );
+		return !!mail( $recipients, $subject, $content, $headers, "-f$sender" );
 	}
 
 	/**
