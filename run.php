@@ -67,6 +67,10 @@ catch ( http_exception $e )
 {
 	header( $e->getResponse() );
 
+	view::variable( 'exception', $e );
+	view::addBodyClass( 'exception' );
+	view::addBodyClass( 'http-exception' );
+
 	$data = variable_space::create( 'reason', $e );
 
 	try {

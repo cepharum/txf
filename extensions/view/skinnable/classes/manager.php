@@ -285,6 +285,11 @@ class manager extends \de\toxa\txf\singleton
 			header( $exception->getResponse() );
 
 
+		$this->accessVariable( 'exception', $exception );
+
+		static::addBodyClass( 'exception' );
+
+
 		try
 		{
 			try
@@ -485,6 +490,23 @@ EOT
 
 			static::current()->assets[$id] = $newAsset;
 		}
+	}
+
+	/**
+	 * Adds another class name for tagging body of view to be rendered.
+	 *
+	 * @param string $className
+	 * @param bool $reset
+	 */
+	public static function addBodyClass( $className, $reset = false ) {
+		if ( $reset )
+			$classes = array();
+		else
+			$classes = preg_split( '/\s+/', trim( static::current()->accessVariable( 'bodyType' ) ) );
+
+		$classes[] = $className;
+
+		static::current()->accessVariable( 'bodyType', implode( ' ', array_filter( $classes ) ) );
 	}
 
 	/**
