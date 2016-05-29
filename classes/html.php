@@ -239,9 +239,18 @@ class html
 
 		foreach ( $arrData as $header => $cell )
 		{
+			$cellClass = ( is_array( $cell ) && count( $cell ) > 1 ) ? 'multi' : 'single';
+
 			$cell = is_callable( $cellFormat ) ? call_user_func( $cellFormat, $cell, $header, $arrData, null ) : htmlspecialchars( $cell );
 			if ( $cell !== null )
 			{
+				if ( is_array( $cell ) ) {
+					$cell = array_filter( $cell, function ( $v ) {
+						return trim( $v ) !== '';
+					} );
+					$cell = implode( "\n", $cell );
+				}
+
 				if ( trim( $cell ) === '' )
 					$cell = $empty;
 
@@ -264,7 +273,7 @@ class html
 
 				$out .= "$basicIndent	<div class=\"$rowClass\">\n";
 				$out .= "$basicIndent		<label>$label</label>\n";
-				$out .= "$basicIndent		<div>$cell</div>\n";
+				$out .= "$basicIndent		<div class=\"$cellClass\">$cell</div>\n";
 				$out .= "$basicIndent	</div>\n";
 			}
 		}
