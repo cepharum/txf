@@ -1,7 +1,7 @@
 <?php namespace de\toxa\txf; ?>
-<?php 
+<?php
 
-if ( count( $items ) ) 
+if ( count( $items ) )
 {
 ?>
 <ul<?php echo view::wrapNotEmpty( html::classname( "level-$level $active" ), ' class="', '"' ) ?>>
@@ -18,7 +18,7 @@ if ( count( $items ) )
 <?php
 		} else {
 ?>
-	<a href="<?php echo html::inAttribute( $item['action'] ) ?>"><?php echo $item['label'] ?></a>
+	<a href="<?php echo html::inAttribute( $item['action'] ) ?>"<?php echo $item['active'] ? ' class="active"' : '' ?>><?php echo $item['label'] ?></a>
 <?php
 		}
 
@@ -29,5 +29,5 @@ if ( count( $items ) )
 	}
 ?>
 </ul>
-<?php 
+<?php
 }

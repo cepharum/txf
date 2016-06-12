@@ -208,6 +208,9 @@ class navigator implements widget
 	{
 		$name = static::normalizeName( $name );
 
+		if ( $selected !== null )
+			$selected = !!$selected;
+
 		// create compact description of new item to be collected internally
 		$newItem = array_filter( compact( 'name', 'label', 'action', 'asset', 'selected', 'sub' ), function( $property ) { return $property !== null; } );
 
@@ -325,9 +328,17 @@ class navigator implements widget
 			$enable = function( $item )
 			{
 				$selected = strtok( $item['action'], '?' );
-				$current  = strtok( context::selfURL(), '?' );
 
-				return ( substr( $current, -strlen( $selected ) ) == $selected );
+				$current = array_merge( array( preg_replace( '/.php$/', '', application::current()->script ) ), application::current()->selectors );
+				$current = '/' . implode( '/', $current );
+
+				if ( $selected === $current )
+					return true;
+
+				if ( substr( $current, 0, strlen( $selected ) + 1 ) === "$selected/" )
+					return 1;
+
+				return false;
 			};
 
 		$this->autoselector = $enable;
@@ -393,13 +404,20 @@ class navigator implements widget
 
 
 				// apply auto-detection of selected item if enabled and on haven't selected item before
-				if ( !$selected && $this->detectSelected( $item ) )
+				if ( !$selected )
 				{
-					// current item is selected, thus mark
-					$item['selected'] = 'selected';
+					$detected = $this->detectSelected( $item );
+					if ( $detected ) {
+						// current item is selected, thus mark
+						if ( $detected === true ) {
+							$item['selected'] = 'selected';
+						} else {
+							$item['active'] = 'active';
+						}
 
-					// and tell any containing navigator about having found selected item
-					$selected = true;
+						// and tell any containing navigator about having found selected item
+						$selected = $detected;
+					}
 				}
 
 				$item['action'] = application::current()->normalizeUrl( $item['action'] );
