@@ -443,6 +443,13 @@ class databrowser implements widget
 
 			if ( is_callable( $this->rowCommander ) )
 				$out[$key]['|command'] = call_user_func( $this->rowCommander, $key, $item );
+
+			$extra = array();
+			foreach ( $item as $extraKey => $value )
+				if ( !array_key_exists( $extraKey, $this->columns ) )
+					$extra[$extraKey] = $value;
+
+			$out[$key]['|extra'] = $extra;
 		}
 
 		return $out;
@@ -455,13 +462,14 @@ class databrowser implements widget
 	 * @param string $name name of column/property
 	 * @param array $item whole item of current row
 	 * @param string $itemId ID of current item
+	 * @param array $extras set of additional properties available in source
 	 * @return string prepared content of cell
 	 */
 
-	public function formatCell( $value, $name, $item, $itemId )
+	public function formatCell( $value, $name, $item, $itemId, $extras = array() )
 	{
 		if ( is_callable( $this->columns[$name]['formatter'] ) )
-			$value = call_user_func( $this->columns[$name]['formatter'], $value, $name, $item, $itemId );
+			$value = call_user_func( $this->columns[$name]['formatter'], $value, $name, $item, $itemId, $extras );
 
 		return $value !== null ? $value : _L('-');
 	}
@@ -522,9 +530,25 @@ class databrowser implements widget
 			// fetch form to use optionally
 			$form = $this->getForm();
 
+			// split items into raw data and additionally delivered data per row
+			$rows = $extras = array();
+			foreach ( $items as $key => $row ) {
+				$rows[$key] = $row;
+				unset( $rows[$key]['|extra'] );
+
+				$extras[$key] = $row['|extra'];
+			}
+
+			// use local callback to wrap custom cell formatter for enriching
+			// with additional data per row
+			$browser       = $this;
+			$cellFormatter = function ( $value, $name, $item, $id ) use ( $browser, $extras ) {
+				return $browser->formatCell( $value, $name, $item, $id, $extras[$id] );
+			};
+
 			// render table view
 			$id    = $form ? null : $this->datasource->name();
-			$table = html::arrayToTable( $items, $id, array( &$this, 'formatCell' ),
+			$table = html::arrayToTable( $rows, $id, $cellFormatter,
 			                             array( &$this, 'formatHeader' ),
 			                             '', '', $this->className );
 
