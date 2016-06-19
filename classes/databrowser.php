@@ -265,9 +265,90 @@ class databrowser implements widget
 		$this->columns[$name] = array(
 									'name'      => $name,
 									'label'     => $label,
-									'sortable'  => $sortable,
+									'sortable'  => !!$sortable,
 									'formatter' => $formatter,
 									);
+
+		return $this;
+	}
+
+	/**
+	 * Removes previously defined column of databrowser.
+	 *
+	 * @note This request is ignored if column does not exist.
+	 *
+	 * @param string $name name of column to remove
+	 * @return $this fluent interface
+	 */
+	public function removeColumn( $name ) {
+		if ( array_key_exists( $name, $this->columns ) )
+			unset( $this->columns[$name] );
+
+		return $this;
+	}
+
+	/**
+	 * Indicates if column with given name was defined before or not.
+	 *
+	 * @param string $name name of column to test
+	 * @return bool true if column was defined before
+	 */
+	public function hasColumn( $name ) {
+		return array_key_exists( $name, $this->columns );
+	}
+
+	/**
+	 * Changes label of named column to be shown in its related cell of table
+	 * head.
+	 *
+	 * @throws \InvalidArgumentException on adjusting undefined column
+	 * @param string $name name of column to adjust
+	 * @param string $label label of column to show in its related cell of table head
+	 * @return $this fluent interface
+	 */
+	public function setColumnLabel( $name, $label ) {
+		if ( !array_key_exists( $name, $this->columns ) )
+			throw new \InvalidArgumentException( 'no such column in databrowser: ' . $name );
+
+		$this->columns[$name]['label'] = strval( $label );
+
+		return $this;
+	}
+
+	/**
+	 * Changes state if named column is considered sortable or not.
+	 *
+	 * @throws \InvalidArgumentException on adjusting undefined column
+	 * @param string $name name of column to adjust
+	 * @param boolean $sortable true if column is considered sortable
+	 * @return $this fluent interface
+	 */
+	public function setColumnIsSortable( $name, $sortable ) {
+		if ( !array_key_exists( $name, $this->columns ) )
+			throw new \InvalidArgumentException( 'no such column in databrowser: ' . $name );
+
+		$this->columns[$name]['sortable'] = !!$sortable;
+
+		return $this;
+	}
+
+	/**
+	 * Changes formatter attached to named column.
+	 *
+	 * @throws \InvalidArgumentException on adjusting undefined column or on
+	 *         providing non-callable callback.
+	 * @param string $name name of column to adjust
+	 * @param callable $callback callback to use on formatting values of column
+	 * @return $this fluent interface
+	 */
+	public function setColumnFormatter( $name, $callback ) {
+		if ( !array_key_exists( $name, $this->columns ) )
+			throw new \InvalidArgumentException( 'no such column in databrowser: ' . $name );
+
+		if ( !is_callable( $callback ) )
+			throw new \InvalidArgumentException( 'invalid formatter callback on column: ' . $name );
+
+		$this->columns[$name]['formatter'] = $callback;
 
 		return $this;
 	}
