@@ -330,7 +330,9 @@ class application
 		if ( ( count( $selectors ) == 1 ) && is_array( $selectors[0] ) )
 			$selectors = array_shift( $selectors );
 
-		$selectors = implode( '/', $selectors );
+		$selectors = implode( '/', array_map( function ( $selector ) {
+			return rawurlencode( $selector );
+		}, $selectors ) );
 
 
 		switch ( txf::getContextMode() )
