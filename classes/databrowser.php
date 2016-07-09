@@ -410,12 +410,14 @@ class databrowser implements widget
 			// process all input once USING pager for semaphore
 			$this->pager = new pager( $this->datasource->count(), $this->volatilePager );
 
-			$this->datasource
-						->size( $this->pager->size() )
-						->offset( $this->pager->offset() );
+			if ( $this->pager->isEnabled() ) {
+				$this->datasource
+					->size( $this->pager->size() )
+					->offset( $this->pager->offset() );
 
-			if ( $this->getForm() )
-				$this->pager->enableButtons( true );
+				if ( $this->getForm() )
+					$this->pager->enableButtons( true );
+			}
 		}
 
 		return $this;

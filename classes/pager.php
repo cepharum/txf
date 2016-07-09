@@ -146,6 +146,15 @@ class pager implements widget
 	}
 
 	/**
+	 * Indicates if pager is enabled per configuration or not.
+	 *
+	 * @return bool
+	 */
+	public function isEnabled() {
+		return !!config::get( 'pager.enabled', true );
+	}
+
+	/**
 	 * Retrieves current number of records to skip.
 	 *
 	 * @return integer number of items to skip
@@ -167,7 +176,7 @@ class pager implements widget
 
 	public function applyOnQuery( datasource\query $query )
 	{
-		if ( config::get( 'pager.enabled', true ) ) {
+		if ( $this->isEnabled() ) {
 			$query->limit( $this->size(), $this->offset() );
 		}
 	}
@@ -201,7 +210,7 @@ class pager implements widget
 
 	public function getCode()
 	{
-		if ( !config::get( 'pager.enabled', true ) ) {
+		if ( !$this->isEnabled() ) {
 			return '';
 		}
 
