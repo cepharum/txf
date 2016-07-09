@@ -76,6 +76,14 @@ interface query
 	public function __construct( connection $connection, $table );
 
 	/**
+	 * Adjusts query to work distinct or not.
+	 *
+	 * @param bool $enabled true to query for distinct values.
+	 * @return $this fluent interface
+	 */
+	public function distinct( $enabled = true );
+	
+	/**
 	 * Joins selected dataset to include (some of) its columns.
 	 *
 	 * @example $query->addDataset( 'salary s', 's.employee=em.id AND tax=?', 'full' );

@@ -202,6 +202,14 @@ class sql_query implements query, browseable
 
 	protected $size = null;
 
+	/**
+	 * Marks if query is fetching distinct values.
+	 *
+	 * @var bool
+	 */
+	protected $distinctQuery = false;
+
+
 
 	/**
 	 * @param connection $connection link to datasource
@@ -268,6 +276,18 @@ class sql_query implements query, browseable
 			$term = $term->replace( $marker, implode( ',', array_pad( array(), count( $parameters ), '?' ) ) );
 
 		return $term;
+	}
+
+	/**
+	 * Adjusts query to work distinct or not.
+	 *
+	 * @param bool $enabled true to query for distinct values.
+	 * @return $this fluent interface
+	 */
+	public function distinct( $enabled = true ) {
+		$this->distinctQuery = !!$enabled;
+
+		return $this;
 	}
 
 	/**
@@ -474,8 +494,9 @@ class sql_query implements query, browseable
 		else
 			$orders = $limit = '';
 
+		$distinct = $this->distinctQuery ? 'DISTINCT ' : '';
 
-		$sql = "SELECT $columns FROM $tables$conditions$groups$filters$orders$limit";
+		$sql = "SELECT $distinct$columns FROM $tables$conditions$groups$filters$orders$limit";
 		if ( $gettingMatchCount )
 			$sql = "SELECT COUNT(*) FROM ($sql) ca";
 
