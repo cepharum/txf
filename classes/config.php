@@ -154,6 +154,19 @@ class config extends singleton
 	}
 
 	/**
+	 * Adjusts current configuration.
+	 *
+	 * This modification is volatile and valid for runtime of current request,
+	 * only.
+	 *
+	 * @param string $path path of configuration option to adjust
+	 * @param mixed $value new value of option
+	 */
+	public static function set( $path, $value ) {
+		static::current()->cached->write( $path, $value );
+	}
+
+	/**
 	 * Reads set of configuration options.
 	 *
 	 * In opposition to config::get() this method is always returning a set of
