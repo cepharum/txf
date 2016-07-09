@@ -167,7 +167,9 @@ class pager implements widget
 
 	public function applyOnQuery( datasource\query $query )
 	{
-		$query->limit( $this->size(), $this->offset() );
+		if ( config::get( 'pager.enabled', true ) ) {
+			$query->limit( $this->size(), $this->offset() );
+		}
 	}
 
 	/**
@@ -199,6 +201,10 @@ class pager implements widget
 
 	public function getCode()
 	{
+		if ( !config::get( 'pager.enabled', true ) ) {
+			return '';
+		}
+
 		$size   = $this->size();
 		$offset = $this->offset();
 
