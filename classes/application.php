@@ -359,7 +359,9 @@ class application
 	/**
 	 * Compiles URL addressing current script of current application.
 	 *
-	 * @param array|false $parameters set of parameters to pass in query, false to drop all current parameters (e.g. on creating GET form)
+	 * @param array|false $parameters set of parameters to pass in query, false
+	 *        to drop all current parameters (e.g. on creating GET form),
+	 *        provide special parameter '*' in array to start fresh set of parameters
 	 * @param mixed $selector first of multiple optional selectors to include
 	 * @return string URL of addressed script including optional parameters
 	 */
@@ -384,10 +386,14 @@ class application
 			// find all non-persistent input parameters of current script
 			$currentVolatileParameters = array();
 
-			$get = input::source( input::SOURCE_ACTUAL_GET );
-			foreach ( $get->listNames() as $name )
-				if ( data::isKeyword( $name ) && !input::isPersistent( $name ) )
-					$currentVolatileParameters[$name] = $get->getValue( $name );
+			if ( !array_key_exists( '*', $parameters ) ) {
+				$get = input::source( input::SOURCE_ACTUAL_GET );
+				foreach ( $get->listNames() as $name )
+					if ( data::isKeyword( $name ) && !input::isPersistent( $name ) )
+						$currentVolatileParameters[$name] = $get->getValue( $name );
+			}
+
+			unset( $parameters['*'] );
 
 			// merge volatile input with given parameters, but drop all those
 			// finally set NULL (to support removal per $parameters)

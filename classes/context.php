@@ -298,6 +298,11 @@ class context
 	/**
 	 * Simplifies retrieval of compiled URLs to a current script.
 	 *
+	 * $parameters might be
+	 * - false to drop all current parameters
+	 * - array of parameters to merge with current input
+	 * - array containing special parameter '*' to start with fresh set of parameters
+	 *
 	 * @param array|false $parameters set of parameters to include in reference
 	 * @param string $selectors... one of several selectors to include in reference
 	 * @return string URL referring to currently running script
@@ -313,6 +318,9 @@ class context
 	/**
 	 * Simplifies retrieval of compiled URLs to a selected script of current
 	 * application.
+	 *
+	 * In opposition to selfURL() $parameters must be array of parameters to
+	 * integrate into generated link for never being merged with existing input.
 	 *
 	 * @param string $scriptName name of script to refer to
 	 * @param array $parameters set of parameters to include in reference
