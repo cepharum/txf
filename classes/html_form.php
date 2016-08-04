@@ -262,7 +262,7 @@ class html_form implements widget
 
 	protected function idName()
 	{
-		return preg_replace( '/^[^a-z]+/i', '', md5( 'formid::' . application::current()->name . '::' . $this->name ) );
+		return substr( preg_replace( '/^[^a-z]+/i', '', md5( 'formid::' . application::current()->name . '::' . $this->name ) ), 10, 12 );
 	}
 
 	/**
@@ -295,7 +295,7 @@ class html_form implements widget
 
 	protected function idValue()
 	{
-		return preg_replace( '/[^a-z0-9_]/i', '', base64_encode( gzcompress( sha1( $this->name . '|' . application::current()->name . '|' . $_SERVER['REMOTE_ADDR'] . '|' . session_id() ), 9 ) ) );
+		return substr( preg_replace( '/[^a-z0-9_]/i', '', base64_encode( gzcompress( sha1( $this->name . '|' . application::current()->name . '|' . $_SERVER['REMOTE_ADDR'] . '|' . session_id() ), 9 ) ) ), 10, 16 );
 	}
 
 	/**
