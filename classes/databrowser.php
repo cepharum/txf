@@ -532,6 +532,14 @@ class databrowser implements widget
 			// fetch form to use optionally
 			$form = $this->getForm();
 
+			$volatiles = _A( config::get( 'databrowser.volatiles', array() ) )->elements;
+			$available = input::listNames();
+
+			foreach ( $volatiles as $volatile )
+				if ( in_array( $volatile, $available ) )
+					$form->setHidden( $volatile, input::vget( $volatile ) );
+
+
 			// split items into raw data and additionally delivered data per row
 			$rows = $extras = array();
 			foreach ( $items as $key => $row ) {
