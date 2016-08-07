@@ -126,6 +126,13 @@ class databrowser implements widget
 
 	protected $volatilePager;
 
+	/**
+	 * Selects callback to invoke for pre-processing list of rows.
+	 *
+	 * @var callable
+	 */
+	private $itemsPreprocessor = null;
+
 
 
 	/**
@@ -205,6 +212,22 @@ class databrowser implements widget
 				$this->volatilePager = false;
 				break;
 		}
+
+		return $this;
+	}
+
+	/**
+	 * Selects callback to invoke on all attached items to be listed in
+	 * data browser prior to generating its code.
+	 *
+	 * @param $callback
+	 * @return $this
+	 */
+	public function setItemsPreprocessor( $callback ) {
+		if ( !is_callable( $callback ) && !is_null( $callback ) )
+			throw new \InvalidArgumentException( 'invalid callback for pre-processing items' );
+
+		$this->itemsPreprocessor = $callback;
 
 		return $this;
 	}
@@ -453,6 +476,9 @@ class databrowser implements widget
 
 			$out[$key]['|extra'] = $extra;
 		}
+
+		if ( is_callable( $this->itemsPreprocessor ) )
+			$out = call_user_func( $this->itemsPreprocessor, $out );
 
 		return $out;
 	}
