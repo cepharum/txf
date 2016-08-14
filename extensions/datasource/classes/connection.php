@@ -58,6 +58,7 @@ interface connection
 	 * This is provided for querying a datasource e.g. for modification not
 	 * returning any resultset.
 	 *
+	 * @param string,... $query query on datasource, followed by one or more parameters to bind on query
 	 * @return bool
 	 */
 
@@ -69,8 +70,7 @@ interface connection
 	 * Provide bound parameters in additional arguments or as single array of
 	 * parameters.
 	 *
-	 * @param string $query query on datasource
-	 * @param array $parameters single array of parameters to bind
+	 * @param string,... $query query on datasource, followed by one or more parameters to bind on query
 	 * @return mixed value of first cell in first matching row
 	 */
 
@@ -82,8 +82,7 @@ interface connection
 	 * Provide bound parameters in additional arguments or as single array of
 	 * parameters.
 	 *
-	 * @param string $query query on datasource
-	 * @param array $parameters single array of parameters to bind
+	 * @param string,... $query query on datasource, followed by one or more parameters to bind on query
 	 * @return array set of columns in first matching row
 	 */
 
@@ -95,8 +94,7 @@ interface connection
 	 * Provide bound parameters in additional arguments or as single array of
 	 * parameters.
 	 *
-	 * @param string $query query on datasource
-	 * @param array $parameters single array of parameters to bind
+	 * @param string,... $query query on datasource, followed by one or more parameters to bind on query
 	 * @return array set of columns in first matching row
 	 */
 
@@ -108,8 +106,7 @@ interface connection
 	 * Provide bound parameters in additional arguments or as single array of
 	 * parameters.
 	 *
-	 * @param string $query query on datasource
-	 * @param array $parameters single array of parameters to bind
+	 * @param string,... $query query on datasource, followed by one or more parameters to bind on query
 	 * @return array-of-arrays matching rows
 	 */
 
@@ -121,8 +118,7 @@ interface connection
 	 * Provide bound parameters in additional arguments or as single array of
 	 * parameters.
 	 *
-	 * @param string $query query on datasource
-	 * @param array $parameters single array of parameters to bind
+	 * @param string,... $query query on datasource, followed by one or more parameters to bind on query
 	 * @return array-of-arrays matching rows
 	 */
 

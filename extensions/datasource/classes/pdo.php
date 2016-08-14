@@ -589,8 +589,7 @@ class pdo extends singleton implements connection
 	 * exceptions returning actually false on a failed query.
 	 *
 	 * @throws \BadMethodCallException
-	 * @param string $query query on datasource
-	 * @param array $parameters single array of parameters to bind
+	 * @param string,... $query query on datasource, followed by one or more parameters to bind on query
 	 * @return boolean true on successfully querying, false on failure
 	 */
 
@@ -617,8 +616,7 @@ class pdo extends singleton implements connection
 	 * parameters.
 	 *
 	 * @throws \BadMethodCallException
-	 * @param string $query query on datasource
-	 * @param array $parameters single array of parameters to bind
+	 * @param string,... $query query on datasource, followed by one or more parameters to bind on query
 	 * @return mixed value of first cell in first matching row
 	 */
 
@@ -635,8 +633,7 @@ class pdo extends singleton implements connection
 	 * parameters.
 	 *
 	 * @throws \BadMethodCallException
-	 * @param string $query query on datasource
-	 * @param array $parameters single array of parameters to bind
+	 * @param string,... $query query on datasource, followed by one or more parameters to bind on query
 	 * @return array set of columns in first matching row
 	 */
 
@@ -653,8 +650,7 @@ class pdo extends singleton implements connection
 	 * parameters.
 	 *
 	 * @throws \BadMethodCallException
-	 * @param string $query query on datasource
-	 * @param array $parameters single array of parameters to bind
+	 * @param string,... $query query on datasource, followed by one or more parameters to bind on query
 	 * @return array set of columns in first matching row
 	 */
 
@@ -671,8 +667,7 @@ class pdo extends singleton implements connection
 	 * parameters.
 	 *
 	 * @throws \BadMethodCallException
-	 * @param string $query query on datasource
-	 * @param array $parameters single array of parameters to bind
+	 * @param string,... $query query on datasource, followed by one or more parameters to bind on query
 	 * @return array-of-arrays matching rows
 	 */
 
@@ -689,8 +684,7 @@ class pdo extends singleton implements connection
 	 * parameters.
 	 *
 	 * @throws \BadMethodCallException
-	 * @param string $query query on datasource
-	 * @param array $parameters single array of parameters to bind
+	 * @param string,... $query query on datasource, followed by one or more parameters to bind on query
 	 * @return array-of-arrays matching rows
 	 */
 
