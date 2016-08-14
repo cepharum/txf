@@ -93,5 +93,38 @@ class markup
 	{
 		return view::render( 'markup/' . $method, variable_space::create( 'arguments', $arguments, 'text', array_shift( $arguments ) ) );
 	}
+
+	/**
+	 * Links all parts of provided code that are not linking already.
+	 *
+	 * @param string $in HTML code to be linked
+	 * @param string $link URL of link target
+	 * @param string $classes classes to use on linking
+	 * @param string $title title to use on linking
+	 * @param boolean $external true if link is considered external (to be opened in new window)
+	 * @return string revised HTML code
+	 */
+	public static function linkStatic( $link, $in, $classes = null, $title = null, $external = false ) {
+		$chunks = preg_split( '#(<a\s|</a>)#', $in, null, PREG_SPLIT_DELIM_CAPTURE );
+
+		$out = '';
+
+		for ( $i = 0; $i < count( $chunks ); $i++ ) {
+			if ( strtolower( trim( $chunks[$i] ) ) === '<a' ) {
+				$out .= $chunks[$i] . $chunks[$i + 1] . $chunks[$i + 2];
+				$i += 2;
+			} else {
+				$out .= preg_replace_callback( '#(^\]?\s*[;,.:]?\s*)(.*?)(\s*[;,.:]?\s*\[?$)#', function( $matches ) use ( $link, $classes, $title, $external ) {
+					if ( $matches[2] ) {
+						return $matches[1] . markup::link( $link, $matches[2], $classes, $title, $external ) . $matches[3];
+					}
+
+					return $matches[1] . $matches[3];
+				}, $chunks[$i] );
+			}
+		}
+
+		return $out;
+	}
 }
 
