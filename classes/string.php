@@ -748,6 +748,48 @@ class string
 
 		return $matches;
 	}
+
+	/**
+	 * Formats string according to some format specifier using provided bits of
+	 * information.
+	 *
+	 * The format specifier is selecting information by name. Contained markup
+	 * is replaced with found non-empty information wrapped in additional static
+	 * characters included with markup. If information is missing or empty the
+	 * whole markup is dropped resulting in replacement with empty string.
+	 *
+	 * * Any markup is enclosed in curly braces.
+	 * * The name of selected information is enclosed in another pair of curly
+	 *   braces.
+	 *   * Name may select filter to apply on selected value before processing.
+	 *   * Supported filters are:
+	 *     * `|d` to consider information non-empty on evaluating as non-zero
+	 *       integer.
+	 * * Any additional text before and after inner pair of curly braces is used
+	 *   to wrap found non-empty information.
+	 *
+	 * @param string $format
+	 * @param array $values
+	 * @return string
+	 */
+	public static function format( $format, $values ) {
+		return trim( preg_replace( '/\s+/', ' ', preg_replace_callback( '/\{([^{}]*)\{(\w+)(?:\|([d]))?\}([^}]*)\}/', function( $match ) use ( $values ) {
+			$value = trim( @$values[$match[2]] );
+
+			switch ( $match[3] ) {
+				case 'd' :
+					if ( !intval( $value ) ) {
+						$value = '';
+					}
+					break;
+			}
+
+			if ( $value !== '' )
+				return $match[1] . $value . $match[4];
+
+			return '';
+		}, $format ) ) );
+	}
 }
 
 
