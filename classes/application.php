@@ -188,7 +188,14 @@ class application
 		else
 			$this->selectors = explode( '/', $_SERVER['PATH_INFO'] );
 
-		$this->selectors = array_map( function ( $a ) { return data::autoType( trim( $a ) ); }, $this->selectors );
+		$urlDecodeSelector = !!getenv( 'TXF_URLDECODE_SELECTORS' );
+
+		$this->selectors = array_map( function ( $a ) use ( $urlDecodeSelector ) {
+			if ( $urlDecodeSelector )
+				$a = urldecode( $a );
+
+			return data::autoType( trim( $a ) );
+		}, $this->selectors );
 
 
 		// prepare application's base URL

@@ -32,7 +32,7 @@ txf - PHP web application framework
 # Motivation
 
 This framework has evolved over several projects now resulting in a simple but
-useful set of classes suitable for developing web applications view by view. 
+useful set of classes suitable for developing web applications view by view.
 
 Classes perfectly aid in writing stateful scripts accepting filtered input for
 accessing SQL databases using parameter binding for safely querying databases.
@@ -40,13 +40,13 @@ Furthermore scripts may use semantic description of output to be converted into
 HTML web pages using integrated template engine. This includes description of
 forms including support for preventing XSRF attacks.
 
-Due to rewriting all requests URLs are always pretty-printed and suitable for 
+Due to rewriting all requests URLs are always pretty-printed and suitable for
 implementing REST-ful APIs on your own. Creating links to current or any other
 script of application is supported without knowing the actual context. On linking
-to current script embedding of current input parameters is optionally managed 
+to current script embedding of current input parameters is optionally managed
 for you.
 
-Further classes simplify data modelling, data model relationships, encrypted 
+Further classes simplify data modelling, data model relationships, encrypted
 on-server session storage, SQL- and LDAP-based user management, i18n/l10n using
 gettext, data browsing and detailed per-record cards and more. Querying SQL
 databases is available using API for incrementally describing an SQL query for
@@ -59,12 +59,12 @@ A single txf framework installation is suitable for running several applications
 
 ## Primer
 
-txf is a PHP framework for rapidly developing PHP-based web applications. 
+txf is a PHP framework for rapidly developing PHP-based web applications.
 Previously it was designed to work out of the box by unzipping it into some
-folder accessible from the web and append one ore more web applications relying 
+folder accessible from the web and append one ore more web applications relying
 on this single installation. This design, however, wasn't suitable for managing
-either application and framework in distinct projects to be versioned 
-separately. That's why the framework was refactored so all framework-specific 
+either application and framework in distinct projects to be versioned
+separately. That's why the framework was refactored so all framework-specific
 files can be put in a common subfolder of some project reyling on txf framework.
 However this refactored framework doesn't work out of the box anymore.
 
@@ -102,9 +102,9 @@ Next write this simple script into file `/var/www/mycontainer/foobar/home.php`:
 
 Setting up server involves these tasks:
 
-1. Ensure requests are forwarded to capturing collector script of txf in 
+1. Ensure requests are forwarded to capturing collector script of txf in
    `/var/www/mycontainer/txf/run.php`.
-2. Include rule for showing initial view of application unless user is 
+2. Include rule for showing initial view of application unless user is
    explicitly requesting view.
 
 ### Apache 2.2+
@@ -118,26 +118,30 @@ Setting up server involves these tasks:
 
         SetEnv TXF_DOCUMENT_ROOT /var/www/mycontainer
         SetEnv TXF_APPLICATION foobar
-    
+
+        # include following two lines to support URL-encoded "/" in selectors
+        #AllowEncodedSlashes On
+        #SetEnv TXF_URLDECODE_SELECTORS foobar
+
         Alias /txf/run.php /var/www/mycontainer/txf/run.php
-    
+
         <Directory /var/www/mycontainer/foobar>
             Options FollowSymLinks
             AllowOverride None
             Order deny,allow
             allow from all
-    
+
             RewriteEngine On
             RewriteBase /
-    
+
             # select some default application
             RewriteRule ^$ home [R,L]
-    
+
             # all requests for unknown resources are processed using global script
             RewriteCond %{REQUEST_FILENAME} !-f
             RewriteRule .* /txf/run.php [L]
         </Directory>
-    
+
 	    <Location ~ ^/(classes|config|skins)/>
 	        Order allow,deny
 	        deny from all
@@ -162,10 +166,14 @@ Setting up server involves these tasks:
 
     Alias /foobar /var/www/mycontainer/foobar
     Alias /txf/run.php /var/www/mycontainer/txf/run.php
-    
-    # provide pathname of folder containing txf and any installed application 
+
+    # provide pathname of folder containing txf and any installed application
     # unless document root of web server is pointing there already
     SetEnv TXF_DOCUMENT_ROOT /var/www/mycontainer
+
+    # include following two lines to support URL-encoded "/" in selectors
+    #AllowEncodedSlashes On
+    #SetEnv TXF_URLDECODE_SELECTORS foobar
 
     <Directory /var/www/mycontainer/foobar>
         Options FollowSymLinks
@@ -184,12 +192,12 @@ Setting up server involves these tasks:
         RewriteCond %{REQUEST_FILENAME} !-f
         RewriteRule .* /txf/run.php [L]
     </Directory>
-    
+
     <Location ~ ^/foobar/(classes|config|skins)/>
         Order allow,deny
         deny from all
     </Location>
-    
+
     <Directory /var/www/mycontainer/txf>
         Order allow,deny
         deny from all
@@ -200,7 +208,7 @@ Setting up server involves these tasks:
         allow from all
     </Directory>
 
-> This example is configuring web server to show your application when using URL 
+> This example is configuring web server to show your application when using URL
 > prefix `/foobar`.
 
 ### nginx
@@ -227,6 +235,9 @@ Setting up server involves these tasks:
 
                     fastcgi_param TXF_DOCUMENT_ROOT /var/www/mycontainer;
                     fastcgi_param TXF_APPLICATION foobar;
+
+			        # include following two lines to support URL-encoded "/" in selectors
+                    fastcgi_param TXF_URLDECODE_SELECTORS 1;
 
                     # This might be contained in included fastcgi_params as well:
                     fastcgi_param SCRIPT_FILENAME $document_root/$fastcgi_script_name;
@@ -268,13 +279,13 @@ Setting up server involves these tasks:
 
 ## Try it!
 
-Use your favourite browser for opening URL of your installation at 
+Use your favourite browser for opening URL of your installation at
 `http://foobar.example.com` or `http://example.com/foobar` depending on whether
 having set up application in a separate virtual host or contained in an existing
 one. Of course you need to choose different domain than `example.com` in either
 case.
 
-This will open a nearly blank page showing well-formed XHTML document reading 
+This will open a nearly blank page showing well-formed XHTML document reading
 "Hello World!". By inspecting the document you will encounter a properly set of
 DOM elements ready for rendering multi-column views. The page is simply missing
 some styling, yet.

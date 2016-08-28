@@ -246,18 +246,18 @@ class context
 				assert( '$_SERVER[REDIRECT_URL] || $_SERVER[PATH_INFO] || $_SERVER[REQUEST_URI]' );
 
 				// get originally requested script (e.g. prior to rewrite)
-				if ( trim( $_SERVER['REDIRECT_URL'] ) !== '' )
+				if ( trim( $_SERVER['REQUEST_URI'] ) !== '' )
 				{
-					// use of mod_rewrite detected
-					$query = $_SERVER['REDIRECT_URL'];
+					// use of lighttpd's rewriting detected
+					$query = strtok( $_SERVER['REQUEST_URI'], '?' );
 
 					// mark rewrite mode by not selecting any valid used proxy
 					$detectedProxy = true;
 				}
-				else if ( trim( $_SERVER['REQUEST_URI'] ) !== '' )
+				else if ( trim( $_SERVER['REDIRECT_URL'] ) !== '' )
 				{
-					// use of lighttpd's rewriting detected
-					$query = strtok( $_SERVER['REQUEST_URI'], '?' );
+					// use of mod_rewrite detected
+					$query = $_SERVER['REDIRECT_URL'];
 
 					// mark rewrite mode by not selecting any valid used proxy
 					$detectedProxy = true;
