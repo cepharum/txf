@@ -283,4 +283,52 @@ class html
 
 		return $out . "$basicIndent</div>\n";
 	}
+
+	/**
+	 * Extracts existing links from provided HTML fragment to be wrapped in a
+	 * new link prior to appending extracted links.
+	 *
+	 * @param callable|null $processor callback invoked per found link to
+	 *        generate related link to be appended later, omit to keep extracted
+	 *        link as-is
+	 * @param string|null $link URL of link to be wrapping provided HTML
+	 *        fragment, null to extract contained links, but skip eventual
+	 *        generation of link
+	 * @param string $label HTML fragment to extract additional links from and
+	 *        wrap in link afterwards
+	 * @param string|null $class classes to apply on link generated eventually
+	 * @param string|null $title title of link generated eventually
+	 * @param bool $external true if eventually generated link is linking sth.
+	 *        external
+	 * @return string resulting HTML fragment
+	 */
+	public static function extendLink( $processor, $link, $label, $class = null, $title = null, $external = false ) {
+		if ( !is_callable( $processor ) )
+			$processor = function( $options ) {
+				return markup::link( $options['href'], $options['label'], $options['class'], $options['title'], !array_key_exists( 'onclick', $options ) );
+			};
+
+		if ( preg_match_all( '#<a\s([^>]+)>#i', $label, $links, PREG_SET_ORDER ) )
+			$tail = implode( ' ', array_map( function( $link ) use ( $processor ) {
+				$opts  = array();
+				$index = 0;
+
+				while ( preg_match( '/\s*([^=]+)=("[^"]*"|\'[^\']*\')/', $link[1], $next, PREG_OFFSET_CAPTURE, $index ) ) {
+					$index = $next[0][1] + strlen( $next[0][0] );
+
+					$name  = trim( $next[1][0] );
+					$value = substr( $next[2][0], 1, -1 );
+
+					$opts[$name] = $value;
+				}
+
+				return call_user_func( $processor, $opts );
+			}, $links ) );
+		else
+			$tail = '';
+
+		$label = strip_tags( $label );
+
+		return trim( ( $link ? markup::link( $link, $label, $class, $title, $external ) : $label ) . ' ' . $tail );
+	}
 }
