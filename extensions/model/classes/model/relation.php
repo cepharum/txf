@@ -841,10 +841,11 @@ class model_relation
 	 *        instances instead of items' labels
 	 * @param int $listNodeAtIndex index of node to list (default: node at
 	 *        opposite end of relation)
+	 * @param int $limit maximum number of related items to list
 	 * @return array list of related elements
 	 */
 
-	public function listRelated( $asModelInstances = false, $listNodeAtIndex = -1 )
+	public function listRelated( $asModelInstances = false, $listNodeAtIndex = -1, $limit = 0 )
 	{
 		// get query over all nodes of relation prepared for filtering
 		$query  = $this->query( true );
@@ -875,6 +876,9 @@ class model_relation
 		/*
 		 * query for matching records
 		 */
+
+		if ( $limit > 0 )
+			$query->limit( $limit );
 
 		$matches = $query->execute();
 
@@ -910,6 +914,21 @@ class model_relation
 
 
 		return $result;
+	}
+
+	/**
+	 * Fetches single item in relation to currently bound ones.
+	 *
+	 * @param bool $asModelInstances true to return list of matching model
+	 *        instances instead of items' labels
+	 * @param int $listNodeAtIndex index of node to list (default: node at
+	 *        opposite end of relation)
+	 * @return model|null fetched related item, null on missing matching relation
+	 */
+	public function getSingleRelated( $asModelInstances = false, $listNodeAtIndex = -1 ) {
+		$relateds = $this->listRelated( $asModelInstances, $listNodeAtIndex, 1 );
+
+		return array_shift( $relateds );
 	}
 
 	/**
