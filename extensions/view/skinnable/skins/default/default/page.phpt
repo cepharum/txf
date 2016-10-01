@@ -1,10 +1,11 @@
-<?php namespace de\toxa\txf; /** @var $variables */ /** @var $regions */ ?>
+<?php namespace de\toxa\txf; /** @var $variables */ /** @var $regions */ /** @var $clientData */ ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 	<!-- powered by cepharum txf -->
 	<title><?php echo html::inAttribute( $variables->title ) ?></title>
 	<?php echo view::wrapNotEmpty( view::getAssetsOfType( view::ASSET_TYPE_STYLE ), '<link rel="stylesheet" type="text/css" href="|"/>' ) ?>
+	<?php echo $clientData ?>
 	<?php echo data::qualifyString( config::get( 'view.html.header', '' ) ) ?>
 </head>
 <body>
