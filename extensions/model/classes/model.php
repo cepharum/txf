@@ -1359,8 +1359,9 @@ class model
 		// bind on provided instance if that is a subclass of current one
 		if ( $bindOnInstance ) {
 			$expectedClass = new \ReflectionClass( get_called_class() );
+			$givenClass = $bindOnInstance->getReflection();
 
-			if ( !$expectedClass->isSubclassOf( $bindOnInstance ) )
+			if ( $givenClass->getName() !== $expectedClass->getName() && !$givenClass->isSubclassOf( $expectedClass ) )
 				throw new \InvalidArgumentException( 'provided instance is not compatible' );
 
 			$relation->bindNodeOnItem( 0, $bindOnInstance );
