@@ -645,10 +645,11 @@ class model_editor
 	 *
 	 * @param string $property name of property to fetch
 	 * @param boolean $customField true if value is retrieved for custom field (and thus value can't be fetched from model instance obviously)
+	 * @param model_editor_element $element optional available for preparing value loaded from database
 	 * @return mixed value of fetched property
 	 */
 
-	public function getValue( $property, $customField = false )
+	public function getValue( $property, $customField = false, model_editor_element $element = null )
 	{
 		// 1. try optional set of fixed/immutable properties
 		$fixed = $this->getFixed();
@@ -673,8 +674,14 @@ class model_editor
 		}
 
 		// 4. try item in editor
-		if ( $this->item && !$customField )
-			return $this->item->__get( $property );
+		if ( $this->item && !$customField ) {
+			$value = $this->item->__get( $property );
+
+			if ( $element )
+				$value = $element->afterLoading( $this, $this->item, $property, $value );
+
+			return $value;
+		}
 
 		// fail ... there is no value for selected property
 		return null;
@@ -930,19 +937,20 @@ class model_editor
 			if ( !count( $this->enabled ) || !@$this->enabled[$property] )
 			{
 				$label = $field->label();
+				$type  = $field->type();
 				$name  = $this->propertyToField( $property );
 
-				$input = $field->isCustom() ? null : $this->__get( $property );
+				$input = $field->isCustom() ? null : $this->getValue( $property, false, $type );
 
 				if ( $this->isFixedValue( $property ) )
 				{
 					$fixed[$property] = $input;
 
-					$field->type()->renderStatic( $form, $name, $input, $label, $this, $field );
+					$type->renderStatic( $form, $name, $input, $label, $this, $field );
 				}
 				else
 				{
-					$field->type()->render( $form, $name, $input, $label, $this, $field );
+					$type->render( $form, $name, $input, $label, $this, $field );
 
 					if ( array_key_exists( $property, $this->errors ) )
 						$form->setRowError( $name, $this->errors[$property] );

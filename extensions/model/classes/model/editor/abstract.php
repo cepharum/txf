@@ -185,6 +185,24 @@ abstract class model_editor_abstract implements model_editor_element
 	}
 
 	/**
+	 * Provides option to transform value of regular property of item once after
+	 * having fetch value from datasource.
+	 *
+	 * This method is NOT invoked on processing input on related field or on
+	 * compiling related value as provided by onLoading() above.
+	 *
+	 * @param model_editor $editor editor trying to load value of selected property
+	 * @param model|null $item item in editor, null if editor is used to create new item on storing
+	 * @param string $propertyName name of property value originates from
+	 * @param mixed $loadedValue value loaded from datasource
+	 * @return mixed prepared value
+	 */
+	public function afterLoading( model_editor $editor, model $item = null, $propertyName, $loadedValue ) {
+		// keep loaded value as-is by default
+		return $loadedValue;
+	}
+
+	/**
 	 * Gets called before invoking optionally given custom validator for checking
 	 * properties of model item in editor instance.
 	 *

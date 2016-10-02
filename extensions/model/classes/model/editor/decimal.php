@@ -1,0 +1,88 @@
+<?php
+
+/**
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2014 cepharum GmbH, Berlin, http://cepharum.de
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ *
+ * @author: Thomas Urban
+ */
+
+namespace de\toxa\txf\model;
+
+/**
+ * Implements model editor element providing single line text input expecting
+ * decimal.
+ *
+ * @author Thomas Urban <thomas.urban@cepharum.de>
+ * @package de\toxa\txf
+ */
+class model_editor_decimal extends model_editor_text {
+	protected $pattern = '/^[+-]?\d+(\.\d+)?$/';
+	protected $trim    = true;
+
+	public function beforeValidating( model_editor $editor, model $item = null, $itemProperties, model_editor_field $field ) {
+		$itemProperties = parent::beforeValidating( $editor, $item, $itemProperties, $field );
+
+		$name = $editor->fieldToProperty( $field->name() );
+		if ( array_key_exists( $name, $itemProperties ) )
+			$itemProperties[$name] = floatval( static::internationalFormat( $itemProperties[$name] ) );
+
+		return $itemProperties;
+	}
+
+	protected static function internationalFormat( $value ) {
+		if ( trim( $value ) !== '' )
+			$value = strtr( $value, array(
+				\de\toxa\txf\_L('DECIMAL_SEP',null,1,'.') => '.',
+			) );
+
+		return $value;
+	}
+
+	protected static function localFormat( $value ) {
+		if ( trim( $value ) !== '' )
+			$value = strtr( $value, array(
+				'.' => \de\toxa\txf\_L('DECIMAL_SEP',null,1,'.'),
+			) );
+
+		return $value;
+	}
+
+	public function validate( $input, $property, model_editor $editor ) {
+		return parent::validate( self::internationalFormat( $input ), $property, $editor );
+	}
+
+	public function afterLoading( model_editor $editor, model $item = null, $itemProperties, $value ) {
+		return static::localFormat( $value );
+	}
+
+	public function beforeStoring( model_editor $editor, model $item = null, $itemProperties, model_editor_field $field ) {
+		$itemProperties = parent::beforeStoring( $editor, $item, $itemProperties, $field );
+
+		$name = $editor->fieldToProperty( $field->name() );
+
+		if ( array_key_exists( $name, $itemProperties ) && !is_null( $itemProperties[$name] ) )
+			$itemProperties[$name] = floatval( static::internationalFormat( $itemProperties[$name] ) );
+
+		return $itemProperties;
+	}
+}
