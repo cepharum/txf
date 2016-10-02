@@ -44,16 +44,21 @@ class model_editor_decimal extends model_editor_text {
 
 		$name = $editor->fieldToProperty( $field->name() );
 		if ( array_key_exists( $name, $itemProperties ) )
-			$itemProperties[$name] = floatval( static::internationalFormat( $itemProperties[$name] ) );
+			$itemProperties[$name] = static::internationalFormat( $itemProperties[$name], true );
 
 		return $itemProperties;
 	}
 
-	protected static function internationalFormat( $value ) {
-		if ( trim( $value ) !== '' )
+	protected static function internationalFormat( $value, $asFloat = false ) {
+		if ( trim( $value ) !== '' ) {
 			$value = strtr( $value, array(
 				\de\toxa\txf\_L('DECIMAL_SEP',null,1,'.') => '.',
 			) );
+
+			if ( $asFloat )
+				$value = floatval( $value );
+		} else if ( $asFloat )
+			$value = null;
 
 		return $value;
 	}
@@ -80,8 +85,9 @@ class model_editor_decimal extends model_editor_text {
 
 		$name = $editor->fieldToProperty( $field->name() );
 
-		if ( array_key_exists( $name, $itemProperties ) && !is_null( $itemProperties[$name] ) )
-			$itemProperties[$name] = floatval( static::internationalFormat( $itemProperties[$name] ) );
+		if ( array_key_exists( $name, $itemProperties ) ) {
+			$itemProperties[$name] = static::internationalFormat( $itemProperties[$name], true );
+		}
 
 		return $itemProperties;
 	}
