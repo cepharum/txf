@@ -32,6 +32,7 @@ namespace de\toxa\txf\model;
 abstract class model_editor_abstract implements model_editor_element
 {
 	protected $isMandatory = false;
+	protected $isReadOnly = false;
 	protected $hint = null;
 	protected $class = null;
 
@@ -111,6 +112,18 @@ abstract class model_editor_abstract implements model_editor_element
 	public function isMandatory()
 	{
 		return $this->isMandatory;
+	}
+
+	public function readOnly( $readOnly = true )
+	{
+		$this->isReadOnly = !!$readOnly;
+
+		return $this;
+	}
+
+	public function isReadOnly()
+	{
+		return $this->isReadOnly;
 	}
 
 	public function setHint( $hintText )

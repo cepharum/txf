@@ -44,6 +44,9 @@ interface model_editor_element
 	public function mandatory( $mandatory = true );
 	public function isMandatory();
 
+	public function readOnly( $readOnly = true );
+	public function isReadOnly();
+
 	public function declareDefaultValue( $defaultValue );
 
 	public function onSelectingItem( model_editor $editor, model $item, model_editor_field $field );

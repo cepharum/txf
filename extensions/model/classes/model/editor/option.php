@@ -48,6 +48,9 @@ class model_editor_option extends model_editor_text
 
 	public function render( html_form $form, $name, $input, $label, model_editor $editor, model_editor_field $field )
 	{
+		if ( $this->isReadOnly )
+			return $this->renderStatic( $form, $name, $input, $label, $editor, $field );
+
 		$classes = implode( ' ', array_filter( array( $this->class, 'option' ) ) );
 
 		$form->setCheckboxRow( $name, $label, $input, $this->isMandatory, $this->hint, null, $classes );

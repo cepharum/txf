@@ -119,6 +119,9 @@ class model_editor_date extends model_editor_abstract
 
 	public function render( html_form $form, $name, $input, $label, model_editor $editor, model_editor_field $field )
 	{
+		if ( $this->isReadOnly )
+			return $this->renderStatic( $form, $name, $input, $label, $editor, $field );
+
 		$ts = $this->parseStorageToDatetime( $input );
 
 		$classes = array( $this->class, 'date', preg_replace( '/\W/', '', $this->editorFormat ) );
