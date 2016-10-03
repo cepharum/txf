@@ -59,6 +59,9 @@ class model_editor_currency extends model_editor_abstract
 
 	public function normalize( $input, $property, model_editor $editor )
 	{
+		if ( $this->isReadOnly )
+			return null;
+
 		// don't normalize input provided by editor, but separately read input
 		// from multiple included fields
 		$field = $editor->propertyToField( $property );

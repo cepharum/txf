@@ -76,6 +76,9 @@ class model_editor_selector extends model_editor_text
 
 	public function normalize( $input, $property, model_editor $editor )
 	{
+		if ( $this->isReadOnly )
+			return null;
+
 		$input = trim( $input );
 
 		return $this->options->exists( $input ) ? $input : null;

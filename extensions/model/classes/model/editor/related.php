@@ -271,6 +271,9 @@ class model_editor_related extends model_editor_abstract
 
 	public function normalize( $input, $property, model_editor $editor )
 	{
+		if ( $this->isReadOnly )
+			return null;
+
 		return array_unique( array_filter( (array) $input ) );
 	}
 

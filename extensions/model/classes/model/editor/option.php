@@ -35,6 +35,9 @@ class model_editor_option extends model_editor_text
 {
 	public function normalize( $input, $property, model_editor $editor )
 	{
+		if ( $this->isReadOnly )
+			return null;
+
 		return preg_match( '/^y(es)?|j(a)?|on|t(rue)?|set|1$/i', trim( $input ) ) ? 1 : 0;
 	}
 

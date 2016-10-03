@@ -94,6 +94,9 @@ class model_editor_date extends model_editor_abstract
 
 	public function normalize( $input, $property, model_editor $editor )
 	{
+		if ( $this->isReadOnly )
+			return null;
+
 		$parsed = $this->parseInputToDatetime( $input );
 
 		return $parsed ? $parsed->format( $this->storageFormat ) : null;

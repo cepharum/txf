@@ -88,7 +88,7 @@ abstract class model_editor_abstract implements model_editor_element
 	{
 		$input = trim( $input );
 
-		return ( $input === '' ) ? null : $input;
+		return ( $this->isReadOnly || $input === '' ) ? null : $input;
 	}
 
 	public function validate( $input, $property, model_editor $editor )

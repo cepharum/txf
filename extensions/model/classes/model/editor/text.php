@@ -50,6 +50,9 @@ class model_editor_text extends model_editor_abstract
 
 	public function normalize( $input, $property, model_editor $editor )
 	{
+		if ( $this->isReadOnly )
+			return null;
+
 		$input = parent::normalize( $input, $property, $editor );
 
 		if ( $input !== null ) {
