@@ -555,6 +555,22 @@ class model_editor
 	}
 
 	/**
+	 * Requests form of editor to be POSTing rather than GETting.
+	 *
+	 * @param boolean $post true to choose POST method, false to choose GET method
+	 * @return $this
+	 */
+	public function post( $post = true )
+	{
+		if ( $post )
+			$this->form()->post();
+		else
+			$this->form()->get();
+
+		return $this;
+	}
+
+	/**
 	 * Fetches all currently fixed properties of item.
 	 *
 	 * @return array
@@ -1041,8 +1057,7 @@ class model_editor
 
 		$record = $this->item->published();
 
-		if ( $this->sortingOrder )
-			data::rearrangeArray( $record, $this->sortingOrder );
+		data::rearrangeArray( $record, $this->sortingOrder ? $this->sortingOrder : array_keys( $fields ) );
 
 		return html::arrayToCard( $record,
 					strtolower( basename( strtr( $this->class->getName(), '\\', '/' ) ) ) . 'Details',
@@ -1155,11 +1170,20 @@ class model_editor
 		return array_key_exists( $property, $this->fields ) ? $this->fields[$property] : false;
 	}
 
+	/**
+	 * Provides manual sorting order for rendering fields of form using this
+	 * list of fields' names.
+	 *
+	 * @param string[] $sortingOrder names of field in desired sorting order
+	 * @return model_editor
+	 */
 	public function setSortingOrder( $sortingOrder )
 	{
 		if ( !is_array( $sortingOrder ) )
 			throw new \InvalidArgumentException( 'invalid sorting order definition' );
 
 		$this->sortingOrder = $sortingOrder;
+
+		return $this;
 	}
 }
