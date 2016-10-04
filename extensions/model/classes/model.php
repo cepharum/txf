@@ -1596,10 +1596,11 @@ class model
 	 * Creates query for browsing model's items stored in provided datasource.
 	 *
 	 * @param connection $source datasource containing model's items, omit for using default datasource
+	 * @param string $alias optional name of alias to explicitly use on model's data set in retrieved query
 	 * @return query query for listing items of current model
 	 */
 
-	public static function browse( connection $source = null )
+	public static function browse( connection $source = null, $alias = null )
 	{
 		if ( $source === null )
 			$source = datasource::getDefault();
@@ -1609,7 +1610,19 @@ class model
 
 		static::updateSchema( $source );
 
-		return $source->createQuery( static::$set_prefix . static::$set );
+		$setName = preg_replace( '/\s+/', ' ', trim( static::$set_prefix . static::$set ) );
+
+		if ( $alias ) {
+			$parts = explode( ' ', $setName );
+
+			if ( !is_string( $alias ) )
+				throw new \InvalidArgumentException( 'invalid type of alias' );
+
+			$alias   = explode( ' ', preg_replace( '/\s+/', ' ', trim( $alias ) ) );
+			$setName = $parts[0] . ' ' . $alias[0];
+		}
+
+		return $source->createQuery( $setName );
 	}
 
 	/**
