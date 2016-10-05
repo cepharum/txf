@@ -923,7 +923,7 @@ class model_relation
 	 *        instances instead of items' labels
 	 * @param int $listNodeAtIndex index of node to list (default: node at
 	 *        opposite end of relation)
-	 * @return model|null fetched related item, null on missing matching relation
+	 * @return model|false fetched related item, null on missing matching relation
 	 */
 	public function getSingleRelated( $asModelInstances = false, $listNodeAtIndex = -1 ) {
 		$relateds = $this->listRelated( $asModelInstances, $listNodeAtIndex, 1 );
