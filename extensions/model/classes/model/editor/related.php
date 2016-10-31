@@ -319,16 +319,22 @@ class model_editor_related extends model_editor_abstract
 
 		$values = array_pad( $input, $this->selectorCount, null );
 
+		if ( \de\toxa\txf\input::vget( $name . '_cmdActionAddSelector' ) )
+			$values[] = null;
+
+		if ( count( $values ) > $this->maxCount )
+			array_splice( $values, $this->maxCount );
+
 		$selectors = array_map( function( $value ) use ( $name, $available ) {
 			return markup::selector( $name . '[]', $available, $value );
-		}, array_pad( $values, min( $this->maxCount, $this->selectorCount ), null ) );
+		}, $values );
 
 		$classes = implode( ' ', array_filter( array( $this->class, 'related' ) ) );
 
 		$form->setRow( $name, $label, implode( "<br />\n", $selectors ), $this->isMandatory, null, null, $classes );
 
 		if ( count( $selectors ) < $this->maxCount )
-			$form->setRowCode( $name, markup::paragraph( markup::button( $name . '_add', \de\toxa\txf\_L('Add Entry') ), 'actionPanel' ) );
+			$form->setRowCode( $name, markup::paragraph( markup::button( $name . '_cmdActionAddSelector', \de\toxa\txf\_L('Add Entry') ), 'actionPanel' ) );
 
 		return $this;
 	}
