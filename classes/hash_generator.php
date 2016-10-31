@@ -62,8 +62,8 @@ class hash_generator
 
 	protected static function _get( $object, $secret, $timestamp )
 	{
-		$salt = ssha::get( $object, 'cePharUm-S3cr3t-54lT' . static::_date( $timestamp ), true );
-		$hash = substr( preg_replace( '#[/+=]#', '', ssha::get( $secret, $salt ) ), 12, 16 );
+		$salt = blowfish::get( $object, 'cePharUm-S3cr3t-54lT' . static::_date( $timestamp ), true );
+		$hash = substr( preg_replace( '#[/+=]#', '', blowfish::get( $secret, $salt ) ), 12, 16 );
 
 		return $hash;
 	}

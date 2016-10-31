@@ -29,7 +29,7 @@
 namespace de\toxa\txf;
 
 
-class ssha
+class blowfish
 {
 	/**
 	 * Creates salted hash of provided value.
@@ -39,41 +39,60 @@ class ssha
 	 * @return string salted hash of provided data
 	 */
 
-	public static function get( $value, $salt = null, $raw = false )
+	public static function get( $value, $salt = null )
 	{
 		if ( $salt === null )
-			$salt = sha1( mt_rand() );
+			$salt = static::getRandomSalt();
 
 		if ( !is_string( $value ) )
 			$value = serialize( $value );
 
-		$hash = sha1( $value . $salt, true ) . $salt;
+		return crypt( $value, $salt );
+	}
 
-		return $raw ? $hash : '{SSHA}' . base64_encode( $hash );
+	/**
+	 * Generates random salt for use with blowfish hashing.
+	 *
+	 * @return string
+	 */
+	protected static function getRandomSalt() {
+		$alphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+		$iterations = config::get( 'blowfish.iterations', 11 );
+		if ( $iterations < 4 || $iterations > 31 )
+			throw new \InvalidArgumentException( 'invalid blowfish iteration count in configuration' );
+
+		$out = '$2y$' . sprintf( '%02d', $iterations ) . '$';
+
+		for ( $i = 0; $i < 22; $i++ ) {
+			$out .= $alphabet[mt_rand( 0, strlen( $alphabet ) )];
+		}
+
+		return $out;
 	}
 
 	/**
 	 * Extracts salt from provided hash.
 	 *
-	 * @param string $hash salted hash previously returned from a call to ssha::get()
+	 * @param string $hash salted hash previously returned from a call to blowfish::get()
 	 * @return string salt of provided hash
 	 */
 
 	public static function extractSalt( $hash )
 	{
-		if ( substr( $hash, 0, 6 ) === '{SSHA}' )
-			return substr( base64_decode( substr( $hash, 6 ) ), 20 );
+		if ( !$hash || !static::isValidHash( $hash ) )
+			throw new \InvalidArgumentException( 'invalid hash for extracting salt from' );
 
-		return substr( $hash, 20 );
+		return substr( $hash, 0, 29 );
 	}
 
 	/**
-	 * Detects if provided hash looks like SSHA hash or not.
+	 * Detects if provided hash looks like blowfish hash or not.
 	 *
 	 * @param string $hash
 	 * @return bool
 	 */
 	public static function isValidHash( $hash ) {
-		return ( substr( $hash, 0, 6 ) === '{SSHA}' );
+		return !!preg_match( '/^\$2y\$\d\d\$[0-9a-zA-Z]{21}/', $hash );
 	}
 }

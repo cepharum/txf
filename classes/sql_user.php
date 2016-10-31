@@ -187,7 +187,7 @@ class sql_user extends user
 				$record = name_mapping::map( array(
 					'uuid'      => uuid::createRandom(),
 					'loginname' => 'admin',
-					'password'  => ssha::get( 'nimda' ),
+					'password'  => blowfish::get( 'nimda' ),
 					'name'      => _L('Administrator'),
 					'lock'      => '',
 					'email'     => '',
@@ -247,7 +247,7 @@ class sql_user extends user
 					$record[$new] = uuid::createRandom();
 					break;
 				case 'password' :
-					$record[$new] = ssha::get( $properties[$old] );
+					$record[$new] = blowfish::get( $properties[$old] );
 					break;
 				case 'loginname' :
 					$record[$new] = substr( trim( $properties[$old] ), 0, 64 );
@@ -455,7 +455,7 @@ class sql_user extends user
 				$ds = static::datasource();
 
 				if ( $propertyName == 'password' )
-					$propertyValue = ssha::get( $propertyValue );
+					$propertyValue = blowfish::get( $propertyValue );
 
 				// update value in cached copy of record
 				$this->record[$propertyName] = $propertyValue;
@@ -488,8 +488,8 @@ class sql_user extends user
 	{
 		$this->credentials = crypt::create( function()
 		{
-			return ssha::get( $_COOKIE['_txf'] . $_SERVER['REMOTE_ADDR'] . $_COOKIE['_txf'] . $_SERVER['HTTP_HOST'], md5( $_SERVER['HTTP_USER_AGENT'] ) ) .
-				   ssha::get( $_SERVER['HTTP_HOST'] . $_COOKIE['_txf'] . $_SERVER['HTTP_USER_AGENT'] . $_COOKIE['_txf'], md5( $_SERVER['REMOTE_ADDR'] ) );
+			return blowfish::get( $_COOKIE['_txf'] . $_SERVER['REMOTE_ADDR'] . $_COOKIE['_txf'] . $_SERVER['HTTP_HOST'], md5( $_SERVER['HTTP_USER_AGENT'] ) ) .
+			       blowfish::get( $_SERVER['HTTP_HOST'] . $_COOKIE['_txf'] . $_SERVER['HTTP_USER_AGENT'] . $_COOKIE['_txf'], md5( $_SERVER['REMOTE_ADDR'] ) );
 		} )->encrypt( $credentials );
 	}
 
@@ -503,8 +503,8 @@ class sql_user extends user
 	{
 		return crypt::create( function()
 		{
-			return ssha::get( $_COOKIE['_txf'] . $_SERVER['REMOTE_ADDR'] . $_COOKIE['_txf'] . $_SERVER['HTTP_HOST'], md5( $_SERVER['HTTP_USER_AGENT'] ) ) .
-				   ssha::get( $_SERVER['HTTP_HOST'] . $_COOKIE['_txf'] . $_SERVER['HTTP_USER_AGENT'] . $_COOKIE['_txf'], md5( $_SERVER['REMOTE_ADDR'] ) );
+			return blowfish::get( $_COOKIE['_txf'] . $_SERVER['REMOTE_ADDR'] . $_COOKIE['_txf'] . $_SERVER['HTTP_HOST'], md5( $_SERVER['HTTP_USER_AGENT'] ) ) .
+			       blowfish::get( $_SERVER['HTTP_HOST'] . $_COOKIE['_txf'] . $_SERVER['HTTP_USER_AGENT'] . $_COOKIE['_txf'], md5( $_SERVER['REMOTE_ADDR'] ) );
 		} )->decrypt( $this->credentials );
 	}
 
@@ -521,8 +521,19 @@ class sql_user extends user
 		$record = $this->getRecord();
 		$token  = @$record['password'];
 
-		if ( $token && $this->credentials && ssha::get( $this->getCredentials(), ssha::extractSalt( $token ) ) !== $token )
-			throw new unauthorized_exception( 'invalid/missing credentials', unauthorized_exception::REAUTHENTICATE, $this );
+		if ( $token && $this->credentials ) {
+			$credentials = $this->getCredentials();
+
+			if ( blowfish::isValidHash( $token ) )
+				$hash = blowfish::get( $credentials, blowfish::extractSalt( $token ) );
+			else if ( ssha::isValidHash( $token ) )
+				$hash = ssha::get( $credentials, ssha::extractSalt( $token ) );
+			else
+				throw new \RuntimeException( "unknown hashing on user's token" );
+
+			if ( $hash !== $token )
+				throw new unauthorized_exception( 'invalid/missing credentials', unauthorized_exception::REAUTHENTICATE, $this );
+		}
 
 		exception::leaveSensitive();
 
@@ -557,7 +568,14 @@ class sql_user extends user
 
 		if ( $credentials && $token )
 		{
-			if ( ssha::get( $credentials, ssha::extractSalt( $token ) ) === $token )
+			if ( blowfish::isValidHash( $token ) )
+				$hash = blowfish::get( $credentials, blowfish::extractSalt( $token ) );
+			else if ( ssha::isValidHash( $token ) )
+				$hash = ssha::get( $credentials, ssha::extractSalt( $token ) );
+			else
+				throw new \RuntimeException( "unknown hashing on user's token" );
+
+			if ( $hash === $token )
 			{
 				if ( trim( $record['lock'] ) !== '' )
 					throw new unauthorized_exception( _L('account is locked'), unauthorized_exception::ACCOUNT_LOCKED, $this );
@@ -618,7 +636,7 @@ class sql_user extends user
 					$db->quoteName( name_mapping::mapSingle( 'id', 'txf.sql_user' ) )
 					);
 
-		if ( $db->test( $sql, ssha::get( $newToken ), $this->getID() ) )
+		if ( $db->test( $sql, blowfish::get( $newToken ), $this->getID() ) )
 		{
 			$this->saveCredentials( $newToken );
 
