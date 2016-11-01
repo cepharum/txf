@@ -546,7 +546,7 @@ class model_relation
 	public function bindNodeOnItem( $intNodeIndex, model $item )
 	{
 		$node = $this->nodeAtIndex( $intNodeIndex );
-		if ( !$node->getModel()->isSameModel( $item ) )
+		if ( !$node->getModel()->isCompatibleModel( $item ) )
 			throw new \InvalidArgumentException( 'item is not matching model of selected node' );
 
 		if ( !$this->datasource )

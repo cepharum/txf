@@ -421,4 +421,24 @@ class model_relation_model
 
 		return model::normalizeModel( $model )->getName() == $this->reflection->getName();
 	}
+
+	/**
+	 * Detects if provided model is compatible with current one.
+	 *
+	 * A model is considered _compatible_ if it is same one as current one or
+	 * derived from current one.
+	 *
+	 * @param model|\ReflectionClass|string|model_relation_model $testedModel
+	 * @return bool true if provided model is compatible with current one
+	 */
+	public function isCompatibleModel( $testedModel )
+	{
+		if ( $this->isVirtual() )
+			// there is no support for derivation on virtual models
+			return $this->isSameModel( $testedModel );
+
+		$testedModel = model::normalizeModel( $testedModel );
+
+		return $testedModel->getName() == $this->reflection->getName() || $testedModel->isSubclassOf( $this->reflection );
+	}
 }
