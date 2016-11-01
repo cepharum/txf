@@ -494,7 +494,7 @@ class sql_query implements query, browseable
 								array_values( $this->columns )
 							) );
 		else
-			$columns = '*';
+			$columns = $this->qualifyName( 0, '*' );
 
 		$tables = implode( ' LEFT JOIN ', array_map(
 							function( $table, $joinFilter ) {
