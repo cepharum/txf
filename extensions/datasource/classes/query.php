@@ -102,6 +102,28 @@ interface query
 	public function addDataset( $dataset, $condition, $parameters = null );
 
 	/**
+	 * Qualifies given name of property in context of selected dataset.
+	 *
+	 * This method is taking names of a dataset and a property and returns a
+	 * combination of both as string suitable for use with current query's data
+	 * source.
+	 *
+	 * `$dataset` might be string addressing dataset by name. In addition it may
+	 * be integer selecting dataset by index according to sequence of datasets
+	 * added to query before. Initial query (the one used to build query) has
+	 * index 0, first one added per @see addDataset() has index 1, etc.
+	 *
+	 * By using negative index dataset set may be addressed in reverse order:
+	 * `-1` is selecting dataset added most recently. If no dataset has been
+	 * added before this wil address initial dataset, too.
+	 *
+	 * @param string|int $dataset
+	 * @param string $property
+	 * @return mixed
+	 */
+	public function qualifyName( $dataset, $property );
+
+	/**
 	 * Adds property to fetch of all matching records in (one of the joined)
 	 * dataset(s).
 	 *
@@ -110,13 +132,7 @@ interface query
 	 * The number of parameters must match number of markers in term.
 	 *
 	 * `$name` may be array consisting of explicitly selected dataset and actual
-	 * name of property to fetch from selected dataset. Dataset may be selected
-	 * by name as used on adding dataset using @see addDataset() or by index.
-	 * On using index this is either 0-based index of dataset according to order
-	 * of adding datasets **previously**. Negative index is counting in reverse
-	 * order, thus `-1` is selecting most recently added dataset whereas `0` is
-	 * selecting initial dataset of query and `1` is selecting first actually
-	 * added dataset.
+	 * name of property to qualified implicitly using @see qualifyName().
 	 *
 	 * @param string[]|string $name property to fetch or term to evaluate on all matches, array of dataset name (or index in current query) and name of dataset's property
 	 * @param string $alias alias to assign for addressing fetched value in filter

@@ -361,6 +361,22 @@ class sql_query implements query, browseable
 		return $this;
 	}
 
+	public function qualifyName( $dataset, $property ) {
+		if ( is_integer( $dataset ) ) {
+			$set = array_slice( array_keys( $this->tables ), $dataset, 1 );
+
+			if ( !count( $set ) )
+				throw new \OutOfRangeException( 'invalid index of data set to bind property' );
+
+			$dataset = array_shift( $set );
+		}
+
+		if ( trim( $dataset ) )
+			return $this->datasource()->qualifyPropertyNames( $dataset, $property );
+
+		return $property;
+	}
+
 	public function addProperty( $name, $alias = null, $parameters = null )
 	{
 		if ( is_array( $name ) ) {
@@ -378,18 +394,8 @@ class sql_query implements query, browseable
 			throw new \InvalidArgumentException( 'bad column alias' );
 
 
-		if ( is_integer( $bindToDataSet ) ) {
-			$sets = array_keys( $this->tables );
-			$sets = array_slice( $sets, $bindToDataSet, 1 );
-
-			if ( !count( $sets ) )
-				throw new \OutOfRangeException( 'invalid index of data set to bind property' );
-
-			$bindToDataSet = array_shift( $sets );
-		}
-
-		if ( trim( $bindToDataSet ) )
-			$name = $this->datasource()->qualifyPropertyNames( $bindToDataSet, $name );
+		if ( $bindToDataSet !== null )
+			$name = $this->qualifyName( $bindToDataSet, $name );
 
 		$this->columns[$alias] = $name;
 
