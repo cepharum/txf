@@ -489,7 +489,7 @@ class sql_query implements query, browseable
 	{
 		if ( count( $this->columns ) )
 			$columns = implode( ',', array_map(
-								function( $alias, $name ) { return ( $alias == $name ) ? $name : "$name AS $alias"; },
+								function( $alias, $name ) { return ( $alias == $name || $alias == '*' ) ? $name : "$name AS $alias"; },
 								array_keys( $this->columns ),
 								array_values( $this->columns )
 							) );
