@@ -363,6 +363,12 @@ class sql_query implements query, browseable
 
 	public function addProperty( $name, $alias = null, $parameters = null )
 	{
+		if ( is_array( $name ) ) {
+			$bindToDataSet = array_shift( $name );
+			$name          = array_shift( $name );
+		} else
+			$bindToDataSet = null;
+
 		if ( !is_string( $name ) || !( $name = trim( $name ) ) )
 			throw new \InvalidArgumentException( 'bad column name' );
 
@@ -370,6 +376,20 @@ class sql_query implements query, browseable
 			$alias = $name;
 		else if ( !is_string( $alias ) || !( $alias = trim( $alias ) ) )
 			throw new \InvalidArgumentException( 'bad column alias' );
+
+
+		if ( is_integer( $bindToDataSet ) ) {
+			$sets = array_keys( $this->tables );
+			$sets = array_slice( $sets, $bindToDataSet, 1 );
+
+			if ( !count( $sets ) )
+				throw new \OutOfRangeException( 'invalid index of data set to bind property' );
+
+			$bindToDataSet = array_shift( $sets );
+		}
+
+		if ( trim( $bindToDataSet ) )
+			$name = $this->datasource()->qualifyPropertyNames( $bindToDataSet, $name );
 
 		$this->columns[$alias] = $name;
 
