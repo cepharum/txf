@@ -1330,9 +1330,11 @@ class model
 		if (!$name)
 			throw new \InvalidArgumentException('invalid relation name');
 
-		if ( array_key_exists( $name, self::$_relationCache ) ) {
+		$fullName = static::getReflection()->getName() . '::' . $name;
+
+		if ( array_key_exists( $fullName, self::$_relationCache ) ) {
 			// read existing relation from runtime cache
-			$relation = self::$_relationCache[$name];
+			$relation = self::$_relationCache[$fullName];
 		} else {
 			if ( !array_key_exists( $name, static::$relations ) )
 				throw new \InvalidArgumentException( sprintf( 'no such relation: %s', $name ) );
@@ -1346,7 +1348,7 @@ class model
 				$relation->setName( $name );
 
 				// write this relation (unbound) into runtime cache
-				self::$_relationCache[$name] = $relation;
+				self::$_relationCache[$fullName] = $relation;
 			} catch ( \InvalidArgumentException $e ) {
 				throw new \InvalidArgumentException(sprintf('%s: %s', $e->getMessage(), $name), $e->getCode(), $e);
 			}
