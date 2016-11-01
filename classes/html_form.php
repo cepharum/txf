@@ -729,6 +729,8 @@ EOT
 		$idName = $this->idName();
 		$idValue = $this->idValue();
 
+		$labelClass = 'without-labels';
+
 
 		// compile code of form's rows
 		$template = self::getRowTemplate();
@@ -738,8 +740,11 @@ EOT
 		if ( $this->sortingOrder )
 			data::rearrangeArray( $rows, $this->sortingOrder, true );
 
-		$rows = array_map( function( $row ) use ( $template )
+		$rows = array_map( function( $row ) use ( $template, &$labelClass )
 		{
+			if ( @$row['label'] )
+				$labelClass = 'with-labels';
+
 			$label = view::wrapNotEmpty( @$row['label'], '', '' );
 			$code  = view::wrapNotEmpty( @$row['htmlCode'], '', '' );
 			$hint  = view::wrapNotEmpty( @$row['hint'], '<span class="hint">', "</span>\n" );
@@ -768,7 +773,7 @@ EOT
 			else if ( $value !== null )
 				$hidden .= '<input type="hidden" name="' . html::inAttribute( $key ) . '" value="' . html::inAttribute( $value ) . '"/>';
 
-		$class = ( $this->class !== null ) ? ' class="' . html::inAttribute( $this->class ) . '"' : '';
+		$class = ' class="' . html::inAttribute( trim( $this->class . ' ' . $labelClass ) ) . '"';
 
 		return <<<EOT
 <form action="$action" method="$method"$mime id="$name"$class>
