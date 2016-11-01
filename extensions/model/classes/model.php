@@ -158,6 +158,22 @@ class model
 	}
 
 	/**
+	 * Detects if selected item of model exists in datasource or not.
+	 *
+	 * This method is available to check for existing item w/o exception thrown.
+	 *
+	 * @return bool
+	 */
+	public function exists() {
+		try {
+			$this->load();
+			return true;
+		} catch ( \Exception $e ) {
+			return false;
+		}
+	}
+
+	/**
 	 * Finds all or up to selected number of items of model matching provided
 	 * properties' values.
 	 *
