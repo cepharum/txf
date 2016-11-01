@@ -249,7 +249,7 @@ class sql_query implements query, browseable
 			$parameters = $parameters[0];
 
 		foreach ( $parameters as $parameter )
-			$collector[] = is_scalar( $parameter ) ? $parameter : \de\toxa\txf\_S((string)$parameter)->asUtf8;
+			$collector[] = ( is_null( $parameter ) || is_scalar( $parameter ) ) ? $parameter : \de\toxa\txf\_S((string)$parameter)->asUtf8;
 	}
 
 	/**
