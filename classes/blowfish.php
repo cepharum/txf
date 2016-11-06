@@ -56,16 +56,18 @@ class blowfish
 	 * @return string
 	 */
 	protected static function getRandomSalt() {
-		$alphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+		$alphabet = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-		$iterations = config::get( 'blowfish.iterations', 11 );
+		mt_srand( microtime( true ) * 1000000 );
+
+		$iterations = config::get( 'blowfish.iterations', 9 );
 		if ( $iterations < 4 || $iterations > 31 )
 			throw new \InvalidArgumentException( 'invalid blowfish iteration count in configuration' );
 
 		$out = '$2y$' . sprintf( '%02d', $iterations ) . '$';
 
 		for ( $i = 0; $i < 22; $i++ ) {
-			$out .= $alphabet[mt_rand( 0, strlen( $alphabet ) )];
+			$out .= $alphabet[mt_rand( 0, strlen( $alphabet ) - 1 )];
 		}
 
 		return $out;
@@ -83,7 +85,7 @@ class blowfish
 		if ( !$hash || !static::isValidHash( $hash ) )
 			throw new \InvalidArgumentException( 'invalid hash for extracting salt from' );
 
-		return substr( $hash, 0, 29 );
+		return $hash;
 	}
 
 	/**
