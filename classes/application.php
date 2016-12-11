@@ -417,4 +417,23 @@ class application
 
 		return call_user_func_array( array( &$this, 'scriptURL' ), $selectors );
 	}
+
+	/**
+	 * Detects if provided URL is a local one addressing different view of
+	 * current application.
+	 *
+	 * @param string $url
+	 * @return bool
+	 */
+	public function isLocalURL( $url ) {
+		if ( !preg_match( '#^\w+://#', $url ) )
+			return true;
+
+		$parsed = parse_url( $url );
+
+		if ( $parsed['host'] && $parsed['host'] !== $this->context->hostname )
+			return false;
+
+		return true;
+	}
 }
