@@ -76,6 +76,9 @@ class model_editor_selector extends model_editor_text
 
 	public function normalize( $input, $property, model_editor $editor )
 	{
+		if ( $this->isReadOnly )
+			return null;
+
 		$input = trim( $input );
 
 		return $this->options->exists( $input ) ? $input : null;
@@ -83,6 +86,9 @@ class model_editor_selector extends model_editor_text
 
 	public function render( html_form $form, $name, $input, $label, model_editor $editor, model_editor_field $field )
 	{
+		if ( $this->isReadOnly )
+			return $this->renderStatic( $form, $name, $input, $label, $editor, $field );
+
 		if ( $this->isMandatory && $this->options->exists( $input ) )
 			$this->options->remove( '' );
 		else if ( !$this->options->exists( '' ) )

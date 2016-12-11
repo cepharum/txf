@@ -48,6 +48,8 @@ namespace de\toxa\txf;
  * configured datasource.
  *
  * Datasources are defined in configuration.
+ *
+ * @method static datasource\connection getDefault() - fetches default datasource according to configuration
  */
 
 class datasource

@@ -555,6 +555,22 @@ class model_editor
 	}
 
 	/**
+	 * Requests form of editor to be POSTing rather than GETting.
+	 *
+	 * @param boolean $post true to choose POST method, false to choose GET method
+	 * @return $this
+	 */
+	public function post( $post = true )
+	{
+		if ( $post )
+			$this->form()->post();
+		else
+			$this->form()->get();
+
+		return $this;
+	}
+
+	/**
 	 * Fetches all currently fixed properties of item.
 	 *
 	 * @return array
@@ -645,10 +661,11 @@ class model_editor
 	 *
 	 * @param string $property name of property to fetch
 	 * @param boolean $customField true if value is retrieved for custom field (and thus value can't be fetched from model instance obviously)
+	 * @param model_editor_element $element optional available for preparing value loaded from database
 	 * @return mixed value of fetched property
 	 */
 
-	public function getValue( $property, $customField = false )
+	public function getValue( $property, $customField = false, model_editor_element $element = null )
 	{
 		// 1. try optional set of fixed/immutable properties
 		$fixed = $this->getFixed();
@@ -673,8 +690,14 @@ class model_editor
 		}
 
 		// 4. try item in editor
-		if ( $this->item && !$customField )
-			return $this->item->__get( $property );
+		if ( $this->item && !$customField ) {
+			$value = $this->item->__get( $property );
+
+			if ( $element )
+				$value = $element->afterLoading( $this, $this->item, $property, $value );
+
+			return $value;
+		}
 
 		// fail ... there is no value for selected property
 		return null;
@@ -930,19 +953,20 @@ class model_editor
 			if ( !count( $this->enabled ) || !@$this->enabled[$property] )
 			{
 				$label = $field->label();
+				$type  = $field->type();
 				$name  = $this->propertyToField( $property );
 
-				$input = $field->isCustom() ? null : $this->__get( $property );
+				$input = $field->isCustom() ? null : $this->getValue( $property, false, $type );
 
 				if ( $this->isFixedValue( $property ) )
 				{
 					$fixed[$property] = $input;
 
-					$field->type()->renderStatic( $form, $name, $input, $label, $this, $field );
+					$type->renderStatic( $form, $name, $input, $label, $this, $field );
 				}
 				else
 				{
-					$field->type()->render( $form, $name, $input, $label, $this, $field );
+					$type->render( $form, $name, $input, $label, $this, $field );
 
 					if ( array_key_exists( $property, $this->errors ) )
 						$form->setRowError( $name, $this->errors[$property] );
@@ -1033,8 +1057,7 @@ class model_editor
 
 		$record = $this->item->published();
 
-		if ( $this->sortingOrder )
-			data::rearrangeArray( $record, $this->sortingOrder );
+		data::rearrangeArray( $record, $this->sortingOrder ? $this->sortingOrder : array_keys( $fields ) );
 
 		return html::arrayToCard( $record,
 					strtolower( basename( strtr( $this->class->getName(), '\\', '/' ) ) ) . 'Details',
@@ -1147,11 +1170,20 @@ class model_editor
 		return array_key_exists( $property, $this->fields ) ? $this->fields[$property] : false;
 	}
 
+	/**
+	 * Provides manual sorting order for rendering fields of form using this
+	 * list of fields' names.
+	 *
+	 * @param string[] $sortingOrder names of field in desired sorting order
+	 * @return model_editor
+	 */
 	public function setSortingOrder( $sortingOrder )
 	{
 		if ( !is_array( $sortingOrder ) )
 			throw new \InvalidArgumentException( 'invalid sorting order definition' );
 
 		$this->sortingOrder = $sortingOrder;
+
+		return $this;
 	}
 }

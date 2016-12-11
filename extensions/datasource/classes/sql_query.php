@@ -249,7 +249,7 @@ class sql_query implements query, browseable
 			$parameters = $parameters[0];
 
 		foreach ( $parameters as $parameter )
-			$collector[] = is_scalar( $parameter ) ? $parameter : \de\toxa\txf\_S((string)$parameter)->asUtf8;
+			$collector[] = ( is_null( $parameter ) || is_scalar( $parameter ) ) ? $parameter : \de\toxa\txf\_S((string)$parameter)->asUtf8;
 	}
 
 	/**
@@ -361,8 +361,30 @@ class sql_query implements query, browseable
 		return $this;
 	}
 
+	public function qualifyName( $dataset, $property ) {
+		if ( is_integer( $dataset ) ) {
+			$set = array_slice( array_keys( $this->tables ), $dataset, 1 );
+
+			if ( !count( $set ) )
+				throw new \OutOfRangeException( 'invalid index of data set to bind property' );
+
+			$dataset = array_shift( $set );
+		}
+
+		if ( trim( $dataset ) )
+			return $this->datasource()->qualifyPropertyNames( $dataset, $property );
+
+		return $property;
+	}
+
 	public function addProperty( $name, $alias = null, $parameters = null )
 	{
+		if ( is_array( $name ) ) {
+			$bindToDataSet = array_shift( $name );
+			$name          = array_shift( $name );
+		} else
+			$bindToDataSet = null;
+
 		if ( !is_string( $name ) || !( $name = trim( $name ) ) )
 			throw new \InvalidArgumentException( 'bad column name' );
 
@@ -370,6 +392,10 @@ class sql_query implements query, browseable
 			$alias = $name;
 		else if ( !is_string( $alias ) || !( $alias = trim( $alias ) ) )
 			throw new \InvalidArgumentException( 'bad column alias' );
+
+
+		if ( $bindToDataSet !== null )
+			$name = $this->qualifyName( $bindToDataSet, $name );
 
 		$this->columns[$alias] = $name;
 
@@ -463,12 +489,12 @@ class sql_query implements query, browseable
 	{
 		if ( count( $this->columns ) )
 			$columns = implode( ',', array_map(
-								function( $alias, $name ) { return ( $alias == $name ) ? $name : "$name AS $alias"; },
+								function( $alias, $name ) { return ( $alias == $name || $alias == '*' ) ? $name : "$name AS $alias"; },
 								array_keys( $this->columns ),
 								array_values( $this->columns )
 							) );
 		else
-			$columns = '*';
+			$columns = $this->qualifyName( 0, '*' );
 
 		$tables = implode( ' LEFT JOIN ', array_map(
 							function( $table, $joinFilter ) {

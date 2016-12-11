@@ -44,10 +44,14 @@ interface model_editor_element
 	public function mandatory( $mandatory = true );
 	public function isMandatory();
 
+	public function readOnly( $readOnly = true );
+	public function isReadOnly();
+
 	public function declareDefaultValue( $defaultValue );
 
 	public function onSelectingItem( model_editor $editor, model $item, model_editor_field $field );
 	public function onLoading( model_editor $editor, model $item = null, $propertyName, model_editor_field $field );
+	public function afterLoading( model_editor $editor, model $item = null, $propertyName, $loadedValue );
 	public function beforeValidating( model_editor $editor, model $item = null, $itemProperties, model_editor_field $field );
 	public function beforeStoring( model_editor $editor, model $item = null, $itemProperties, model_editor_field $field );
 	public function afterStoring( model_editor $editor, model $item, $itemProperties, model_editor_field $field );

@@ -83,7 +83,7 @@ namespace de\toxa\txf;
  * @method static string checkbox( $name, $value, $checked, $label = null, $title = null, $class = null ) renders checkbox
  * @method static string selector( $name, $options, $value, $label = null, $multi = false, $class = null ) renders selector
  * @method static string upload( $name, $label = null, $class = null ) renders file upload control
- * @method static string button( $name, $value, $label = null, $class = null, $title = null, $class = null ) renders clickable button
+ * @method static string button( $name, $value, $label = null, $title = null, $class = null ) renders clickable button
  */
 
 

@@ -245,7 +245,7 @@ interface connection
 	 *         property names otherwise
 	 */
 
-	public function qualifyPropertyNames( $qualifiedSetOrAlias, $property, $quoted = true );
+	public function qualifyPropertyNames( $qualifiedSetOrAlias, $property );
 
 	/**
 	 * Retrieves new exception instance linked with current connection,

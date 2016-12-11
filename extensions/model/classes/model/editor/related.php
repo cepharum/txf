@@ -271,6 +271,9 @@ class model_editor_related extends model_editor_abstract
 
 	public function normalize( $input, $property, model_editor $editor )
 	{
+		if ( $this->isReadOnly )
+			return null;
+
 		return array_unique( array_filter( (array) $input ) );
 	}
 
@@ -309,20 +312,30 @@ class model_editor_related extends model_editor_abstract
 
 	public function render( html_form $form, $name, $input, $label, model_editor $editor, model_editor_field $field )
 	{
+		if ( $this->isReadOnly )
+			return $this->renderStatic( $form, $name, $input, $label, $editor, $field );
+
 		$available = array_merge( array( '0' => \de\toxa\txf\_L('-') ), $this->getSelectableOptions() );
 
 		$values = array_pad( $input, $this->selectorCount, null );
 
+		if ( \de\toxa\txf\input::vget( $name . '_cmdActionAddSelector' ) )
+			$values[] = null;
+
+		if ( count( $values ) > $this->maxCount )
+			array_splice( $values, $this->maxCount );
+
 		$selectors = array_map( function( $value ) use ( $name, $available ) {
 			return markup::selector( $name . '[]', $available, $value );
-		}, array_pad( $values, min( $this->maxCount, $this->selectorCount ), null ) );
+		}, $values );
 
 		$classes = implode( ' ', array_filter( array( $this->class, 'related' ) ) );
 
-		$form->setRow( $name, $label, implode( "<br />\n", $selectors ), $this->isMandatory, null, null, $classes );
+		$form->setRow( $name, $label, implode( "\n", $selectors ), $this->isMandatory, $this->hint, null, $classes );
 
-		if ( count( $selectors ) < $this->maxCount )
-			$form->setRowCode( $name, markup::paragraph( markup::button( $name . '_add', \de\toxa\txf\_L('Add Entry') ), 'actionPanel' ) );
+		if ( count( $selectors ) < $this->maxCount ) {
+			$form->setRowCode( $name, markup::button( $name . '_cmdActionAddSelector', '1', \de\toxa\txf\_L('Add Entry'), \de\toxa\txf\_L('Click this button to add another selector for choosing related information.'), 'actionAddSelector' ) );
+		}
 
 		return $this;
 	}

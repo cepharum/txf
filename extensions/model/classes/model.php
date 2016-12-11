@@ -158,6 +158,22 @@ class model
 	}
 
 	/**
+	 * Detects if selected item of model exists in datasource or not.
+	 *
+	 * This method is available to check for existing item w/o exception thrown.
+	 *
+	 * @return bool
+	 */
+	public function exists() {
+		try {
+			$this->load();
+			return true;
+		} catch ( \Exception $e ) {
+			return false;
+		}
+	}
+
+	/**
 	 * Finds all or up to selected number of items of model matching provided
 	 * properties' values.
 	 *
@@ -1330,9 +1346,11 @@ class model
 		if (!$name)
 			throw new \InvalidArgumentException('invalid relation name');
 
-		if ( array_key_exists( $name, self::$_relationCache ) ) {
+		$fullName = static::getReflection()->getName() . '::' . $name;
+
+		if ( array_key_exists( $fullName, self::$_relationCache ) ) {
 			// read existing relation from runtime cache
-			$relation = self::$_relationCache[$name];
+			$relation = self::$_relationCache[$fullName];
 		} else {
 			if ( !array_key_exists( $name, static::$relations ) )
 				throw new \InvalidArgumentException( sprintf( 'no such relation: %s', $name ) );
@@ -1346,7 +1364,7 @@ class model
 				$relation->setName( $name );
 
 				// write this relation (unbound) into runtime cache
-				self::$_relationCache[$name] = $relation;
+				self::$_relationCache[$fullName] = $relation;
 			} catch ( \InvalidArgumentException $e ) {
 				throw new \InvalidArgumentException(sprintf('%s: %s', $e->getMessage(), $name), $e->getCode(), $e);
 			}
@@ -1359,8 +1377,9 @@ class model
 		// bind on provided instance if that is a subclass of current one
 		if ( $bindOnInstance ) {
 			$expectedClass = new \ReflectionClass( get_called_class() );
+			$givenClass = $bindOnInstance->getReflection();
 
-			if ( !$expectedClass->isSubclassOf( $bindOnInstance ) )
+			if ( $givenClass->getName() !== $expectedClass->getName() && !$givenClass->isSubclassOf( $expectedClass ) )
 				throw new \InvalidArgumentException( 'provided instance is not compatible' );
 
 			$relation->bindNodeOnItem( 0, $bindOnInstance );
@@ -1595,10 +1614,11 @@ class model
 	 * Creates query for browsing model's items stored in provided datasource.
 	 *
 	 * @param connection $source datasource containing model's items, omit for using default datasource
+	 * @param string $alias optional name of alias to explicitly use on model's data set in retrieved query
 	 * @return query query for listing items of current model
 	 */
 
-	public static function browse( connection $source = null )
+	public static function browse( connection $source = null, $alias = null )
 	{
 		if ( $source === null )
 			$source = datasource::getDefault();
@@ -1608,7 +1628,19 @@ class model
 
 		static::updateSchema( $source );
 
-		return $source->createQuery( static::$set_prefix . static::$set );
+		$setName = preg_replace( '/\s+/', ' ', trim( static::$set_prefix . static::$set ) );
+
+		if ( $alias ) {
+			$parts = explode( ' ', $setName );
+
+			if ( !is_string( $alias ) )
+				throw new \InvalidArgumentException( 'invalid type of alias' );
+
+			$alias   = explode( ' ', preg_replace( '/\s+/', ' ', trim( $alias ) ) );
+			$setName = $parts[0] . ' ' . $alias[0];
+		}
+
+		return $source->createQuery( $setName );
 	}
 
 	/**

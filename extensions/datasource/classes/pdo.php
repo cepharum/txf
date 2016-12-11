@@ -532,7 +532,7 @@ class pdo extends singleton implements connection
 	 *         in $property, set of quoted property names otherwise
 	 */
 
-	public function qualifyPropertyNames( $qualifiedSetOrAlias = null, $property, $quoted = true )
+	public function qualifyPropertyNames( $qualifiedSetOrAlias = null, $property )
 	{
 		$qualify = !is_null( $qualifiedSetOrAlias );
 
@@ -567,7 +567,7 @@ class pdo extends singleton implements connection
 
 		foreach ( $properties as $name )
 		{
-			$quotedName       = $quoted  ? $this->quoteName( $name ) : $name;
+			$quotedName       = $name === '*' ? $name : $this->quoteName( $name );
 			$qualified[$name] = $qualify ? $qualifiedSetOrAlias . '.' . $quotedName : $quotedName;
 		}
 

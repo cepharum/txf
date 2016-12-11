@@ -130,6 +130,14 @@ class manager extends \de\toxa\txf\singleton
 
 	protected $assets = array();
 
+	/**
+	 * Lists client variables to set in output document of current view.
+	 *
+	 * @var array[]
+	 */
+	protected $clientVariables = array();
+
+
 
 	const ASSET_TYPE_SCRIPT = 'text/javascript';
 
@@ -430,6 +438,22 @@ EOT
 			return static::current()->accessVariable( $name );
 
 		return static::current()->accessVariable( $name, $value );
+	}
+
+	/**
+	 * Adds (another) client side variable to output of current view.
+	 *
+	 * @param string $name name of variable to set
+	 * @param string $property optional name of property of variable to set
+	 * @param mixed $value value to assign
+	 */
+	public static function clientVariable( $name, $property, $value = null ) {
+		if ( func_num_args() < 3 ) {
+			$value    = $property;
+			$property = null;
+		}
+
+		static::current()->clientVariables[] = compact( 'name', 'property', 'value' );
 	}
 
 	/**
@@ -744,7 +768,8 @@ EOT
 			$data = variable_space::create(
 										'variables', $this->variables,
 										'regions', variable_space::fromArray( $regions ),
-										'view', $this
+										'view', $this,
+										'clientData', $this->compileClientVariables()
 									);
 
 			$code = $this->engine->render( 'page', $data );
@@ -755,6 +780,37 @@ EOT
 		}
 
 		return $code;
+	}
+
+	/**
+	 * Converts client variables defined for current view into javascript code
+	 * block.
+	 *
+	 * @return string
+	 */
+	protected function compileClientVariables() {
+		if ( !count( $this->clientVariables ) )
+			return '';
+
+
+		$collected = array();
+		foreach ( $this->clientVariables as $info ) {
+			if ( is_null( $info['property'] ) )
+				$collected[$info['name']] = $info['value'];
+			else {
+				if ( !is_array( $collected[$info['name']] ) )
+					$collected[$info['name']] = array();
+
+				$collected[$info['name']][$info['property']] = $info['value'];
+			}
+		}
+
+		$script = '';
+		foreach ( $collected as $name => $value ) {
+			$script .= $name . '=' . json_encode( $value ) . ";\n";
+		}
+
+		return "<script type=\"text/javascript\">\n//<![CDATA[\n$script//]]>\n</script>";
 	}
 
 	/**
@@ -774,6 +830,7 @@ EOT
 	 * Selects different skin,
 	 *
 	 * @param mixed $skinSelector skin selector
+	 * @return mixed
 	 */
 
 	public static function selectSkin( $skinSelector )

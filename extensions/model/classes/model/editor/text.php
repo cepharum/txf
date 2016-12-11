@@ -50,6 +50,9 @@ class model_editor_text extends model_editor_abstract
 
 	public function normalize( $input, $property, model_editor $editor )
 	{
+		if ( $this->isReadOnly )
+			return null;
+
 		$input = parent::normalize( $input, $property, $editor );
 
 		if ( $input !== null ) {
@@ -80,8 +83,15 @@ class model_editor_text extends model_editor_abstract
 			if ( $this->maxLength > 0 && mb_strlen( $text ) > $this->maxLength )
 				throw new \InvalidArgumentException( \de\toxa\txf\_L('Your input is too long.') );
 
-			if ( $this->pattern && $input !== null && !preg_match( $this->pattern[0], $this->pattern[1] ? preg_replace( '/\s+/', '', $input ) : $input ) )
-				throw new \InvalidArgumentException( \de\toxa\txf\_L('Your input is invalid.') );
+			if ( $this->pattern && $input !== null ) {
+				if ( is_array( $this->pattern ) )
+					$match = preg_match( $this->pattern[0], $this->pattern[1] ? preg_replace( '/\s+/', '', $input ) : $input );
+				else
+					$match = preg_match( $this->pattern, $input );
+
+				if ( !$match )
+					throw new \InvalidArgumentException( \de\toxa\txf\_L('Your input is invalid.') );
+			}
 
 			if ( preg_match( '#<(script|object|iframe|style|link)[\s/>]#i', $input ) )
 				throw new \InvalidArgumentException( \de\toxa\txf\_L('This input contains invalid HTML code.') );
@@ -92,6 +102,9 @@ class model_editor_text extends model_editor_abstract
 
 	public function render( html_form $form, $name, $input, $label, model_editor $editor, model_editor_field $field )
 	{
+		if ( $this->isReadOnly )
+			return $this->renderStatic( $form, $name, $input, $label, $editor, $field );
+
 		$classes = implode( ' ', array_filter( array( $this->class, 'text' ) ) );
 
 		$form->setTexteditRow( $name, $label, $input, $this->isMandatory, $this->hint, null, $classes );
