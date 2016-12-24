@@ -160,6 +160,26 @@ abstract class model_editor_abstract implements model_editor_element
 	}
 
 	/**
+	 * Provides opportunity to adjust some provided value according to element
+	 * on handling values.
+	 *
+	 * Certain types of editor elements (such as `related`) might require to use
+	 * internal-only values to be mapped from/to actual values. Such elements
+	 * require fixed values to fake actually expected input by means of such
+	 * internal-only value. This method is extracting mapping of actual value
+	 * into element's internal-only mapping so model_editor's fixProperty() can
+	 * be used properly.
+	 *
+	 * @param * $actualValue some actual value of property managed by current element
+	 * @return * mapped internal-only value related to given actual one, might be given value in most cases though
+	 */
+
+	public function getFixableValue( $actualValue )
+	{
+		return $actualValue;
+	}
+
+	/**
 	 * Gets called on selecting item in editor.
 	 *
 	 * This callback is provided mainly to inform editor elements on changing

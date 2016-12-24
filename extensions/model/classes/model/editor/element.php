@@ -48,6 +48,7 @@ interface model_editor_element
 	public function isReadOnly();
 
 	public function declareDefaultValue( $defaultValue );
+	public function getFixableValue( $value );
 
 	public function onSelectingItem( model_editor $editor, model $item, model_editor_field $field );
 	public function onLoading( model_editor $editor, model $item = null, $propertyName, model_editor_field $field );

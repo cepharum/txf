@@ -342,11 +342,10 @@ class model_editor_related extends model_editor_abstract
 
 	public function renderStatic( html_form $form, $name, $value, $label, model_editor $editor, model_editor_field $field )
 	{
-		$available = $this->_getAvailables();
+		$options = $this->getSelectableOptions();
 
-		$value = array_map( function( $selected ) use ( $available ) {
-			$info = $available[$selected];
-			return is_array( $info ) ? $info['label'] : null;
+		$value = array_map( function( $selected ) use ( $options ) {
+			return @$options[$selected];
 		}, (array) $value );
 
 		$classes = implode( ' ', array_filter( array( $this->class, 'related' ) ) );
@@ -356,6 +355,18 @@ class model_editor_related extends model_editor_abstract
 		$form->setRow( $name, $label, $list, $this->isMandatory(), $this->hint, null, $classes );
 
 		return $this;
+	}
+
+	public function getFixableValue( $relatedId ) {
+		$available = $this->_getAvailables();
+
+		foreach ( $available as $option ) {
+			if ( $option['data'] == $relatedId ) {
+				return $this->bindingToLocalId( $option['data'] );
+			}
+		}
+
+		return null;
 	}
 
 	public function formatValue( $name, $value, model_editor $editor, model_editor_field $field )
