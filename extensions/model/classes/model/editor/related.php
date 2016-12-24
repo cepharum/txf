@@ -317,7 +317,7 @@ class model_editor_related extends model_editor_abstract
 
 		$available = array_merge( array( '0' => \de\toxa\txf\_L('-') ), $this->getSelectableOptions() );
 
-		$values = array_pad( $input, $this->selectorCount, null );
+		$values = array_pad( (array) $input, $this->selectorCount, null );
 
 		if ( \de\toxa\txf\input::vget( $name . '_cmdActionAddSelector' ) )
 			$values[] = null;
@@ -342,10 +342,11 @@ class model_editor_related extends model_editor_abstract
 
 	public function renderStatic( html_form $form, $name, $value, $label, model_editor $editor, model_editor_field $field )
 	{
-		$available = $this->getSelectableOptions();
+		$available = $this->_getAvailables();
 
 		$value = array_map( function( $selected ) use ( $available ) {
-			return $available[$selected];
+			$info = $available[$selected];
+			return is_array( $info ) ? $info['label'] : null;
 		}, (array) $value );
 
 		$classes = implode( ' ', array_filter( array( $this->class, 'related' ) ) );
