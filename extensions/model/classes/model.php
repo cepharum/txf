@@ -35,6 +35,13 @@ use \de\toxa\txf\datasource\datasource_exception;
 use \de\toxa\txf\data;
 
 
+/**
+ * Implements basic behaviour of a model and its instances/items.
+ *
+ * @property-read integer|array id
+ *
+ * @package de\toxa\txf\model
+ */
 class model
 {
 	/**

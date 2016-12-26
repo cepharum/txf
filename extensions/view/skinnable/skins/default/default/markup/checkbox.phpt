@@ -31,7 +31,7 @@ $title   = trim( $title ) !== '' ? ' title="' . html::inAttribute( $title ) . '"
 
 $name = html::idname( $name, true );
 
-echo view::wrapNotEmpty( $label, "<label for=\"$name\">|:</label>" );
+echo view::wrapNotEmpty( $label, "<label for=\"checkbox-$name\">|:</label>" );
 
 if ( $class ) {
 	$class = ' class="' . html::inAttribute( $class ) . '"';
@@ -39,5 +39,5 @@ if ( $class ) {
 
 ?>
 <span<?php echo $class ?>>
- <input type="checkbox" class="checkbox" name="<?php echo $name ?>" value="<?php echo html::inAttribute( $value ) ?>"<?php echo $checked . $title ?>/>
+ <input type="checkbox" class="checkbox" name="<?php echo $name ?>" id="checkbox-<?php echo $name ?>" value="<?php echo html::inAttribute( $value ) ?>"<?php echo $checked . $title ?>/>
 </span>
