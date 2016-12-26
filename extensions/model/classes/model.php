@@ -151,7 +151,7 @@ class model
 	 *
 	 * @param connection $source link to datasource to use instead of current one
 	 * @param array|integer $itemId ID of item to be managed by instance
-	 * @return model instance of model prepared to manage selected item
+	 * @return static instance of model prepared to manage selected item
 	 * @throws \InvalidArgumentException on providing invalid item ID
 	 * @throws datasource_exception on missing selected item in datasource
 	 */
