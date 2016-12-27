@@ -165,6 +165,44 @@ class model
 	}
 
 	/**
+	 * Fetches item of current model matching given selector.
+	 *
+	 * This method is searching item with ID matching provided value if value is
+	 * an integer. If provided value is not an integer but some scalar (string)
+	 * it is searching item matching given value in additionally named property.
+	 *
+	 * @param connection|null $source
+	 * @param integer|string $value value to look up to find matching item
+	 * @param string $property name of property to use if value is not an integer
+	 * @return static|null found existing item
+	 */
+	public static function get( connection $source = null, $value, $property = 'alias' ) {
+		if ( !$value )
+			throw new \InvalidArgumentException( 'missing model item selector' );
+
+		if ( $value instanceof self )
+			return $value;
+
+		if ( !is_scalar( $value ) )
+			throw new \InvalidArgumentException( 'invalid model item selector' );
+
+		$value = trim( $value );
+		if ( ctype_digit( $value ) ) {
+			$item = static::select( $source, intval( $value ) );
+
+			if ( !$item->exists() )
+				return null;
+		} else {
+			$filter = array();
+			$filter[$property] = $value;
+
+			$item = static::findOne( $source, $filter );
+		}
+
+		return $item ?: null;
+	}
+
+	/**
 	 * Detects if selected item of model exists in datasource or not.
 	 *
 	 * This method is available to check for existing item w/o exception thrown.
