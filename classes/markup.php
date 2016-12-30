@@ -69,8 +69,8 @@ namespace de\toxa\txf;
  * @method static string image( $src, $class = null, $alt = "", $href = null, $title = null, $width = 0, $height = 0 ) renders optionally clickable image
  *
  * = layout-related
- * @method static string block( $text, $class = null ) renders text in block-like container
- * @method static string inline( $text, $class = null ) renders text in inline container
+ * @method static string block( $text, $class = null, $title = null ) renders text in block-like container
+ * @method static string inline( $text, $class = null, $title = null ) renders text in inline container
  * @method static string flash( $context, $messages ) renders messages in given context
  *
  * = form related
