@@ -734,13 +734,15 @@ class model_editor
 	 * Processes input on current editor.
 	 *
 	 * @param callable $validatorCallback
+	 * @param callable $preStoreCallback
+	 * @param callable $postStoreCallback
 	 * @return bool|string false on input failures requiring user action,
 	 *                     "saved" on input successfully saved to data source,
 	 *                     "cancel" on user pressing cancel button,
 	 *                     "delete" on user deleting record
 	 */
 
-	public function processInput( $validatorCallback = null )
+	public function processInput( $validatorCallback = null, $preStoreCallback = null, $postStoreCallback = null )
 	{
 		if ( $this->hasInput() )
 		{
@@ -796,7 +798,7 @@ class model_editor
 					}
 
 					// wrap modification on model in transaction
-					$success = $source->transaction()->wrap( function() use ( $ctx, $class, $source, $fields, $enabled, $fixed, &$item, &$errors, $validatorCallback )
+					$success = $source->transaction()->wrap( function( connection $db ) use ( $ctx, $class, $source, $fields, $enabled, $fixed, &$item, &$errors, $validatorCallback, $preStoreCallback, $postStoreCallback )
 					{
 						$properties = array();
 
@@ -861,6 +863,11 @@ class model_editor
 						}
 
 
+						if ( is_callable( $preStoreCallback ) )
+							if ( !call_user_func( $preStoreCallback, $db, $item, $properties ) )
+								return false;
+
+
 						// optionally pre-process saving properties of item
 						foreach ( $fields as $field )
 							/** @var model_editor_field $field */
@@ -885,6 +892,12 @@ class model_editor
 						foreach ( $fields as $field )
 							/** @var model_editor_field $field */
 							$item = $field->type()->afterStoring( $ctx, $item, $properties, $field );
+
+
+						if ( is_callable( $postStoreCallback ) )
+							if ( !call_user_func( $postStoreCallback, $db, $item, $properties ) )
+								return false;
+
 
 						return true;
 					} );
