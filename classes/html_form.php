@@ -34,15 +34,15 @@ namespace de\toxa\txf;
  *
  * This class provides API for basically building HTML-based forms.
  *
- * @method html_form setStaticRow( string $name, string $label, string $value ) adds/updates single-line with static code to form
- * @method html_form setTexteditRow( string $name, string $label, string $value = null ) adds/updates single-line text edit control to form
- * @method html_form setPasswordRow( string $name, string $label ) adds/updates single-line password edit control to form
- * @method html_form setButtonRow( string $name, string $label, string $value = null ) adds/updates single button control to form
- * @method html_form setSelectorRow( string $name, string $label, array $options, string $value = null ) adds/updates drop down list control to form
- * @method html_form setMultiSelectorRow( string $name, string $label, array $options, string $value = null ) adds/updates multi-selectable list control to form
- * @method html_form setTextareaRow( string $name, string $label, string $value = null, int $rows, int $columns ) adds/updates multiline text edit control to form
- * @method html_form setFileRow( string $name, string $label ) adds/updates file upload control to form
- * @method html_form setCheckboxRow( string $name, string $label, string $value = null ) adds/updates single checkbox control to form
+ * @method html_form setStaticRow( string $name, string $label, string $value, boolean $mandatory = false, string $hint = null, string $error = null, string $class = null ) adds/updates single-line with static code to form
+ * @method html_form setTexteditRow( string $name, string $label, string $value = null, boolean $mandatory = false, string $hint = null, string $error = null, string $class = null ) adds/updates single-line text edit control to form
+ * @method html_form setPasswordRow( string $name, string $label, boolean $mandatory = false, string $hint = null, string $error = null, string $class = null ) adds/updates single-line password edit control to form
+ * @method html_form setButtonRow( string $name, string $label, string $value = null, boolean $mandatory = false, string $hint = null, string $error = null, string $class = null ) adds/updates single button control to form
+ * @method html_form setSelectorRow( string $name, string $label, array $options, string $value = null, boolean $mandatory = false, string $hint = null, string $error = null, string $class = null ) adds/updates drop down list control to form
+ * @method html_form setMultiSelectorRow( string $name, string $label, array $options, string $value = null, boolean $mandatory = false, string $hint = null, string $error = null, string $class = null ) adds/updates multi-selectable list control to form
+ * @method html_form setTextareaRow( string $name, string $label, string $value = null, int $rows, int $columns, boolean $mandatory = false, string $hint = null, string $error = null, string $class = null ) adds/updates multiline text edit control to form
+ * @method html_form setFileRow( string $name, string $label, boolean $mandatory = false, string $hint = null, string $error = null, string $class = null ) adds/updates file upload control to form
+ * @method html_form setCheckboxRow( string $name, string $label, string $value = null, boolean $mandatory = false, string $hint = null, string $error = null, string $class = null ) adds/updates single checkbox control to form
  */
 
 class html_form implements widget
@@ -175,6 +175,12 @@ class html_form implements widget
 			// get arguments depending on selected template
 			switch ( $type )
 			{
+				case 'password' :
+				case 'file' :
+				case 'upload' :
+					list( $name, $label ) = array_splice( $arguments, 0, 2 );
+					$value = "";
+					break;
 				case 'selector' :
 				case 'multiselector' :
 					list( $name, $label, $options, $value ) = array_splice( $arguments, 0, 4 );
@@ -195,6 +201,9 @@ class html_form implements widget
 			{
 				case 'selector' :
 					$args = array( $name, $options, $value );
+					break;
+				case 'checkbox' :
+					$args = array( $name, 'y', $value );
 					break;
 				case 'multiselector' :
 					$type = 'selector';

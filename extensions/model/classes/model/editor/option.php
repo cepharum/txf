@@ -56,6 +56,10 @@ class model_editor_option extends model_editor_text
 
 		$classes = implode( ' ', array_filter( array( $this->class, 'option' ) ) );
 
+		if ( ctype_digit( $input ) ) {
+			$input = intval( $input );
+		}
+
 		$form->setCheckboxRow( $name, $label, $input, $this->isMandatory, $this->hint, null, $classes );
 
 		return $this;
