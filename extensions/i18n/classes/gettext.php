@@ -141,7 +141,7 @@ class locale extends singleton
 	/**
 	 * ID of currently selected locale
 	 *
-	 * @var string
+	 * @var object
 	 */
 
 	protected $language;
@@ -183,30 +183,34 @@ class locale extends singleton
 	public function onLoad()
 	{
 		// select language to use (this must be listed in server's locale -a)
-		$this->language = config::get( 'locale.language', 'en_US.utf8' );
-		$this->domain   = config::get( 'locale.domain', TXF_APPLICATION );
+		$language     = config::get( 'locale.language', 'en_US.utf8' );
+		$this->domain = config::get( 'locale.domain', TXF_APPLICATION );
 
 
 		// choose locale according to request/context/available translations
 		$projectPath = config::get( 'locale.path', path::glue( TXF_APPLICATION_PATH, 'locale' ) );
 		$txfPath     = path::glue( dirname( __DIR__ ), 'locale' );
 
-		$bestMatch = static::chooseAcceptedLocale( $this->language, $this->domain, $projectPath, $txfPath );
+		$bestMatch = static::chooseAcceptedLocale( $language, $this->domain, $projectPath, $txfPath );
 		if ( $bestMatch )
-			$this->language = $bestMatch->original;
+			$this->language = $bestMatch;
+		else
+			$this->language = static::parseLocale( $language );
 
 
-		putenv( 'LANGUAGE=' . $this->language );
-		putenv( 'LANG=' . $this->language );
-		putenv( 'LC_ALL=' . $this->language );
+		$localeTag = $this->language->original;
 
-		if ( !setlocale( LC_ALL, $this->language ) )
-			log::error( 'could not select locale %s', $this->language );
+		putenv( 'LANGUAGE=' . $localeTag );
+		putenv( 'LANG=' . $localeTag );
+		putenv( 'LC_ALL=' . $localeTag );
+
+		if ( !setlocale( LC_ALL, $localeTag ) )
+			log::error( 'could not select locale %s', $localeTag );
 
 		if ( \extension_loaded( 'gettext' ) )
 		{
 			// bind configured domain to configured path containing l10n files
-			if ( static::hasTranslation( $projectPath, $this->language, $this->domain ) ) {
+			if ( static::hasTranslation( $projectPath, $localeTag, $this->domain ) ) {
 				bindtextdomain( $this->domain, $projectPath );
 				textdomain( $this->domain );
 				bind_textdomain_codeset( $this->domain, 'UTF-8' );
@@ -214,7 +218,7 @@ class locale extends singleton
 
 			if ( $this->domain !== 'txf' ) {
 				// bind domain "txf" to l10n path included with current extension
-				if ( static::hasTranslation( $txfPath, $this->language, 'txf' ) ) {
+				if ( static::hasTranslation( $txfPath, $localeTag, 'txf' ) ) {
 					bindtextdomain( 'txf', $txfPath );
 					bind_textdomain_codeset( 'txf', 'UTF-8' );
 				}
@@ -223,6 +227,14 @@ class locale extends singleton
 
 		self::$collectionMode = config::get( 'locale.collect.mode', '' );
 		self::$collectionFile = config::get( 'locale.collect.file' );
+	}
+
+	public function __get( $name ) {
+		switch ( $name ) {
+			case "locale" :
+			case "language" :
+				return $this->language;
+		}
 	}
 
 	/**
