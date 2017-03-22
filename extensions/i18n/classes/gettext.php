@@ -186,6 +186,16 @@ class locale extends singleton
 		$this->language = config::get( 'locale.language', 'en_US.utf8' );
 		$this->domain   = config::get( 'locale.domain', TXF_APPLICATION );
 
+
+		// choose locale according to request/context/available translations
+		$projectPath = config::get( 'locale.path', path::glue( TXF_APPLICATION_PATH, 'locale' ) );
+		$txfPath     = path::glue( dirname( __DIR__ ), 'locale' );
+
+		$bestMatch = static::chooseAcceptedLocale( $this->language, $this->domain, $projectPath, $txfPath );
+		if ( $bestMatch )
+			$this->language = $bestMatch->original;
+
+
 		putenv( 'LANGUAGE=' . $this->language );
 		putenv( 'LANG=' . $this->language );
 		putenv( 'LC_ALL=' . $this->language );
@@ -196,24 +206,189 @@ class locale extends singleton
 		if ( \extension_loaded( 'gettext' ) )
 		{
 			// bind configured domain to configured path containing l10n files
-			$path = config::get( 'locale.path', path::glue( TXF_APPLICATION_PATH, 'locale' ) );
-
-			bindtextdomain( $this->domain, $path );
-			textdomain( $this->domain );
-			bind_textdomain_codeset( $this->domain, 'UTF-8' );
+			if ( static::hasTranslation( $projectPath, $this->language, $this->domain ) ) {
+				bindtextdomain( $this->domain, $projectPath );
+				textdomain( $this->domain );
+				bind_textdomain_codeset( $this->domain, 'UTF-8' );
+			}
 
 			if ( $this->domain !== 'txf' ) {
 				// bind domain "txf" to l10n path included with current extension
-				$path = path::glue( dirname( __DIR__ ), 'locale' );
-
-				bindtextdomain( 'txf', $path );
-				bind_textdomain_codeset( 'txf', 'UTF-8' );
+				if ( static::hasTranslation( $txfPath, $this->language, 'txf' ) ) {
+					bindtextdomain( 'txf', $txfPath );
+					bind_textdomain_codeset( 'txf', 'UTF-8' );
+				}
 			}
 		}
 
-
 		self::$collectionMode = config::get( 'locale.collect.mode', '' );
 		self::$collectionFile = config::get( 'locale.collect.file' );
+	}
+
+	/**
+	 * Parses provided string for contained locale tag returning found and
+	 * normalized pieces as object properties `locale`, `region`, `encoding` and
+	 * the originally provided string in property `original`. If given string is
+	 * omitting either piece of locale tag the related property is set `null`.
+	 *
+	 * @param string $locale
+	 * @return null|object
+	 */
+	public static function parseLocale( $locale ) {
+		if ( preg_match( '/^([a-z]+)(?:[-_]([a-z]+))?(?:\.([a-z0-9_-]+))?$/i', $locale, $matches ) ) {
+			return (object) array(
+				'original' => $locale,
+				'locale'   => strtolower( $matches[1] ),
+				'region'   => $matches[2] ? strtolower( $matches[2] ) : null,
+				'encoding' => $matches[3] ? strtolower( strtr( $matches[3], array( '-' => '', '_' => '' ) ) ) : null,
+			);
+		}
+
+		return null;
+	}
+
+	/**
+	 * Lists parsed locale descriptors according to folders found in provided
+	 * path.
+	 *
+	 * @param string $path pathname of folder to contain l10ns
+	 * @return object[] parsed locale descriptors
+	 */
+	protected static function findAvailable( $path ) {
+		$availables = array();
+
+		$dir = opendir( $path );
+		while ( ( $folder = readdir( $dir ) ) !== false ) {
+			$found = static::parseLocale( $folder );
+			if ( $found )
+				$availables[] = $found;
+		}
+		closedir( $dir );
+
+		return $availables;
+	}
+
+	protected static function hasTranslation( $path, $locale, $domain ) {
+		if ( file_exists( path::glue( $path, $locale, 'LC_MESSAGES', $domain . '.mo' ) ) ) {
+			return $locale;
+		}
+
+		$available = static::findAvailable( $path );
+		$requested = static::parseLocale( $locale );
+
+		return static::findMatching( $available, $requested, function( $locale ) use ( $path, $domain ) {
+			return file_exists( path::glue( $path, $locale->original, 'LC_MESSAGES', $domain . '.mo' ) );
+		} );
+	}
+
+	public static function findMatching( $availables, $requested, $customTest ) {
+		if ( $requested ) {
+			foreach ( $availables as $available ) {
+				$isMatching = static::isMatching( $requested, $available, $customTest );
+				if ( $isMatching )
+					return $isMatching;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Returns locale in $toBeChecked if it basically matching locale given in
+	 * $toBeComparedWith.
+	 *
+	 * @param object $toBeChecked locale descriptor (as returned by static::parseLocale())
+	 * @param object $toBeComparedWith locale descriptor (as returned by static::parseLocale())
+	 * @param callable $customTest function invoked with $toBeChecked to eventually decide if basically matching locale shall be considered matching
+	 * @return object|null value of $toBeChecked on matching, null otherwise
+	 */
+	protected static function isMatching( $toBeChecked, $toBeComparedWith, $customTest = null ) {
+		if ( $toBeChecked && $toBeComparedWith )
+			if ( $toBeChecked->locale == $toBeComparedWith->locale )
+				if ( is_null( $toBeChecked->region ) || is_null( $toBeComparedWith->region ) || $toBeChecked->region == $toBeComparedWith->region )
+					if ( is_null( $toBeChecked->encoding ) || is_null( $toBeComparedWith->encoding ) || $toBeChecked->encoding == $toBeComparedWith->encoding )
+						if ( !$customTest || call_user_func( $customTest, $toBeChecked ) )
+							return $toBeChecked;
+
+		return null;
+	}
+
+	/**
+	 * Selects locale to use obeying explicit requests in query or by coolkie as
+	 * well as preferences sent by browser regarding accepted language.
+	 *
+	 * @param string $defaultLocale configured default locale
+	 * @param string $domain name of gettext domain to use for texting if related translation is available or not
+	 * @returns object finally accepted locale to use (parsed)
+	 */
+	protected static function chooseAcceptedLocale( $defaultLocale, $domain, $projectPath, $txfPath ) {
+		$save = false;
+
+		// select list of locales to test
+		$locale = input::vget( 'locale' );
+		if ( $locale ) {
+			$save = true;
+		} else {
+			if ( $_COOKIE['locale'] ) {
+				$locale = $_COOKIE['locale'];
+				$save   = true;
+			} else {
+				$locale = $_SERVER['HTTP_ACCEPT_LANGUAGE'];
+			}
+		}
+
+		$locales = preg_split( '/[,;]/', $locale );
+
+
+		$availables = $found = null;
+
+		foreach ( $locales as $requested ) {
+			$requested = self::parseLocale( $requested );
+			if ( !$requested )
+				continue;
+
+			if ( file_exists( path::glue( $projectPath, $requested->original, 'LC_MESSAGES', $domain . '.mo' ) ) ) {
+				$found = $requested;
+				break;
+			}
+
+			if ( !$availables ) {
+				$availables = static::findAvailable( $projectPath );
+				foreach ( static::findAvailable( $txfPath ) as $txfLocale ) {
+					$found = false;
+					foreach ( $availables as $locale )
+						if ( static::isMatching( $txfLocale, $locale ) ) {
+							$found = true;
+							break;
+						}
+
+					if ( !$found )
+						$availables[] = $locale;
+				}
+			}
+
+			$found = false;
+			foreach ( $availables as $available ) {
+				$found = self::isMatching( $available, $requested );
+				if ( $found )
+					break;
+			}
+
+			if ( $found )
+				break;
+		}
+
+		if ( $found ) {
+			if ( $save ) {
+				setcookie( 'locale', $found->original, time() + 365 * 86400, '/' . application::current()->prefixPathname, $_SERVER['HTTP_HOST'] );
+			}
+
+			return $found;
+		}
+
+		setcookie( 'locale', '', time() - 86400, '/' . application::current()->prefixPathname, $_SERVER['HTTP_HOST'] );
+
+		return static::parseLocale( $defaultLocale );
 	}
 
 	/**
