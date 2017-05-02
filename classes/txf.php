@@ -493,7 +493,7 @@ class txf extends singleton
 
 	public static function isValidClassName( &$name )
 	{
-		if ( string::isString( $name ) )
+		if ( str::isString( $name ) )
 		{
 			$name = trim( $name );
 

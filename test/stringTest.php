@@ -46,7 +46,7 @@ class stringTest extends \PHPUnit_Framework_TestCase
 		if ( !\extension_loaded( 'mbstring' ) )
 			$this->markTestSkipped( 'missing mbstring extension' );
 
-		$this->previous = string::encodingDetectionOrder( 'utf-7,utf-8,iso-8859-15' );
+		$this->previous = str::encodingDetectionOrder( 'utf-7,utf-8,iso-8859-15' );
 
 		// "Mäßige Zuwächse im €-Raum laut Societé" in UTF7
 		$this->long = _S('M+AOQA3w-ige Zuw+AOQ-chse im +IKw--Raum laut Societ+AOk-');
@@ -57,7 +57,7 @@ class stringTest extends \PHPUnit_Framework_TestCase
 
 	protected function tearDown()
 	{
-		string::encodingDetectionOrder( $this->previous );
+		str::encodingDetectionOrder( $this->previous );
 	}
 
 	public function provideEncodedStringsAndLengths()
@@ -95,12 +95,12 @@ class stringTest extends \PHPUnit_Framework_TestCase
 
 	public function testWrapping()
 	{
-		$this->assertThat( string::wrap( 'test' ), $this->isInstanceOf( 'de\toxa\txf\string' ) );
-		$this->assertThat( _S( 'test' ), $this->isInstanceOf( 'de\toxa\txf\string' ) );
-		$this->assertThat( _S( '' ), $this->isInstanceOf( 'de\toxa\txf\string' ) );
-		$this->assertThat( _S( 4 ), $this->isInstanceOf( 'de\toxa\txf\string' ) );
+		$this->assertThat( str::wrap( 'test' ), $this->isInstanceOf( 'de\toxa\txf\str' ) );
+		$this->assertThat( _S( 'test' ), $this->isInstanceOf( 'de\toxa\txf\str' ) );
+		$this->assertThat( _S( '' ), $this->isInstanceOf( 'de\toxa\txf\str' ) );
+		$this->assertThat( _S( 4 ), $this->isInstanceOf( 'de\toxa\txf\str' ) );
 
-		$this->assertThat( _S( array( 4, 5 ) ), $this->isInstanceOf( 'de\toxa\txf\string' ) );
+		$this->assertThat( _S( array( 4, 5 ) ), $this->isInstanceOf( 'de\toxa\txf\str' ) );
 		$this->assertEquals( 'Array', _S( array( 4, 5 ) )->string );
 	}
 
@@ -110,7 +110,7 @@ class stringTest extends \PHPUnit_Framework_TestCase
 
 	public function testWrapping2()
 	{
-		$this->assertThat( _S( (object) array( 4, 5 ) ), $this->isInstanceOf( 'de\toxa\txf\string' ) );
+		$this->assertThat( _S( (object) array( 4, 5 ) ), $this->isInstanceOf( 'de\toxa\txf\str' ) );
 	}
 
 	public function testWrapping3()
@@ -303,7 +303,7 @@ class stringTest extends \PHPUnit_Framework_TestCase
 	public function testParsingUrlQuery()
 	{
 		$query  = "%c3%a4=gr%c3%b6%c3%9fe&%c3%ad=ren%c3%a9";
-		$parsed = string::parseString( $query );
+		$parsed = str::parseString( $query );
 
 		$this->assertEquals( 2, count( $parsed ) );
 		$this->assertEquals( _S("gr\xC3\xB6\xC3\x9Fe"), $parsed[_S("\xC3\xA4")->string] );

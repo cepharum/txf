@@ -40,7 +40,7 @@ class setTest extends \PHPUnit_Framework_TestCase
 
 	protected function setUp()
 	{
-		$this->previous = string::encodingDetectionOrder( 'utf-8' );
+		$this->previous = str::encodingDetectionOrder( 'utf-8' );
 
 		$this->set = new set( array(
 								'context' => array(
@@ -69,7 +69,7 @@ class setTest extends \PHPUnit_Framework_TestCase
 
 	protected function tearDown()
 	{
-		string::encodingDetectionOrder( $this->previous );
+		str::encodingDetectionOrder( $this->previous );
 	}
 
 	public function testWrapping()

@@ -59,12 +59,12 @@ function _L( $singular, $plural = null, $count = 1, $fallbackSingular = null, $f
  * @param string $string native or managed string to wrap/clone
  * @param string $encoding encoding of provided string, ignored on cloning
  * @param string $useIfNotAString if $string is not a string this string is used instead
- * @return \de\toxa\txf\string managed string instance
+ * @return \de\toxa\txf\str managed string instance
  */
 
 function _S( $string, $encoding = null, $useIfNotAString = null )
 {
-	return string::wrap( $string, $encoding, $useIfNotAString );
+	return str::wrap( $string, $encoding, $useIfNotAString );
 }
 
 
@@ -108,7 +108,7 @@ function _H( $code )
 
 function _HA( $attribute )
 {
-	return html::inAttribute( $code );
+	return html::inAttribute( $attribute );
 }
 
 /**

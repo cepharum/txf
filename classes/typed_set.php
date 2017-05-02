@@ -53,7 +53,7 @@ class typed_set extends set
 	{
 		if ( is_callable( $type ) )
 			$this->type = $type;
-		else if ( !string::isString( $type ) )
+		else if ( !str::isString( $type ) )
 			throw new \InvalidArgumentException( 'invalid type specifier' );
 		else
 			$this->type = trim( _S($type)->asUtf8 );

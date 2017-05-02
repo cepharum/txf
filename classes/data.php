@@ -43,7 +43,7 @@ class data
 
 	public static function isKeyword( $in )
 	{
-		if ( !string::isString( $in ) )
+		if ( !str::isString( $in ) )
 			log::debug( 'use of non-string value "%s"', static::describe( $in ) );
 
 		$in = trim( $in );
@@ -65,7 +65,7 @@ class data
 
 	public static function isNonEmptyString( $in )
 	{
-		if ( !string::isString( $in ) )
+		if ( !str::isString( $in ) )
 			log::debug( 'use of non-string value' );
 
 		$in = trim( $in );
@@ -248,7 +248,7 @@ class data
 		{
 			case 'string' :
 				$type  = 'string[' . strlen( $value ) . ']';
-				$value = '"' . ( $fullSize ? $value : string::wrap( $value )->limit( 40 ) ) . '"';
+				$value = '"' . ( $fullSize ? $value : str::wrap( $value )->limit( 40 ) ) . '"';
 				break;
 			case 'boolean' :
 				$type  = 'boolean';
@@ -288,7 +288,7 @@ class data
 					$value = '[no-string]';
 
 				if ( !$fullSize )
-					$value = string::wrap( $value )->limit( 40 );
+					$value = str::wrap( $value )->limit( 40 );
 
 				break;
 		}
@@ -336,7 +336,7 @@ class data
 
 	public static function autoType( $value, $type = null )
 	{
-		if ( string::isString( $value ) )
+		if ( str::isString( $value ) )
 		{
 			$type = strtolower( trim( $type ) );
 

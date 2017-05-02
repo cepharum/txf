@@ -99,7 +99,7 @@ class set
 
 	public static function isValidThreadPath( $path )
 	{
-		return string::isString( $path ) && preg_match( '/^([^.]+\.)*[^.]+$/', strval( $path ) );
+		return str::isString( $path ) && preg_match( '/^([^.]+\.)*[^.]+$/', strval( $path ) );
 	}
 
 	/**
@@ -439,7 +439,7 @@ class set
 
 	public static function fromXml( $xml )
 	{
-		if ( string::isString( $xml ) )
+		if ( str::isString( $xml ) )
 			$xml = simplexml_load_string( (string) $xml );
 
 		if ( !( $xml instanceof \SimpleXMLElement ) )
@@ -450,7 +450,7 @@ class set
 
 	public function extendFromXml( $xml )
 	{
-		if ( string::isString( $xml ) )
+		if ( str::isString( $xml ) )
 			$xml= simplexml_load_string( (string) $xml );
 
 		if ( !( $xml instanceof \SimpleXMLElement ) )
@@ -581,7 +581,7 @@ class set
 		{
 			// it's a leaf node
 			// -> convert to element containing single text element
-			if ( string::isString( $set ) )
+			if ( str::isString( $set ) )
 				$set = _S($set)->asUtf8;
 			else
 				$set = data::asAutoTypable( $set );

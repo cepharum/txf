@@ -36,7 +36,7 @@ namespace de\toxa\txf;
  */
 
 
-class string
+class str
 {
 	/**
 	 * mark on whether using mbstring or not
@@ -204,7 +204,7 @@ class string
 	 *
 	 * @param string $string native or managed string to wrap/clone
 	 * @param string $encoding encoding of provided string, ignored on cloning
-	 * @return \de\toxa\txf\string managed string instance
+	 * @return \de\toxa\txf\str managed string instance
 	 */
 
 	public static function wrap( $string, $encoding = null, $useIfNotAString = null )
@@ -328,7 +328,7 @@ class string
 	 * Converts internal string to desired encoding.
 	 *
 	 * @param string $encoding desired encoding of string
-	 * @return \de\toxa\txf\string
+	 * @return \de\toxa\txf\str
 	 */
 
 	public function convertTo( $encoding )
@@ -376,7 +376,7 @@ class string
 	 *
 	 * @param integer $offset
 	 * @param integer $length
-	 * @return \de\toxa\txf\string
+	 * @return \de\toxa\txf\str
 	 */
 
 	public function substr( $offset, $length = null )
@@ -517,7 +517,7 @@ class string
 	 *
 	 * This method is returning another instance of class string.
 	 *
-	 * @return \de\toxa\txf\string converted string
+	 * @return \de\toxa\txf\str converted string
 	 */
 
 	public function toLower()
@@ -531,7 +531,7 @@ class string
 	 *
 	 * This method is returning another instance of class string.
 	 *
-	 * @return \de\toxa\txf\string converted string
+	 * @return \de\toxa\txf\str converted string
 	 */
 
 	public function toUpper()
@@ -544,7 +544,7 @@ class string
 	 * Trims string on either end.
 	 *
 	 * @param string $chars set of characters to remove at both ends of string
-	 * @return \de\toxa\txf\string trimmed string
+	 * @return \de\toxa\txf\str trimmed string
 	 */
 
 	public function trim( string $chars = null )
@@ -557,7 +557,7 @@ class string
 	 * Trims string at its beginning.
 	 *
 	 * @param string $chars set of characters to remove at beginning of string
-	 * @return \de\toxa\txf\string trimmed string
+	 * @return \de\toxa\txf\str trimmed string
 	 */
 
 	public function ltrim( string $chars = null )
@@ -570,7 +570,7 @@ class string
 	 * Trims string at its end.
 	 *
 	 * @param string $chars set of characters to remove at end of string
-	 * @return \de\toxa\txf\string trimmed string
+	 * @return \de\toxa\txf\str trimmed string
 	 */
 
 	public function rtrim( string $chars = null )
@@ -585,7 +585,7 @@ class string
 	 * @param integer $count maximum number of characters
 	 * @param string $ellipsis indicator string used at end of string on
 	 *                          cropping off some data
-	 * @return \de\toxa\txf\string
+	 * @return \de\toxa\txf\str
 	 */
 
 	public function limit( $count, string $ellipsis = null )
@@ -638,7 +638,7 @@ class string
 	 * @param string|array $pattern single (or set of) substring(s) to replace
 	 * @param string|array $replacement single (or set of) substring(s)
 	 *                      replacing related substring(s) in $pattern
-	 * @return \de\toxa\txf\string string with replacements applied
+	 * @return \de\toxa\txf\str string with replacements applied
 	 */
 
 	public function replace( $pattern, $replacement = null )
@@ -699,7 +699,7 @@ class string
 	 *
 	 * @param string|array $original original entities to translate
 	 * @param string $translated translated entities
-	 * @return \de\toxa\txf\string managed string with content adjusted
+	 * @return \de\toxa\txf\str managed string with content adjusted
 	 */
 
 	public function translate( $original, $translated = null )
@@ -793,5 +793,5 @@ class string
 }
 
 
-string::init();
+str::init();
 

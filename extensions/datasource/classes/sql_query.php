@@ -28,7 +28,6 @@
 
 namespace de\toxa\txf\datasource;
 
-use de\toxa\txf\string as string;
 use de\toxa\txf\browseable as browseable;
 
 
