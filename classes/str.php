@@ -399,7 +399,7 @@ class str
 	 * @return int|false
 	 */
 
-	public function indexOf( string $pattern, $offset = null )
+	public function indexOf( str $pattern, $offset = null )
 	{
 		if ( !$pattern->length )
 			return false;
@@ -420,7 +420,7 @@ class str
 	 * @return int|false
 	 */
 
-	public function indexOfNoCase( string $pattern, $offset = null )
+	public function indexOfNoCase( str $pattern, $offset = null )
 	{
 		if ( !$pattern->length )
 			return false;
@@ -432,7 +432,7 @@ class str
 							 : \stripos( $this->data, (string) $pattern, $offset );
 	}
 
-	protected function _lastIndexOf( string $pattern, $offset = null, $caseSensitive = true )
+	protected function _lastIndexOf( str $pattern, $offset = null, $caseSensitive = true )
 	{
 		if ( !$pattern->length )
 			return false;
@@ -474,7 +474,7 @@ class str
 	 * @return int|false
 	 */
 
-	public function lastIndexOf( string $pattern, $offset = null )
+	public function lastIndexOf( str $pattern, $offset = null )
 	{
 		return $this->_lastIndexOf( $pattern, $offset, true );
 	}
@@ -491,7 +491,7 @@ class str
 	 * @return int|false
 	 */
 
-	public function lastIndexOfNoCase( string $pattern, $offset = null )
+	public function lastIndexOfNoCase( str $pattern, $offset = null )
 	{
 		return $this->_lastIndex( $pattern, $offset, false );
 	}
@@ -547,7 +547,7 @@ class str
 	 * @return \de\toxa\txf\str trimmed string
 	 */
 
-	public function trim( string $chars = null )
+	public function trim( str $chars = null )
 	{
 		$chars = is_null( $chars ) ? " \r\t\n\f" : _S($chars)->asUtf8;
 		return static::wrap( trim( $this->asUtf8, $chars ), 'utf-8'  )->convertTo( $this->encoding );
@@ -560,7 +560,7 @@ class str
 	 * @return \de\toxa\txf\str trimmed string
 	 */
 
-	public function ltrim( string $chars = null )
+	public function ltrim( str $chars = null )
 	{
 		$chars = is_null( $chars ) ? " \r\t\n\f" : _S($chars)->asUtf8;
 		return static::wrap( ltrim( $this->asUtf8, $chars ), 'utf-8'  )->convertTo( $this->encoding );
@@ -573,7 +573,7 @@ class str
 	 * @return \de\toxa\txf\str trimmed string
 	 */
 
-	public function rtrim( string $chars = null )
+	public function rtrim( str $chars = null )
 	{
 		$chars = is_null( $chars ) ? " \r\t\n\f" : _S($chars)->asUtf8;
 		return static::wrap( rtrim( $this->asUtf8, $chars ), 'utf-8'  )->convertTo( $this->encoding );
@@ -588,7 +588,7 @@ class str
 	 * @return \de\toxa\txf\str
 	 */
 
-	public function limit( $count, string $ellipsis = null )
+	public function limit( $count, str $ellipsis = null )
 	{
 		if ( self::$mbMode )
 		{
@@ -721,7 +721,7 @@ class str
 	 * @return array set of chunks
 	 */
 
-	public function split( string $pcre )
+	public function split( str $pcre )
 	{
 		$result = preg_split( $pcre->asUtf8 . 'u', $this->asUtf8 );
 
@@ -738,7 +738,7 @@ class str
 	 * @return array set of matching subpatterns, false on mismatch
 	 */
 
-	public function match( string $pcre )
+	public function match( str $pcre )
 	{
 		if ( !preg_match( $pcre->asUtf8 . 'u', $this->asUtf8, $matches ) )
 			return false;
