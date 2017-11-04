@@ -101,7 +101,7 @@ class ldap_user extends user
 
 	public function getUUID()
 	{
-		return $this->readNode( 'entryUUID' )->attributeByName( $this->setup->read( 'uuidAttr', 'entryUUID' ) )->read( 0 );
+		return $this->getProperty( $this->setup->read( 'uuidAttr', 'entryUUID' ) );
 	}
 
 	public function getLoginName()
@@ -128,7 +128,12 @@ class ldap_user extends user
 
 	public function getProperty( $propertyName, $defaultIfMissing = null )
 	{
-		return $this->readNode()->attributeByName( $propertyName )->read( 0 );
+		$attribute = $this->readNode( $propertyName )->attributeByName( $propertyName );
+		if ( $attribute ) {
+			return $attribute->read( 0 );
+		}
+
+		return $defaultIfMissing;
 	}
 
 	public function setProperty( $propertyName, $propertyValue = null )
