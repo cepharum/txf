@@ -147,6 +147,8 @@ class model_editor_related extends model_editor_abstract
 					array_shift( $unboundReferences );
 					break;
 				}
+
+				// falls through
 			default :
 				throw new \InvalidArgumentException( 'relation is not properly bound for editing' );
 		}
@@ -269,6 +271,7 @@ class model_editor_related extends model_editor_abstract
 		return $this->mutable->getReferencingNode()->isManyToMany();
 	}
 
+	/** @inheritdoc */
 	public function normalize( $input, $property, model_editor $editor )
 	{
 		if ( $this->isReadOnly )
@@ -277,6 +280,7 @@ class model_editor_related extends model_editor_abstract
 		return array_unique( array_filter( (array) $input ) );
 	}
 
+	/** @inheritdoc */
 	public function validate( $input, $property, model_editor $editor )
 	{
 		$min = max( $this->isMandatory ? 1 : 0, $this->minCount );
@@ -549,6 +553,7 @@ class model_editor_related extends model_editor_abstract
 	 * @param connection|null $source data source to fetch items from,
 	 *        null to use default of model mentioned in selector
 	 * @return array see extended result form of model::listItemLabels()
+	 * @throws datasource_exception
 	 */
 
 	protected function _selectAvailable( connection $source )
@@ -563,6 +568,7 @@ class model_editor_related extends model_editor_abstract
 	 * @param connection|null $source data source to fetch items from,
 	 *        null to use default of model mentioned in selector
 	 * @return array see extended result form of model::listItemLabels()
+	 * @throws datasource_exception
 	 */
 
 	protected function _selectExisting( connection $source )
@@ -578,6 +584,7 @@ class model_editor_related extends model_editor_abstract
 	 * @param array $selector selector retrieved from _getSelectorOfAvailable()
 	 *        or _getSelectorOfExisting()
 	 * @return array
+	 * @throws datasource_exception
 	 */
 
 	protected function _select( connection $source = null, $selector )
@@ -688,7 +695,7 @@ class model_editor_related extends model_editor_abstract
 			$extras = array_map( function( $binding ) { return '( ' . $binding['term'] . ' )'; }, $kept );
 			$values = array_merge( $keptValues, $null['filter']['values'] );
 
-			$filter = $filter . ' AND NOT ( ' . implode( ' OR ', $extras ) . ' )';
+			$filter = $filter . ( count( $extras ) ? ' AND NOT ( ' . implode( ' OR ', $extras ) . ' )' : '' );
 
 			// compile query to NULL referencing properties in data set
 			$term = implode( ',', array_map( function ( $name ) use ( $source ) {
@@ -991,7 +998,7 @@ class model_editor_related extends model_editor_abstract
 		return null;
 	}
 
-	private $__savedBindings = null;
+	private $__localIdsToSave = null;
 
 	/** @inheritdoc */
 	public function beforeValidating( model_editor $editor, model $item = null, $itemProperties, model_editor_field $field )
@@ -1025,12 +1032,12 @@ class model_editor_related extends model_editor_abstract
 			// storing item's basic properties, thus ...
 			//
 			// 1) temporarily save binding information on relation
-			$this->__savedBindings = (array) $itemProperties[$this->relationName];
+			$this->__localIdsToSave = (array) $itemProperties[$this->relationName];
 
 			// 2) remove binding information from properties of item to save
 			unset( $itemProperties[$this->relationName] );
 		} else
-			$this->__savedBindings = null;
+			$this->__localIdsToSave = null;
 
 		return $itemProperties;
 	}
@@ -1038,14 +1045,14 @@ class model_editor_related extends model_editor_abstract
 	/** @inheritdoc */
 	public function afterStoring( model_editor $editor, model $item, $itemProperties, model_editor_field $field )
 	{
-		if ( is_array( $this->__savedBindings ) ) {
+		if ( is_array( $this->__localIdsToSave ) ) {
 			$datasource = $editor->source();
 			$existing   = $this->_getSelectorOfExisting( $item );
 
 			// 1) get all IDs of items to be bound
 			$allBindings = array_map( function( $localId ) {
 				return $this->localIdToBinding( $localId );
-			}, $this->__savedBindings );
+			}, $this->__localIdsToSave );
 
 			// 2) drop all previously existing bindings that aren't listed to be bound further on
 			$this->_unbindSelected( $datasource, $existing, $allBindings );
