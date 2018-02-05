@@ -647,10 +647,11 @@ class model_editor_related extends model_editor_abstract
 	 *
 	 * @param connection $source connection data source
 	 * @param array $selector selector describing bindings to release
+	 * @param array $keepBound lists IDs of bound models not be unbound
 	 * @throws datasource_exception on failing to adjust data source
 	 */
 
-	protected function _unbindSelected( connection $source, $selector )
+	protected function _unbindSelected( connection $source, $selector, $keepBound = array() )
 	{
 		if ( array_key_exists( 'null', $selector ) ) {
 			// Selector is configured to keep existing instances of mutable node
@@ -669,11 +670,25 @@ class model_editor_related extends model_editor_abstract
 			// only) and NULL all properties referencing in mutable reference!
 			$null = $selector['null'];
 
+			// derive extra filters and related values for keeping bindings if possible
+			$kept = $this->_getAssignmentFilters( $source, $selector, $keepBound );
+
+			$keptValues = array_reduce( $kept, function( $collector, $binding ) {
+				return array_merge( $collector, $binding['values'] );
+			}, array() );
+
+
 			// compile filter for selecting items to NULL
 			$filter = $this->_compileFilterTerm( $source, $null['filter'] );
 
 			// get name of data set of mutable node's model
 			$set = $this->_setNameOfModel( $source, $null['model'] );
+
+			// compile filter and its values eventually
+			$extras = array_map( function( $binding ) { return '( ' . $binding['term'] . ' )'; }, $kept );
+			$values = array_merge( $keptValues, $null['filter']['values'] );
+
+			$filter = $filter . ' AND NOT ( ' . implode( ' OR ', $extras ) . ' )';
 
 			// compile query to NULL referencing properties in data set
 			$term = implode( ',', array_map( function ( $name ) use ( $source ) {
@@ -686,7 +701,7 @@ class model_editor_related extends model_editor_abstract
 			$null['model']->declareInDatasource( $source );
 
 			// perform modification in data source
-			if ( !$source->test( $query, $null['filter']['values'] ) )
+			if ( !$source->test( $query, $values ) )
 				throw new datasource_exception( $source, 'failed to null references' );
 		}
 
@@ -704,6 +719,9 @@ class model_editor_related extends model_editor_abstract
 			// a<m) and remove them from data source.
 			$drop = $selector['drop'];
 
+			// collect all values to be actually unbound
+			$actualValues = $drop['filter']['values'];
+
 			// compile filter for selecting items to remove
 			$filter = $this->_compileFilterTerm( $source, $drop['filter'] );
 
@@ -717,9 +735,49 @@ class model_editor_related extends model_editor_abstract
 			$drop['model']->declareInDatasource( $source );
 
 			// perform modification in data source
-			if ( !$source->test( $query, $drop['filter']['values'] ) )
+			if ( !$source->test( $query, $actualValues ) )
 				throw new datasource_exception( $source, 'failed to drop nodes of reference' );
 		}
+	}
+
+	/**
+	 * Maps provided list of desired bindings into term and values for matching
+	 * either binding.
+	 *
+	 * @param connection $source
+	 * @param $selector
+	 * @param array $allBindings
+	 * @return array
+	 */
+	protected function _getAssignmentFilters( connection $source, $selector, $allBindings ) {
+		return array_map( function( $binding ) use ( $source, $selector ) {
+			// join names and values of binding/referencing properties
+			$reference = array_combine( $selector['properties'], $binding );
+
+			assert( 'count( $selector["properties"] ) === count( $binding )' );
+			assert( 'count( $reference ) === count( $binding )' );
+
+			// collect binding/referencing properties to actually use on updating
+			$properties = $values = array();
+
+			foreach ( $reference as $name => $value )
+				if ( array_key_exists( $name, $properties ) )
+				{
+					if ( $value != $properties[$name] )
+						throw new \RuntimeException( 'double use of identifying/referencing property with mismatching value' );
+				}
+				else
+				{
+					$properties[] = $name;
+					$values[]     = $value;
+				}
+
+
+			return array(
+				'term' => implode( ' AND ', array_map( function( $name ) { return "$name=?"; }, $source->qualifyPropertyNames( null, $properties ) ) ),
+				'values' => $values,
+			);
+		}, $allBindings );
 	}
 
 	protected function _rebind( connection $source, $selector, $binding )
@@ -875,6 +933,7 @@ class model_editor_related extends model_editor_abstract
 		throw new \InvalidArgumentException( 'invalid item ID' );
 	}
 
+	/** @inheritdoc */
 	public function onSelectingItem( model_editor $editor, model $item, model_editor_field $field )
 	{
 		// bind element's relation with item sharing its data source
@@ -883,6 +942,7 @@ class model_editor_related extends model_editor_abstract
 			->bindNodeOnItem( 0, $item );
 	}
 
+	/** @inheritdoc */
 	public function onLoading( model_editor $editor, model $item = null, $propertyName, model_editor_field $field )
 	{
 		if ( $this->relationName == $propertyName )
@@ -933,6 +993,7 @@ class model_editor_related extends model_editor_abstract
 
 	private $__savedBindings = null;
 
+	/** @inheritdoc */
 	public function beforeValidating( model_editor $editor, model $item = null, $itemProperties, model_editor_field $field )
 	{
 		if ( array_key_exists( $this->relationName, $itemProperties ) )
@@ -952,6 +1013,7 @@ class model_editor_related extends model_editor_abstract
 		return $itemProperties;
 	}
 
+	/** @inheritdoc */
 	public function beforeStoring( model_editor $editor, model $item = null, $itemProperties, model_editor_field $field )
 	{
 		if ( array_key_exists( $this->relationName, $itemProperties ) )
@@ -973,19 +1035,24 @@ class model_editor_related extends model_editor_abstract
 		return $itemProperties;
 	}
 
+	/** @inheritdoc */
 	public function afterStoring( model_editor $editor, model $item, $itemProperties, model_editor_field $field )
 	{
 		if ( is_array( $this->__savedBindings ) ) {
 			$datasource = $editor->source();
 			$existing   = $this->_getSelectorOfExisting( $item );
 
-			// 1) drop all previously existing bindings
-			$this->_unbindSelected( $datasource, $existing );
+			// 1) get all IDs of items to be bound
+			$allBindings = array_map( function( $localId ) {
+				return $this->localIdToBinding( $localId );
+			}, $this->__savedBindings );
 
-			// 2) write all current bindings
-			foreach ( array_values( $this->__savedBindings ) as $localId )
-				$this->_rebind( $datasource, $existing, $this->localIdToBinding( $localId ) );
+			// 2) drop all previously existing bindings that aren't listed to be bound further on
+			$this->_unbindSelected( $datasource, $existing, $allBindings );
 
+			// 2) bind all items that haven't been bound before
+			foreach ( $allBindings as $binding )
+				$this->_rebind( $datasource, $existing, $binding );
 
 			$item->dropCachedRecord();
 		}
@@ -993,6 +1060,7 @@ class model_editor_related extends model_editor_abstract
 		return $item;
 	}
 
+	/** @inheritdoc */
 	public function onDeleting( model_editor $editor, model $item, model_editor_field $field )
 	{
 		$datasource = $editor->source();
