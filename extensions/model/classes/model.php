@@ -667,6 +667,17 @@ class model
 
 	public function describe()
 	{
+		$isset = false;
+		foreach ( $this->_id as $value )
+			if ( $value !== null ) {
+				$isset = true;
+				break;
+			}
+
+		if ( !$isset )
+			return \de\toxa\txf\_L('-');
+
+
 		$record = $this->published();
 
 		$label = static::formatLabel( $record, true );
