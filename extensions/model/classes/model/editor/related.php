@@ -693,7 +693,7 @@ class model_editor_related extends model_editor_abstract
 
 			// compile filter and its values eventually
 			$extras = array_map( function( $binding ) { return '( ' . $binding['term'] . ' )'; }, $kept );
-			$values = array_merge( $keptValues, $null['filter']['values'] );
+			$values = array_merge( $null['filter']['values'], $keptValues );
 
 			$filter = $filter . ( count( $extras ) ? ' AND NOT ( ' . implode( ' OR ', $extras ) . ' )' : '' );
 
