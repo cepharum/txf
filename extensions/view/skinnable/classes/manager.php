@@ -269,10 +269,11 @@ class manager extends \de\toxa\txf\singleton
 
 	public function onError( $code, $text, $file, $line, $context )
 	{
-		if ( error_reporting() != 0 || !( $code & (E_NOTICE|E_WARNING) ) )
+		$configured = error_reporting();
+		if ( $code & ( ( $configured != 0 ) ? $configured : ~( E_NOTICE | E_WARNING ) ) )
 		{
 			// error isn't suppressed notice/warning actually -> pass on to exception handler
-			self::onException( new \ErrorException( $text, $code, 0, $file, $line ) );
+			self::onException( new \ErrorException( $text, 0, $code, $file, $line ) );
 		}
 	}
 

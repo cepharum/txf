@@ -115,7 +115,7 @@ class html
 
 	public static function classname( $value )
 	{
-		return implode( ' ', array_map( array( self, 'idname' ), is_array( $value ) ? array_map( function( $item ) { return trim( $item ); }, $value ) : preg_split( '/\s+/', trim( $value ) ) ) );
+		return implode( ' ', array_map( array( get_class(), 'idname' ), is_array( $value ) ? array_map( function( $item ) { return trim( $item ); }, $value ) : preg_split( '/\s+/', trim( $value ) ) ) );
 	}
 
 	/**
