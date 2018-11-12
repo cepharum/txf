@@ -272,10 +272,11 @@ abstract class user
 
 	final public static function dropCurrent()
 	{
-		if ( self::$__current instanceof self )
+		$current = static::current();
+		if ( $current instanceof self )
 		{
 			// enforce drop of user's authenticated state
-			self::$__current->unauthenticate();
+			$current->unauthenticate();
 
 			// drop reference on current user
 			self::$__current = null;
