@@ -281,10 +281,10 @@ class manager extends \de\toxa\txf\singleton
 	 * Catches exceptions not catched in code for embedding rendered exception
 	 * description in selected page design (if possible).
 	 *
-	 * @param \Exception $exception
+	 * @param \Throwable $exception
 	 */
 
-	public function onException( \Exception $exception )
+	public function onException( \Throwable $exception )
 	{
 		if ( $exception instanceof \ErrorException )
 			if ( $exception->getCode() & E_NOTICE )

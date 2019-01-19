@@ -98,7 +98,7 @@ class engine_php extends engine
 			include( $templateFile );
 			$code = ob_get_clean();
 		}
-		catch ( \Exception $e )
+		catch ( \Throwable $e )
 		{
 			ob_end_clean();
 			$code = manager::simpleRenderException( $e );
