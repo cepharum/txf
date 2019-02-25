@@ -94,6 +94,16 @@ class databrowser implements widget
 	protected $rowCommander;
 
 	/**
+	 * Optional callback invoked on every row for marking row as selected
+	 *
+	 * The callback will be invoked with the row-data as parameter
+	 * and is expected to return true iff the row shall be shown as selected
+	 *
+	 * @var callable
+	 */
+	protected $rowSelectCallback = null;
+
+	/**
 	 * HTML form instance used internally for managing browser input
 	 *
 	 * @var html_form
@@ -396,6 +406,27 @@ class databrowser implements widget
 	}
 
 	/**
+	 * Activates a callback for the rendering of every visible datalist-row.
+	 *
+	 * The callback will receive the row's index and data as parameters.
+	 * The corresponding table-row will have the CSS-class 'selected' iff the callback returns true.
+	 *
+	 * The callback must be set before getCode() is called.
+	 *
+	 * @param callable $callback callback to invoke on every table-row
+	 * @throws \InvalidArgumentException
+	 * @return \de\toxa\txf\databrowser current instance
+	 */
+	public function setRowSelectCallback( $callback ) {
+		if ( !is_callable( $callback ) ) {
+			throw new \InvalidArgumentException( 'invalid callback' );
+		}
+
+		$this->rowSelectCallback = $callback;
+		return $this;
+	}
+
+	/**
 	 * Changes empty text to display on empty list. Provided text is replacing
 	 * any previously set text (e.g. on creating databrowser).
 	 *
@@ -586,7 +617,7 @@ class databrowser implements widget
 			$id    = $form ? null : $this->datasource->name();
 			$table = html::arrayToTable( $rows, $id, $cellFormatter,
 			                             array( &$this, 'formatHeader' ),
-			                             '', '', $this->className );
+			                             '', '', $this->className, $this->rowSelectCallback );
 
 			$code = $this->pager . $table;
 

@@ -127,10 +127,15 @@ class html
 	 * @param function $headerFormat method called to render value of a header
 	 * @param string $empty string to render in columns unset in a row
 	 * @param string $basicIndent string prefixing every line of rendered HTML code
+	 * @param string $class CSS-class to set for complete table
+	 * @param function $rowSelect
+	 *		callback to determine if a table-row shall get the CSS-class 'selected',
+	 *		the callback will be called for every row with the current index and item of $arrData as parameters
+	 *		and is expected to return a boolean
 	 * @return string HTML code describing table
 	 */
 
-	public static function arrayToTable( $arrData, $id = '', $cellFormat = null, $headerFormat = null, $empty = '', $basicIndent = '', $class = '' )
+	public static function arrayToTable( $arrData, $id = '', $cellFormat = null, $headerFormat = null, $empty = '', $basicIndent = '', $class = '', $rowSelect = null )
 	{
 		if ( !is_array( $arrData ) )
 			throw new \InvalidArgumentException( 'not an array' );
@@ -177,6 +182,10 @@ class html
 		foreach ( $arrData as $index => $record )
 		{
 			$rowClass = ( ( $rowIndex % 2 ) ? 'even' : 'odd' ) . ( $rowIndex ? '' : ' first' ) . ( ++$rowIndex == count( $arrData ) ? ' last' : '' );
+
+			if ( is_callable( $rowSelect ) && call_user_func( $rowSelect, $index, $record ) === true ) {
+				$rowClass .= ' selected';
+			}
 
 			$out .= "$basicIndent		<tr class=\"$rowClass\">\n";
 
