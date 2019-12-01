@@ -101,7 +101,29 @@ class ldap_user extends user
 
 	public function getUUID()
 	{
-		return $this->getProperty( $this->setup->read( 'uuidAttr', 'entryUUID' ) );
+		$name = $this->setup->read( 'uuidAttr', 'entryUUID' );
+		$value = $this->getProperty( $name );
+
+		if ( strtolower( $name ) === "objectsid" ) {
+			$version = ord( $value[0] );
+			$numSubs = ord( $value[1] );
+			if ( $version !== 1 ) {
+				throw new \RuntimeException( "invalid SID version: $version" );
+			}
+
+			if ( $numSubs < 4 ) {
+				throw new \RuntimeException( "insufficient number of sub-authorities" );
+			}
+
+			$data = unpack( "H*bytes", substr( $value, -16 ) );
+			$value = substr( $data['bytes'], 0, 8 ) . "-" .
+			         substr( $data['bytes'], 8, 4 ) . "-" .
+			         substr( $data['bytes'], 12, 4 ) . "-" .
+			         substr( $data['bytes'], 16, 4 ) . "-" .
+			         substr( $data['bytes'], 20, 12 );
+		}
+
+		return strtolower( $value );
 	}
 
 	public function getLoginName()
