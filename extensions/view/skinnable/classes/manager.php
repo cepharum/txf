@@ -248,7 +248,7 @@ class manager extends \de\toxa\txf\singleton
 			{
 				echo $this->renderPage();
 			}
-			catch ( \Exception $e )
+			catch ( \Throwable $e )
 			{
 				echo self::simpleRenderException( $e );
 			}
@@ -281,10 +281,10 @@ class manager extends \de\toxa\txf\singleton
 	 * Catches exceptions not catched in code for embedding rendered exception
 	 * description in selected page design (if possible).
 	 *
-	 * @param \Exception $exception
+	 * @param \Throwable $exception
 	 */
 
-	public function onException( \Exception $exception )
+	public function onException( \Throwable $exception )
 	{
 		if ( $exception instanceof \ErrorException )
 			if ( $exception->getCode() & E_NOTICE )
@@ -305,7 +305,7 @@ class manager extends \de\toxa\txf\singleton
 			{
 				$code = $this->engine->render( 'exception', variable_space::create( 'exception', $exception ) );
 			}
-			catch ( \Exception $e )
+			catch ( \Throwable $e )
 			{
 				$code = locale::get( 'failed to render exception' );
 			}
@@ -318,7 +318,7 @@ class manager extends \de\toxa\txf\singleton
 				// --> call it explicitly here
 				$this->onShutdown();
 		}
-		catch ( \Exception $e )
+		catch ( \Throwable $e )
 		{
 			echo '<h1>Failed to render exception</h1>';
 			echo self::simpleRenderException( $exception );
@@ -332,11 +332,11 @@ class manager extends \de\toxa\txf\singleton
 	/**
 	 * Renders exception without utilizing template engine.
 	 *
-	 * @param \Exception $exception
+	 * @param \Throwable $exception
 	 * @return string
 	 */
 
-	protected static function simpleRenderException( \Exception $exception )
+	protected static function simpleRenderException( \Throwable $exception )
 	{
 		$trace = exception::reduceExceptionTrace( $exception, true );
 
@@ -775,7 +775,7 @@ EOT
 
 			$code = $this->engine->render( 'page', $data );
 		}
-		catch ( \Exception $e )
+		catch ( \Throwable $e )
 		{
 			$code = self::simpleRenderException( $e );
 		}
