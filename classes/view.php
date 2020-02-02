@@ -165,7 +165,7 @@ class view extends view\skinnable\manager
 			// @todo consider selecting engine depending on current configuration instead of using current view's one
 			return static::engine()->render( $template, $data );
 		}
-		catch ( \Exception $e )
+		catch ( \Throwable $e )
 		{
 			while ( $oblevel < ob_get_level() )
 				ob_end_clean();
