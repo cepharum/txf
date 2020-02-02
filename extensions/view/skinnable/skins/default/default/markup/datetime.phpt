@@ -4,7 +4,7 @@
 if ( count( $arguments ) == 1 ) {
 	try {
 		$value = input::vget( $name );
-	} catch ( \Exception $e ) {
+	} catch ( \Throwable $e ) {
 		$value = null;
 	}
 }
