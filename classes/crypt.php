@@ -171,8 +171,8 @@ class crypt
 
 	protected static function getIV()
 	{
-		return blowfish::get( $_SERVER['REMOTE_ADDR'] . $_COOKIE['_txf'] . $_SERVER['HTTP_USER_AGENT'], $_SERVER['HTTP_HOST'] ) .
-			   blowfish::get( $_SERVER['HTTP_HOST'] . $_COOKIE['_txf'] . $_SERVER['HTTP_USER_AGENT'], $_SERVER['REMOTE_ADDR'] );
+		return blowfish::get( $_COOKIE['_txf'] . $_SERVER['HTTP_USER_AGENT'], $_SERVER['HTTP_HOST'] ) .
+			   blowfish::get( $_SERVER['HTTP_HOST'] . $_COOKIE['_txf'] . $_SERVER['HTTP_USER_AGENT'], $_SERVER['HTTP_USER_AGENT'] );
 	}
 
 	/**

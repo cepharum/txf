@@ -304,7 +304,7 @@ class html_form implements widget
 
 	protected function idValue()
 	{
-		return substr( preg_replace( '/[^a-z0-9_]/i', '', base64_encode( gzcompress( sha1( $this->name . '|' . application::current()->name . '|' . $_SERVER['REMOTE_ADDR'] . '|' . session_id() ), 9 ) ) ), 10, 16 );
+		return substr( preg_replace( '/[^a-z0-9_]/i', '', base64_encode( gzcompress( sha1( $this->name . '|' . application::current()->name . '|' . session_id() ), 9 ) ) ), 10, 16 );
 	}
 
 	/**
